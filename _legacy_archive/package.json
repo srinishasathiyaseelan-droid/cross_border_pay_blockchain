@@ -1,0 +1,19 @@
+{
+  "name": "eventchain-deployment",
+  "version": "1.0.0",
+  "description": "Deployment scripts for EventChain smart contract",
+  "scripts": {
+    "deploy:hardhat": "hardhat run scripts/deploy-with-hardhat.js --network ganache",
+    "deploy:hardhat:localhost": "hardhat run scripts/deploy-with-hardhat.js --network localhost",
+    "compile": "hardhat compile",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.28.0"
+  },
+  "dependencies": {
+    "ethers": "^6.9.0",
+    "html5-qrcode": "^2.3.8"
+  }
+}

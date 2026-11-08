@@ -1,0 +1,37 @@
+{
+    "model_name": "Random Forest Classifier",
+    "n_estimators": 100,
+    "random_state": 42,
+    "accuracy": 98.67,
+    "precision": 98.67,
+    "recall": 98.67,
+    "f1_score": 98.66,
+    "total_samples": 6000,
+    "test_samples": 1500,
+    "feature_importances": {
+        "amount": 0.3608,
+        "frequency": 0.2329,
+        "previous_transactions": 0.0673,
+        "suspicious_transactions": 0.0353,
+        "account_age": 0.0359,
+        "corridor_risk": 0.1315,
+        "amount_to_age_ratio": 0.1362
+    },
+    "confusion_matrix": [
+        [
+            856,
+            5,
+            0
+        ],
+        [
+            13,
+            372,
+            2
+        ],
+        [
+            0,
+            0,
+            252
+        ]
+    ]
+}

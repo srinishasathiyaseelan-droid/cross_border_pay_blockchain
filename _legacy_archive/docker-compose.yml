@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ganache:
+    image: trufflesuite/ganache:latest
+    ports:
+      - "8545:8545"
+    command: [ "--wallet.mnemonic", "test test test test test test test test test test test junk", "--chain.chainId", "1337", "--server.host", "0.0.0.0" ]
+
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  backend:
+    build: ./backend-node
+    ports:
+      - "4000:4000"
+    environment:
+      - BLOCKCHAIN_RPC_URL=http://ganache:8545
+      - BLOCKCHAIN_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - AI_SERVICE_URL=http://ai-service:5000
+    depends_on:
+      - ganache
+      - ai-service
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:4000
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CrossPay{% endblock %} | Risk-Adaptive Smart Contract Settlement for SMEs</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Chart.js for Interactive Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="{{ url_for('index') }}" class="nav-brand">
+                <span style="font-size: 1.4rem;">🌐</span>
+                <span>CrossPay</span>
+                <span class="brand-badge">SME Settlement</span>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
+                <li><a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="{{ url_for('kyc') }}" class="nav-link {% if request.endpoint == 'kyc' %}active{% endif %}">
+                    KYC Verification
+                    {% if current_kyc %}
+                        {% if current_kyc.status == 'VERIFIED' %}
+                            <span class="badge badge-verified" style="font-size:0.65rem; padding:2px 6px;">Verified</span>
+                        {% elif current_kyc.status == 'PENDING' %}
+                            <span class="badge badge-pending" style="font-size:0.65rem; padding:2px 6px;">Pending</span>
+                        {% else %}
+                            <span class="badge badge-rejected" style="font-size:0.65rem; padding:2px 6px;">Rejected</span>
+                        {% endif %}
+                    {% endif %}
+                </a></li>
+                <li><a href="{{ url_for('payment') }}" class="nav-link {% if request.endpoint == 'payment' %}active{% endif %}">Send Payment</a></li>
+                <li><a href="{{ url_for('transactions') }}" class="nav-link {% if request.endpoint == 'transactions' %}active{% endif %}">Transactions</a></li>
+                <li><a href="{{ url_for('blockchain_explorer') }}" class="nav-link {% if request.endpoint == 'blockchain_explorer' %}active{% endif %}">Blockchain Ledger</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                {% if current_user %}
+                    <span style="font-size: 0.82rem; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
+                        <span class="dot dot-low"></span>
+                        <strong>{{ current_user.name }}</strong> ({{ current_user.role|upper }})
+                    </span>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">Sign Out</a>
+                {% else %}
+                    <a href="{{ url_for('quick_login', role='sme') }}" class="btn btn-secondary btn-sm">⚡ Quick SME Demo</a>
+                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">Sign In</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container" style="flex: 1; padding-top: 24px; padding-bottom: 48px;">
+        <!-- Global Flash Messages -->
+        <div class="flash-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div>
+                <strong>Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments</strong>
+                <p style="margin-top: 4px;">Academic Research Prototype • Machine Learning (Random Forest) + Blockchain & Smart Contract Architecture</p>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <span class="badge badge-neutral">Flask 3.1</span>
+                <span class="badge badge-neutral">Scikit-Learn 1.9</span>
+                <span class="badge badge-neutral">SHA-256 Ledger</span>
+                <span class="badge badge-neutral">SQLite</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Application Scripts -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,42 @@
+### EventChain API Examples
+### Use these examples with REST clients like IntelliJ HTTP Client, VS Code REST Client, or Postman
+
+### Base URL
+@baseUrl = http://localhost:8080
+
+### 1. Create a new event
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "eventType": "certificate",
+  "metadata": "{\"name\":\"John Doe\",\"degree\":\"Bachelor of Science\",\"major\":\"Computer Science\",\"year\":\"2024\",\"institution\":\"University Example\"}"
+}
+
+### 2. Get all events
+GET {{baseUrl}}/events
+
+### 3. Get event by index
+GET {{baseUrl}}/events/0
+
+### 4. Verify event hash (replace with actual IPFS hash)
+GET {{baseUrl}}/events/verify/QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco
+
+### 5. Create a document event
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "eventType": "document",
+  "metadata": "{\"title\":\"Important Contract\",\"documentId\":\"DOC-2024-001\",\"version\":\"1.0\",\"status\":\"signed\"}"
+}
+
+### 6. Create a transaction event
+POST {{baseUrl}}/events
+Content-Type: application/json
+
+{
+  "eventType": "transaction",
+  "metadata": "{\"transactionId\":\"TXN-12345\",\"amount\":1000,\"currency\":\"USD\",\"from\":\"Alice\",\"to\":\"Bob\",\"date\":\"2024-12-17\"}"
+}
+

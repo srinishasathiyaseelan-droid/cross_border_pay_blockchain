@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #f7f9fc;
+    --card-bg: #ffffff;
+    --text: #1f2933;
+    --primary: #2563eb;
+    --border: #e5e7eb;
+  }
+
+  .dark {
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f8fafc;
+    --primary: #3b82f6;
+    --border: #334155;
+  }
+
+  body {
+    @apply min-h-screen transition-colors duration-200;
+    background-color: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-gray-700 font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg border border-gray-300 hover:border-gray-400 transform hover:scale-105 transition-all duration-200;
+  }
+
+  .card {
+    @apply rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 border;
+    background-color: var(--card-bg);
+    border-color: var(--border);
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200;
+    background-color: var(--card-bg);
+    border-color: var(--border);
+    color: var(--text);
+  }
+}

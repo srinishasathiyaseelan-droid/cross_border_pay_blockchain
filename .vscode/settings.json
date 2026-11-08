@@ -1,0 +1,31 @@
+{
+    "python.defaultInterpreterPath": "python",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}"
+    ],
+    "files.exclude": {
+        "**/_legacy_archive/**": true,
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true
+    },
+    "search.exclude": {
+        "**/_legacy_archive": true,
+        "**/__pycache__": true
+    },
+    "files.watcherExclude": {
+        "**/_legacy_archive/**": true,
+        "**/__pycache__/**": true
+    },
+    "java.import.maven.enabled": false,
+    "java.autobuild.enabled": false,
+    "javascript.validate.enable": false,
+    "typescript.validate.enable": false
+}

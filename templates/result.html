@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Settlement Result - {{ tx.transaction_id }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 20px auto;">
+    <!-- Step Pipeline -->
+    <div class="workflow-pipeline" style="margin-bottom: 24px;">
+        <div class="workflow-step complete">
+            <span class="step-num">✓</span>
+            <span>KYC Verified</span>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step complete">
+            <span class="step-num">✓</span>
+            <span>Payment Submitted</span>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step complete">
+            <span class="step-num">✓</span>
+            <span>Random Forest ML</span>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step active">
+            <span class="step-num">4</span>
+            <span>Risk-Based Decision</span>
+        </div>
+        <span class="workflow-arrow">→</span>
+        <div class="workflow-step active">
+            <span class="step-num">5</span>
+            <span>Smart Contract & Chain</span>
+        </div>
+    </div>
+
+    <!-- Main Decision Hero Banner -->
+    <div class="result-hero {% if tx.decision == 'APPROVED' %}result-approved{% elif tx.decision == 'HOLD' %}result-hold{% else %}result-blocked{% endif %}">
+        {% if tx.risk_level == 'LOW' %}
+            <div class="result-risk-badge badge-low">
+                🟢 ML RISK LEVEL: LOW RISK ({{ tx.risk_score }}% Risk Probability)
+            </div>
+            <div class="result-decision-title" style="color: #34d399;">
+                DECISION: APPROVED
+            </div>
+            <p class="result-decision-sub">
+                Autonomous Smart Contract Settlement Executed. Transaction verified and permanently recorded on the cryptographic Blockchain ledger.
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--color-low-border); padding: 8px 18px; border-radius: var(--radius-full); font-size: 0.86rem; color: #6ee7b7;">
+                <span>⛓️ Mined to Blockchain Block <strong>#{{ tx.block_number }}</strong></span>
+            </div>
+
+        {% elif tx.risk_level == 'MEDIUM' %}
+            <div class="result-risk-badge badge-med">
+                🟡 ML RISK LEVEL: MEDIUM RISK ({{ tx.risk_score }}% Risk Probability)
+            </div>
+            <div class="result-decision-title" style="color: #fbbf24;">
+                DECISION: ON HOLD
+            </div>
+            <p class="result-decision-sub">
+                Risk-Adaptive Smart Contract Policy Triggered: Transaction placed on hold in compliance escrow for secondary manual verification before settlement.
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.2); border: 1px solid var(--color-med-border); padding: 8px 18px; border-radius: var(--radius-full); font-size: 0.86rem; color: #fde68a;">
+                <span>⏳ Blockchain Ledger Recording: <strong>PENDING AUDIT</strong></span>
+            </div>
+
+        {% else %}
+            <div class="result-risk-badge badge-high">
+                🔴 ML RISK LEVEL: HIGH RISK ({{ tx.risk_score }}% Risk Probability)
+            </div>
+            <div class="result-decision-title" style="color: #f87171;">
+                DECISION: BLOCKED
+            </div>
+            <p class="result-decision-sub">
+                High-Risk Anomaly Detected by Random Forest: Transaction strictly blocked by Smart Contract security rules. Ledger settlement denied.
+            </p>
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--color-high-border); padding: 8px 18px; border-radius: var(--radius-full); font-size: 0.86rem; color: #fca5a5;">
+                <span>🚫 Blockchain Ledger Recording: <strong>NOT RECORDED</strong></span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Detail Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        <!-- Left: Transaction Overview -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span>📄</span> Transaction Record Details
+                </h3>
+                <span class="badge badge-neutral font-mono">{{ tx.transaction_id }}</span>
+            </div>
+
+            <table class="custom-table" style="font-size: 0.86rem;">
+                <tr>
+                    <td style="color: var(--text-muted); width: 40%;">Original Amount (Source)</td>
+                    <td>
+                        <strong style="font-size: 1.15rem; color: #fff;">
+                            {{ "{:,.2f}".format(tx.amount) }} {{ tx.source_currency or tx.currency }}
+                        </strong>
+                        <span class="badge badge-neutral" style="font-size:0.7rem; margin-left: 6px;">Sender Currency</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Converted Settlement (Target)</td>
+                    <td>
+                        <strong style="font-size: 1.25rem; color: #34d399;">
+                            {% if tx.target_currency == 'JPY' %}
+                                {{ "{:,.0f}".format(tx.converted_amount or tx.amount) }} {{ tx.target_currency or tx.currency }}
+                            {% else %}
+                                {{ "{:,.2f}".format(tx.converted_amount or tx.amount) }} {{ tx.target_currency or tx.currency }}
+                            {% endif %}
+                        </strong>
+                        <span class="badge badge-low" style="font-size:0.7rem; margin-left: 6px;">Beneficiary Payout</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Confirmed Exchange Rate</td>
+                    <td>
+                        <span class="font-mono" style="color: #60a5fa; font-weight: 600;">
+                            1 {{ tx.source_currency or tx.currency }} = {{ "{:.6f}".format(tx.exchange_rate or 1.0) }} {{ tx.target_currency or tx.currency }}
+                        </span>
+                        <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                            Provider: <strong>{{ tx.exchange_rate_provider or 'ExchangeRate-API' }}</strong> • {{ tx.rate_timestamp or tx.timestamp }}
+                        </div>
+                    </td>
+                </tr>
+                {% if (tx.source_currency or tx.currency) != 'USD' %}
+                <tr>
+                    <td style="color: var(--text-muted);">Normalized Reference Amount</td>
+                    <td>
+                        <span class="font-mono" style="color: #cbd5e1;">${{ "{:,.2f}".format(tx.normalized_usd_amount or tx.amount) }} USD</span>
+                        <span style="font-size: 0.72rem; color: var(--text-dim); margin-left: 6px;">(Used for Random Forest Risk Evaluation)</span>
+                    </td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td style="color: var(--text-muted);">Originating SME</td>
+                    <td>{{ tx.sender }} ({{ tx.sender_country }})</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Beneficiary SME</td>
+                    <td>{{ tx.receiver }} ({{ tx.receiver_country }})</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Corridor Risk Rating</td>
+                    <td><span class="font-mono">{{ tx.corridor_risk }}</span></td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Trade Context / Notes</td>
+                    <td>{{ tx.notes }}</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Submission Timestamp</td>
+                    <td><span class="font-mono">{{ tx.timestamp }}</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Right: Machine Learning & Smart Contract Audit -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <span>🧠</span> ML & Smart Contract Execution Audit
+                </h3>
+                <span class="badge badge-neutral">Autonomous Rules</span>
+            </div>
+
+            <table class="custom-table" style="font-size: 0.86rem;">
+                <tr>
+                    <td style="color: var(--text-muted); width: 42%;">ML Model Algorithm</td>
+                    <td><strong>Random Forest Classifier (n=100)</strong></td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Predicted Risk Tier</td>
+                    <td>
+                        {% if tx.risk_level == 'LOW' %}
+                            <span class="badge badge-low">LOW RISK</span>
+                        {% elif tx.risk_level == 'MEDIUM' %}
+                            <span class="badge badge-med">MEDIUM RISK</span>
+                        {% else %}
+                            <span class="badge badge-high">HIGH RISK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Calculated Risk Probability</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="flex: 1; height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden;">
+                                <div style="width: {{ tx.risk_score }}%; height: 100%; background: {% if tx.risk_level == 'LOW' %}var(--color-low){% elif tx.risk_level == 'MEDIUM' %}var(--color-med){% else %}var(--color-high){% endif %};"></div>
+                            </div>
+                            <strong class="font-mono">{{ tx.risk_score }}%</strong>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Smart Contract Address</td>
+                    <td><span class="font-mono" style="font-size: 0.76rem; color: #a5b4fc;">{{ contract_address }}</span></td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Smart Contract State</td>
+                    <td>
+                        <span class="font-mono" style="font-size: 0.8rem; font-weight:600; color: {% if tx.decision == 'APPROVED' %}#34d399{% elif tx.decision == 'HOLD' %}#fbbf24{% else %}#f87171{% endif %};">
+                            {{ tx.smart_contract_status }}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted);">Blockchain Tx Hash</td>
+                    <td>
+                        {% if tx.decision == 'APPROVED' %}
+                            <span class="font-mono hash-pill" style="font-size: 0.74rem;">{{ tx.blockchain_hash }}</span>
+                        {% else %}
+                            <span style="font-size: 0.8rem; color: var(--text-dim);">{{ tx.blockchain_hash }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Navigation & Quick Actions -->
+    <div style="display: flex; gap: 14px; justify-content: space-between; flex-wrap: wrap;">
+        <a href="{{ url_for('payment') }}" class="btn btn-secondary">
+            ← Initiate Another Settlement
+        </a>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('transactions') }}" class="btn btn-outline">
+                📋 View Transaction History
+            </a>
+            {% if tx.decision == 'APPROVED' %}
+                <a href="{{ url_for('blockchain_explorer') }}" class="btn btn-primary">
+                    ⛓️ Inspect on Blockchain Ledger →
+                </a>
+            {% elif tx.decision == 'HOLD' %}
+                <form method="POST" action="{{ url_for('resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline;">
+                    <input type="hidden" name="action" value="approve">
+                    <button type="submit" class="btn btn-warning">
+                        🛡️ Compliance Review: Release Hold & Settle
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

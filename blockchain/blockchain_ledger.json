@@ -1,0 +1,587 @@
+[
+    {
+        "index": 0,
+        "timestamp": "2026-01-01 00:00:00",
+        "transactions": [
+            {
+                "transaction_id": "GENESIS-0000",
+                "sender": "SME-SYSTEM-ROOT",
+                "receiver": "NETWORK-GENESIS",
+                "amount": 0.0,
+                "currency": "SYS",
+                "risk_level": "LOW",
+                "status": "APPROVED",
+                "smart_contract_status": "CONTRACT_INITIALIZED",
+                "timestamp": "2026-01-01 00:00:00",
+                "notes": "Genesis Block - Risk-Adaptive SME Cross-Border Settlement Network initialized"
+            }
+        ],
+        "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "nonce": 460,
+        "hash": "00e11728412078678702d32dbaa844de9eacd0f16cb56a394f183bd7486d1dd4"
+    },
+    {
+        "index": 1,
+        "timestamp": "2026-10-03 01:16:26",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-7643",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xdc9819ebc210c8edde5b542fd804b14f96f724de67db96640850d8f0ad0ae30a",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 01:16:26"
+            }
+        ],
+        "previous_hash": "00e11728412078678702d32dbaa844de9eacd0f16cb56a394f183bd7486d1dd4",
+        "nonce": 150,
+        "hash": "0041ac4927d93b7d2e8e9af1950d93e0e70b796d6c2b1a8d19224b8861f61585"
+    },
+    {
+        "index": 2,
+        "timestamp": "2026-10-03 01:28:38",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-4892",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xa3831202e2e4dae6c8f5feebabe20125c18f791f5d9357659afd04d45a3f4b7a",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 01:28:38"
+            }
+        ],
+        "previous_hash": "0041ac4927d93b7d2e8e9af1950d93e0e70b796d6c2b1a8d19224b8861f61585",
+        "nonce": 10,
+        "hash": "009248bdd767091497c1f214522e629989be01f7b17d70d36093004035c16751"
+    },
+    {
+        "index": 3,
+        "timestamp": "2026-10-03 01:28:51",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-5300",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "Apex Pacific Trade Corp",
+                "sender_country": "United States",
+                "receiver_country": "Brazil",
+                "amount": 28500.0,
+                "currency": "EUR",
+                "risk_level": "MEDIUM",
+                "risk_score": 50.0,
+                "decision": "APPROVED",
+                "tx_hash": "0x9ef930e010c5e31190bdfed236d11db2219214a21f0e0ac92d3a39d278d98452",
+                "smart_contract_status": "EXECUTED_SETTLED_POST_AUDIT",
+                "timestamp": "2026-10-03 01:28:51"
+            }
+        ],
+        "previous_hash": "009248bdd767091497c1f214522e629989be01f7b17d70d36093004035c16751",
+        "nonce": 425,
+        "hash": "00feff6db28d9dfca5df02d4f0b983444412761cf812edd6438addadc9fa6f47"
+    },
+    {
+        "index": 4,
+        "timestamp": "2026-10-03 22:36:26",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-6057",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xbd40f485267bf93cc6b8164624d643660826b1a1864837baab6cc9cd5ea6f4b5",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:36:26"
+            }
+        ],
+        "previous_hash": "00feff6db28d9dfca5df02d4f0b983444412761cf812edd6438addadc9fa6f47",
+        "nonce": 29,
+        "hash": "009ae963b3f0ae796cbbe5af2fcd510e415915d65e8b253a2817f751261f360f"
+    },
+    {
+        "index": 5,
+        "timestamp": "2026-10-03 22:53:40",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-4570",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xbb1c2f284c3928b7047360ab3d7197b3af43551c9528ed00ff87237c2ff9990e",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:53:40"
+            }
+        ],
+        "previous_hash": "009ae963b3f0ae796cbbe5af2fcd510e415915d65e8b253a2817f751261f360f",
+        "nonce": 98,
+        "hash": "004f6296f1506550978d3eaa28c3f85e5b061eda33d2808e89b5edf66738d6b7"
+    },
+    {
+        "index": 6,
+        "timestamp": "2026-10-03 22:53:59",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-1855",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x4fb4e9373bb361a0084e72831829d2ef4435fec364fc385ed6059f6c47dffc64",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:53:59"
+            }
+        ],
+        "previous_hash": "004f6296f1506550978d3eaa28c3f85e5b061eda33d2808e89b5edf66738d6b7",
+        "nonce": 9,
+        "hash": "002baeb5e34b872964430e17fc7280421b81504aa6a6f97f7f86d06982a11bb6"
+    },
+    {
+        "index": 7,
+        "timestamp": "2026-10-03 22:54:29",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-6624",
+                "sender": "Apex Test Export Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 3200.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.2,
+                "decision": "APPROVED",
+                "tx_hash": "0xbe3b51975e0fe82f9ff8a873374d1396d957d0f70aae82d502b9faa7ff6cac35",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:54:29"
+            }
+        ],
+        "previous_hash": "002baeb5e34b872964430e17fc7280421b81504aa6a6f97f7f86d06982a11bb6",
+        "nonce": 636,
+        "hash": "002a85769abec26eb914875e38a67c09b7e9f7cffa04c3798a51b7f9225ac002"
+    },
+    {
+        "index": 8,
+        "timestamp": "2026-10-03 22:54:49",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-2824",
+                "sender": "Apex Test Export Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 3200.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.2,
+                "decision": "APPROVED",
+                "tx_hash": "0x37caea40ecb65ab0631cd3e19fbe17213f2fa219cfb1d55131d415eab380f417",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:54:49"
+            }
+        ],
+        "previous_hash": "002a85769abec26eb914875e38a67c09b7e9f7cffa04c3798a51b7f9225ac002",
+        "nonce": 289,
+        "hash": "0031401f06b23abc38dc780f0963568fe11d5b4ef20ba3ecf5ab3f6ea76c32f3"
+    },
+    {
+        "index": 9,
+        "timestamp": "2026-10-03 22:54:56",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-5260",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xa28f85b203c5505fa679c2f5403054729e0a2a1614869d269d102e80d350c035",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:54:56"
+            }
+        ],
+        "previous_hash": "0031401f06b23abc38dc780f0963568fe11d5b4ef20ba3ecf5ab3f6ea76c32f3",
+        "nonce": 115,
+        "hash": "00c392d0b17dc879b1da9dcc35358f4eae51de870de8fdb6b3faaec1d7de50d7"
+    },
+    {
+        "index": 10,
+        "timestamp": "2026-10-03 22:55:24",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-2273",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x22e7bf3a24147569614e3244c97796aff71e389f2ac04addcf9321762b55d955",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-03 22:55:24"
+            }
+        ],
+        "previous_hash": "00c392d0b17dc879b1da9dcc35358f4eae51de870de8fdb6b3faaec1d7de50d7",
+        "nonce": 580,
+        "hash": "00a2b9d340d377ba085624f16b67b903121f6027c66d060774e860d51b304b72"
+    },
+    {
+        "index": 11,
+        "timestamp": "2026-10-04 01:46:17",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-2696",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x8fd2c4ac13a5f690697a5100c210efaf67b1142b4ae09fa6b42b8fa3dc20d353",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-04 01:46:17"
+            }
+        ],
+        "previous_hash": "00a2b9d340d377ba085624f16b67b903121f6027c66d060774e860d51b304b72",
+        "nonce": 441,
+        "hash": "001a7081be7ef10fb1624b47abbe96850c846477c6e2431b0462f483d0090129"
+    },
+    {
+        "index": 12,
+        "timestamp": "2026-10-05 02:04:23",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-3165",
+                "sender": "abc",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x3ef641f95bbb6694af899ae21ac7d2a94fd975a0aa3c1dabbb0500e52780b8be",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-05 02:04:23"
+            }
+        ],
+        "previous_hash": "001a7081be7ef10fb1624b47abbe96850c846477c6e2431b0462f483d0090129",
+        "nonce": 172,
+        "hash": "00612f6402fdf2a253de58b91e36ff375ca09615249557574db60d8b85602f99"
+    },
+    {
+        "index": 13,
+        "timestamp": "2026-10-05 02:11:18",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-1805",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xfd4649e58f29be13c22536d301182f3ada322d1a00a3e28631366e1de724e0c8",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-05 02:11:18"
+            }
+        ],
+        "previous_hash": "00612f6402fdf2a253de58b91e36ff375ca09615249557574db60d8b85602f99",
+        "nonce": 252,
+        "hash": "00c45046633674e3db08eab6c37d691e3a196e6fc8a1683ec056ca6bc746a86c"
+    },
+    {
+        "index": 14,
+        "timestamp": "2026-10-06 08:48:17",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-7727",
+                "sender": "alpha",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x3a20fb9de9044b5b56edebeb5f9b2dc90fdbd07190b66bbf2d6703201670ac00",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-06 08:48:17"
+            }
+        ],
+        "previous_hash": "00c45046633674e3db08eab6c37d691e3a196e6fc8a1683ec056ca6bc746a86c",
+        "nonce": 302,
+        "hash": "00b2bff71cbb2704e9216d415d13c3364823dc47e551cebf5316783d1bd2136f"
+    },
+    {
+        "index": 15,
+        "timestamp": "2026-10-06 10:54:32",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-7424",
+                "sender": "abbb",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x9c1ca6059cb129c01405b5dcf9bf52c4c6d47778ee74b1dfcee778244b494c8c",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-06 10:54:32"
+            }
+        ],
+        "previous_hash": "00b2bff71cbb2704e9216d415d13c3364823dc47e551cebf5316783d1bd2136f",
+        "nonce": 488,
+        "hash": "00083d3edd75cf16045d00260778d37a819eb5f8d388ccb607801c64ecc7fa08"
+    },
+    {
+        "index": 16,
+        "timestamp": "2026-10-06 12:35:20",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-2053",
+                "sender": "dry",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x4f1f1fee7aa4968fd6e81297d480d6d40388848944bd9e039687d0c758042a58",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-06 12:35:20"
+            }
+        ],
+        "previous_hash": "00083d3edd75cf16045d00260778d37a819eb5f8d388ccb607801c64ecc7fa08",
+        "nonce": 265,
+        "hash": "00b0182ef255c5af557b2de288184752eca69b127f263598aec616a6324cbedb"
+    },
+    {
+        "index": 17,
+        "timestamp": "2026-10-24 10:06:38",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-1975",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 1000.0,
+                "currency": "USD",
+                "source_currency": "USD",
+                "target_currency": "INR",
+                "exchange_rate": 83.25,
+                "converted_amount": 83250.0,
+                "exchange_rate_provider": "SnapshotTestProvider",
+                "rate_timestamp": "2026-10-24 10:00:00 UTC",
+                "risk_level": "LOW",
+                "risk_score": 0.4,
+                "decision": "APPROVED",
+                "tx_hash": "0x21cb220d6ae9287d6892bec0d3509725d726ff09dd0af411b434bda3fa70a5be",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-24 10:06:38"
+            }
+        ],
+        "previous_hash": "00b0182ef255c5af557b2de288184752eca69b127f263598aec616a6324cbedb",
+        "nonce": 53,
+        "hash": "00e57fae1930b02660cfacd4e67f573ffa221eb035c728577d648bb801039511"
+    },
+    {
+        "index": 18,
+        "timestamp": "2026-10-24 10:06:39",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-6702",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "source_currency": "USD",
+                "target_currency": "EUR",
+                "exchange_rate": 0.92,
+                "converted_amount": 4140.0,
+                "exchange_rate_provider": "ExchangeRate-API",
+                "rate_timestamp": "2026-10-24 00:00:00 UTC",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0xff7281ace3224ef8431db0e5d0fd404c233028ff300d4e0d6dc0d2b3645d9c09",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-24 10:06:39"
+            }
+        ],
+        "previous_hash": "00e57fae1930b02660cfacd4e67f573ffa221eb035c728577d648bb801039511",
+        "nonce": 182,
+        "hash": "00d450d1e7955b546e88e079398038caf3fbbf3ad2f7a2781a147d4e7269d058"
+    },
+    {
+        "index": 19,
+        "timestamp": "2026-10-24 10:08:12",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-5144",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "source_currency": "USD",
+                "target_currency": "EUR",
+                "exchange_rate": 0.892784,
+                "converted_amount": 4017.53,
+                "exchange_rate_provider": "https://www.exchangerate-api.com",
+                "rate_timestamp": "Sat, 24 Oct 2026 00:02:31 +0000",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x4d6b606384c487a75f60080a25cf87161c4e648ecceea5d12802714c669d1baf",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-24 10:08:12"
+            }
+        ],
+        "previous_hash": "00d450d1e7955b546e88e079398038caf3fbbf3ad2f7a2781a147d4e7269d058",
+        "nonce": 189,
+        "hash": "00569565c7d8946d84a518793ab309ed35fd0a7741754b75779bfdbd9ed91852"
+    },
+    {
+        "index": 20,
+        "timestamp": "2026-10-24 10:08:24",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-1203",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 1000.0,
+                "currency": "USD",
+                "source_currency": "USD",
+                "target_currency": "INR",
+                "exchange_rate": 83.25,
+                "converted_amount": 83250.0,
+                "exchange_rate_provider": "SnapshotTestProvider",
+                "rate_timestamp": "2026-10-24 10:00:00 UTC",
+                "risk_level": "LOW",
+                "risk_score": 0.4,
+                "decision": "APPROVED",
+                "tx_hash": "0xc3cfb1c32559864e966396da67d331c4e7d31d5a0daed2fc3dafe5e72e0403f5",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-24 10:08:24"
+            }
+        ],
+        "previous_hash": "00569565c7d8946d84a518793ab309ed35fd0a7741754b75779bfdbd9ed91852",
+        "nonce": 559,
+        "hash": "00ef02e485a34c05c4c90deba047014fdebb1ea952e44a22394bc8e523162265"
+    },
+    {
+        "index": 21,
+        "timestamp": "2026-10-24 10:08:25",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-9107",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "United States",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "USD",
+                "source_currency": "USD",
+                "target_currency": "EUR",
+                "exchange_rate": 0.92,
+                "converted_amount": 4140.0,
+                "exchange_rate_provider": "ExchangeRate-API",
+                "rate_timestamp": "2026-10-24 00:00:00 UTC",
+                "risk_level": "LOW",
+                "risk_score": 0.1,
+                "decision": "APPROVED",
+                "tx_hash": "0x266d750988445b0c25d7e75fcc0036eba17c45ebf19357e356dec12eae8b4f15",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-24 10:08:25"
+            }
+        ],
+        "previous_hash": "00ef02e485a34c05c4c90deba047014fdebb1ea952e44a22394bc8e523162265",
+        "nonce": 214,
+        "hash": "0059d028f35175f0c116ea03744bdbdaf15666de6dbd40ba1c7c4dffc760ba71"
+    },
+    {
+        "index": 22,
+        "timestamp": "2026-10-24 10:51:01",
+        "transactions": [
+            {
+                "transaction_id": "TX-2026-4017",
+                "sender": "Global Logistics SME Ltd",
+                "receiver": "EuroTech Industrial Gmbh",
+                "sender_country": "India",
+                "receiver_country": "Germany",
+                "amount": 4500.0,
+                "currency": "INR",
+                "source_currency": "INR",
+                "target_currency": "EUR",
+                "exchange_rate": 0.00941,
+                "converted_amount": 42.35,
+                "exchange_rate_provider": "https://www.exchangerate-api.com",
+                "rate_timestamp": "Sat, 24 Oct 2026 00:02:31 +0000",
+                "risk_level": "LOW",
+                "risk_score": 0.3,
+                "decision": "APPROVED",
+                "tx_hash": "0xe26949393da0e17e81529ea364746229e29becee6a034cb5f2e08893c4d98418",
+                "smart_contract_status": "EXECUTED_SETTLED",
+                "timestamp": "2026-10-24 10:51:01"
+            }
+        ],
+        "previous_hash": "0059d028f35175f0c116ea03744bdbdaf15666de6dbd40ba1c7c4dffc760ba71",
+        "nonce": 560,
+        "hash": "00873149d91b90764376d5ded16d7fcf977f8f86fd232dbe63d6b7d0b4c2ee65"
+    }
+]

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Cryptographic Blockchain Ledger & Explorer{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+    <div>
+        <h1 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em;">
+            Immutable Blockchain Ledger Explorer
+        </h1>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+            Tamper-resistant cryptographic audit trail. Only <strong>APPROVED</strong> cross-border payments are minted into blocks.
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" id="btn-verify-blockchain" class="btn btn-primary">
+            🛡️ Verify Blockchain Integrity
+        </button>
+    </div>
+</div>
+
+<div id="blockchain-verify-result"></div>
+
+<!-- Blockchain Protocol Specs Card -->
+<div class="card" style="margin-bottom: 28px; background: rgba(15, 23, 42, 0.7); border-color: rgba(59, 130, 246, 0.2);">
+    <div class="card-header">
+        <h3 class="card-title" style="color: #60a5fa;">
+            <span>⛓️</span> Distributed Settlement Ledger Architecture
+        </h3>
+        <span class="badge badge-low">Local Academic Node Active</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; font-size: 0.84rem;">
+        <div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Cryptographic Hash</div>
+            <div style="font-weight: 700; color: #fff; margin-top: 2px;">SHA-256 (256-bit Digest)</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Consensus Mechanism</div>
+            <div style="font-weight: 700; color: #fff; margin-top: 2px;">Proof-of-Work (PoW Difficulty: 2)</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Smart Contract Address</div>
+            <div class="font-mono" style="font-size: 0.74rem; color: #a5b4fc; margin-top: 2px;">{{ contract_address }}</div>
+        </div>
+        <div>
+            <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Chain State Verification</div>
+            <div style="font-weight: 700; color: #34d399; margin-top: 2px;">
+                {% if is_valid %}
+                    ✓ Cryptographically Intact ({{ chain|length }} Blocks)
+                {% else %}
+                    ✕ Integrity Error Detected
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Visual Chain Blocks Display -->
+<div class="chain-blocks">
+    {% for block in chain|reverse %}
+        <div class="block-card">
+            <div class="block-header">
+                <div class="block-index">
+                    <span>📦 Block #{{ block.index }}</span>
+                    {% if block.index == 0 %}
+                        <span class="badge badge-neutral" style="font-size: 0.7rem;">GENESIS BLOCK</span>
+                    {% else %}
+                        <span class="badge badge-low" style="font-size: 0.7rem;">SETTLEMENT BLOCK</span>
+                    {% endif %}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-dim); display:flex; align-items:center; gap:8px;">
+                    <span>🕒 Nonce: <strong>{{ block.nonce }}</strong></span>
+                    <span>•</span>
+                    <span>Timestamp: <strong class="font-mono">{{ block.timestamp }}</strong></span>
+                </div>
+            </div>
+
+            <!-- Block Hashes -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                <div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+                        Block SHA-256 Hash
+                    </div>
+                    <div class="hash-pill" style="width: 100%;">{{ block.hash }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">
+                        Previous Block Hash
+                    </div>
+                    <div class="hash-pill" style="width: 100%; color: #94a3b8;">{{ block.previous_hash }}</div>
+                </div>
+            </div>
+
+            <!-- Block Transactions Payloads -->
+            <div style="background: rgba(10, 15, 29, 0.85); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; margin-bottom: 8px;">
+                    Transactions in Block ({{ block.transactions|length }})
+                </div>
+
+                {% for tx in block.transactions %}
+                    <div style="padding: 10px; background: rgba(255, 255, 255, 0.02); border-radius: 4px; margin-bottom: 6px; font-size: 0.84rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <strong class="font-mono" style="color: #60a5fa;">{{ tx.transaction_id }}</strong>: 
+                            <span>{{ tx.sender }}</span> ➔ <span>{{ tx.receiver }}</span>
+                            {% if tx.notes %}
+                                <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 2px;">{{ tx.notes }}</div>
+                            {% endif %}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <strong style="color: #34d399; font-size: 0.95rem;">
+                                {{ "{:,.2f}".format(tx.amount) }} {{ tx.currency }}
+                            </strong>
+                            <span class="badge badge-low" style="font-size: 0.68rem;">{{ tx.status or 'APPROVED' }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if not loop.last %}
+            <div class="chain-connector">
+                <span>↓ (Cryptographically Linked by SHA-256 Previous Hash)</span>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endblock %}
