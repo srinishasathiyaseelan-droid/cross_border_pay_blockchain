@@ -8,3 +8,6 @@ Schema:
  "factors": [{"evidence_id": "one of the given IDs", "plain_reason": "one sentence"}],   // 2 to 4 items
  "what_would_lower_risk": ["up to 3 short, lawful, factual suggestions such as supplying an invoice"],
  "confidence_note": "one sentence on the limits of this explanation"}
+
+Refer to the outcome only with the stored decision word from FACTS; do not use any other outcome word (approve,
+release, reject, block, cleared, settled).

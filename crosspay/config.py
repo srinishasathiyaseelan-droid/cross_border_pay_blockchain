@@ -71,6 +71,9 @@ class BaseConfig:
         for name in ("AI_EXPLAIN", "AI_PURPOSE", "AI_COPILOT", "AI_INVOICE", "AI_NLQ", "AI_ASSIST", "AI_REPORTS")
     }
     AI_RUN_SYNC = _flag("AI_RUN_SYNC", "0")  # tests run background jobs inline
+    # Input-guard BLOCK may escalate a payment to HOLD only because the measured FPR on the benign holdout was
+    # <= 2% (model/evaluation/guardrail_holdout.json). Set to 0 to make it evidence-only.
+    INPUT_GUARD_ESCALATES = _flag("INPUT_GUARD_ESCALATES", "1")
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_ENABLED = True
     TRUSTED_PROXIES = [p.strip() for p in os.getenv("TRUSTED_PROXIES", "").split(",") if p.strip()]

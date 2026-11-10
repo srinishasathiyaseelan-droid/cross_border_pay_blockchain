@@ -169,19 +169,46 @@ def nl_filter(conn, query: str, user_id: int) -> GuardedResult:
 
 
 # ---- P6.6 SME assistant -----------------------------------------------------------------------------------
-_REFUSE = re.compile(r"\b(split|structur\w*|smaller\s+payments|under\s+the\s+(limit|threshold)|avoid\s+(review|"
-                     r"detection|reporting)|threshold|other\s+(users?|customers?|smes?|companies)|someone\s+else)\b",
-                     re.IGNORECASE)
+_REFUSE = re.compile(r"\b(split|structur\w*|smaller\s+payments|under\s+the\s+(limit|threshold)|avoid\w*\s+(the\s+)?"
+                     r"(review|detection|reporting|checks?|hold)|thresholds?|other\s+(users?|customers?|smes?|companies)|"
+                     r"someone\s+else|system\s+prompt|not\s+(get\s+)?(held|flagged|reviewed))\b", re.IGNORECASE)
+# Output side (found by red-team case RT34): an answer that coaches evasion is rejected even if the question looked
+# innocent.
+_EVASION_OUT = re.compile(r"\b(under|below)\s+the\s+(limit|threshold)|avoid\w*\s+(the\s+)?(review|detection|reporting)|"
+                          r"split\w*\s+(it|this|the\s+payment|your\s+payment)?\s*(into|in)\s+(smaller|several|multiple)|"
+                          r"\bthresholds?\b", re.IGNORECASE)
 REFUSAL = ("I can't help with that. I can explain your own payment, its exchange rate, and which documents can help a "
            "compliance review.")
 
 
+CHAT_TURNS_PER_TX_PER_DAY = 10
+
+
+def chat_turns_today(conn, tx_id: str, user_id: int) -> int:
+    day = utcnow_iso()[:10] + "T00:00:00Z"
+    return conn.execute("SELECT COUNT(*) FROM llm_calls WHERE task = 'assistant' AND tx_id = ? AND user_id = ? "
+                        "AND created_at >= ?", (tx_id, user_id, day)).fetchone()[0]
+
+
 def assistant(conn, tx: dict, message: str, user_id: int) -> dict:
+    if chat_turns_today(conn, tx["transaction_id"], user_id) >= CHAT_TURNS_PER_TX_PER_DAY:  # G17
+        return {"answer": "You have reached today's limit of 10 questions for this payment.", "refused": True,
+                "status": "CHAT_LIMIT"}
     if _REFUSE.search(message or ""):  # deterministic refusal before any model call (G4)
+        from ..log import record
+
+        record(conn, task="assistant", prompt_version=None, provider=None, model=None, tx_id=tx["transaction_id"],
+               user_id=user_id, input_hash=None, redacted_input=None, status="REFUSED", guard_outcome="REFUSAL_POLICY",
+               output_json=None, latency_ms=0, input_tokens=0, output_tokens=0, cost_usd=0)
         return {"answer": REFUSAL, "refused": True, "status": "REFUSED"}
     res = run_task("assistant", context.assistant(conn, tx, message), user_id, conn)
     if not res.ok:
         return {"answer": None, "refused": False, "status": res.status}
+    if _EVASION_OUT.search(res.data.get("answer") or ""):
+        conn.execute("UPDATE llm_calls SET status = 'REJECTED_GUARD:EVASION_COACHING', guard_outcome = "
+                     "'REJECTED_GUARD:EVASION_COACHING', output_json = NULL WHERE id = (SELECT MAX(id) FROM llm_calls "
+                     "WHERE task = 'assistant' AND tx_id = ?)", (tx["transaction_id"],))
+        return {"answer": None, "refused": True, "status": "REJECTED_GUARD:EVASION_COACHING"}
     return {**res.data, "status": "OK"}
 
 

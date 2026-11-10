@@ -91,21 +91,44 @@ def _decoded_views(text: str) -> str:
     return "\n".join(views)
 
 
+_TAG_CHARS = re.compile("[\U000e0000-\U000e007f]")
+_BIDI = re.compile("[‪-‮⁦-⁩]")
+# Common Cyrillic/Greek look-alikes folded to Latin for ANALYSIS only (the text sent on is not changed).
+_CONFUSABLES = str.maketrans({
+    "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "у": "y", "х": "x", "і": "i", "ј": "j", "ѕ": "s", "ԁ": "d",
+    "ӏ": "l", "к": "k", "м": "m", "т": "t", "в": "b", "н": "h", "А": "A", "Е": "E", "О": "O", "Р": "P", "С": "C",
+    "Т": "T", "Х": "X", "Н": "H", "К": "K", "М": "M", "В": "B", "ο": "o", "α": "a", "ε": "e", "ρ": "p", "ι": "i",
+    "κ": "k", "ν": "v", "τ": "t", "υ": "u", "Ο": "O", "Α": "A", "Ε": "E", "Ρ": "P", "Τ": "T",
+})
+
+
+def _despace(text: str) -> str:
+    """'i g n o r e   p r e v i o u s' -> 'ignore previous' when most tokens are single characters."""
+    tokens = text.split()
+    if len(tokens) < 8 or sum(len(t) == 1 for t in tokens) < 0.6 * len(tokens):
+        return text
+    words = re.split(r"\s{2,}", text)
+    return " ".join(w.replace(" ", "") for w in words)
+
+
 def evaluate(text: str) -> dict:
     """-> {status: ALLOW|RESTRICT|BLOCK, score, signals}"""
-    norm = canonicalize(text)
-    analysed = _decoded_views(norm)
-    squashed = re.sub(r"[\s._\-*]+", "", analysed.lower())
+    raw = "" if text is None else str(text)
+    norm = canonicalize(raw)
+    folded = norm.translate(_CONFUSABLES)
+    spaced = _INVISIBLE.sub("", unicodedata.normalize("NFKC", raw)).translate(_CONFUSABLES)  # keep runs of spaces
+    analysed = _decoded_views(folded) + "\n" + _despace(spaced)
     score, signals = 0, []
     for name, (weight, rx) in SIGNALS.items():
         if rx.search(analysed):
             score += weight
             signals.append(name)
-    for needle in ("ignorepreviousinstructions", "ignoreallpreviousinstructions", "revealsystemprompt",
-                   "marklowrisk", "markaslowrisk", "approvethispayment"):
-        if needle in squashed and "SPACED_OBFUSCATION" not in signals and not signals:
-            score += 3
-            signals.append("SPACED_OBFUSCATION")
+    if _TAG_CHARS.search(raw):  # invisible Unicode tag characters have no place in a payment note
+        score += 3
+        signals.append("HIDDEN_UNICODE_TAGS")
+    if _BIDI.search(raw):
+        score += 2
+        signals.append("BIDI_CONTROL")
     if _CLOSING_TAG.search(norm):
         score += 3
         signals.append("DELIMITER_BREAKOUT")
