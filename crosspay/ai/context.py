@@ -99,10 +99,22 @@ def weekly_report(conn, days: int = 7) -> TaskContext:
                              "GROUP BY receiver_country ORDER BY COUNT(*) DESC LIMIT 5", (since,)).fetchall()
     reviews = conn.execute("SELECT action, COUNT(*) FROM hold_reviews WHERE created_at >= ? GROUP BY action",
                            (since,)).fetchall()
+    by_decision = {r[0]: {"count": r[1], "usd_volume": r[2]} for r in rows}
+    total = sum(v["count"] for v in by_decision.values())
+    volume = round(sum(v["usd_volume"] for v in by_decision.values()), 2)
+    # Derived figures are computed HERE so the model never has to calculate (the output guard rejects any number
+    # that is not in the input, and model arithmetic was the usual cause of REJECTED_GUARD:UNSUPPORTED_NUMBER).
+    for v in by_decision.values():
+        v["share_of_payments_percent"] = round(v["count"] / total * 100, 1) if total else 0.0
+    decided = sum(by_decision.get(d, {}).get("count", 0) for d in ("APPROVED", "HOLD", "BLOCKED", "REJECTED"))
     facts = {"period_days": days, "period_start": since[:10],
-             "payments_by_decision": {r[0]: {"count": r[1], "usd_volume": r[2]} for r in rows},
+             "total_payments": total, "total_usd_volume": volume,
+             "approval_rate_percent": round(by_decision.get("APPROVED", {}).get("count", 0) / decided * 100, 1)
+             if decided else 0.0,
+             "payments_by_decision": by_decision,
              "top_receiver_countries": {r[0]: r[1] for r in corridors},
-             "officer_reviews": {r[0]: r[1] for r in reviews}}
+             "officer_reviews": {r[0]: r[1] for r in reviews},
+             "officer_reviews_total": sum(r[1] for r in reviews)}
     return TaskContext(facts=facts)
 
 
