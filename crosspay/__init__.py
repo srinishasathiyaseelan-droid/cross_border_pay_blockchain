@@ -91,6 +91,9 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     conn = dbmod.connect(app.config["DB_PATH"])
     try:
         ailog.purge(conn, int(app.config["LLM_LOG_RETENTION_DAYS"]), force=True)
+        # Jobs live in a thread pool; a restart loses them. Rows still PENDING from a previous process would block
+        # the Explain button and the backfill forever, so mark them interrupted (they can be queued again).
+        conn.execute("UPDATE ai_jobs SET status = 'FAILED', error_code = 'INTERRUPTED' WHERE status = 'PENDING'")
     finally:
         conn.close()
     if app.config.get("AI_BACKFILL") and app.config.get("LLM_ENABLED"):

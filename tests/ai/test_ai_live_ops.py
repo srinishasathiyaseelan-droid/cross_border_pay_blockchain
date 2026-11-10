@@ -129,3 +129,21 @@ def test_live_console_and_stats(app, admin_client, sme_client, db):
     assert stats["hold"] == hold and "approval_rate" in stats and "p95_ms" in stats
     assert sme_client.get("/admin/live").status_code in (302, 403)
     assert sme_client.get("/api/live/stats").status_code in (302, 403)
+
+
+def test_restart_releases_jobs_left_pending(tmp_path, fx_mock):
+    from crosspay import create_app
+    from crosspay.config import TestConfig
+    from crosspay.db import connect
+
+    over = {"DB_PATH": str(tmp_path / "r.db"), "LEDGER_PATH": str(tmp_path / "l.json"), "UPLOAD_DIR": str(tmp_path / "u")}
+    app = create_app("test", over)
+    conn = connect(app.config["DB_PATH"])
+    conn.execute("INSERT INTO ai_jobs (task, tx_id, status, created_at, updated_at) VALUES "
+                 "('explain', 'TX-X', 'PENDING', 'now', 'now')")
+    conn.close()
+    create_app("test", over)  # restart
+    conn = connect(app.config["DB_PATH"])
+    assert conn.execute("SELECT status, error_code FROM ai_jobs WHERE tx_id='TX-X'").fetchone()[:] == ("FAILED", "INTERRUPTED")
+    conn.close()
+    assert TestConfig.AI_BACKFILL is False
