@@ -6,7 +6,7 @@ init_db() creates tables, applies additive column migrations and seeds demo data
 import os
 import secrets
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import current_app, g
 from werkzeug.security import generate_password_hash
@@ -97,7 +97,19 @@ SCHEMA = [
 ]
 
 # Additive migrations: (table, column, definition). Applied when the column is missing.
-COLUMNS = []
+COLUMNS = [
+    # P2: honest risk pipeline
+    ("transactions", "amount_to_age_ratio", "REAL"),
+    ("transactions", "p_low", "REAL"),
+    ("transactions", "p_med", "REAL"),
+    ("transactions", "p_high", "REAL"),
+    ("transactions", "scoring_engine", "TEXT"),
+    ("transactions", "top_factors", "TEXT"),
+    ("transactions", "feature_source", "TEXT DEFAULT 'db'"),
+    ("kyc", "reviewed_by", "INTEGER"),
+    ("kyc", "review_reason", "TEXT"),
+    ("kyc", "reviewed_at", "TEXT"),
+]
 
 
 def init_db(app) -> None:
@@ -116,8 +128,15 @@ def init_db(app) -> None:
         conn.close()
 
 
+def _iso(dt: datetime) -> str:
+    return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
 def seed_initial_data(conn: sqlite3.Connection, config) -> None:
-    now = utcnow_iso()
+    """Demo fixtures: an established SME (account opened 26 months ago) with three past payments."""
+    now_dt = datetime.now(timezone.utc)
+    now = _iso(now_dt)
+    opened = _iso(now_dt - timedelta(days=26 * 31))
     # C2: seed passwords come from the environment; when unset they are random and unknown to anyone
     # (the demo accounts are then reachable only through /quick_login, which exists only in DEMO_MODE).
     sme_pwd = generate_password_hash(config.get("DEMO_SME_PASSWORD") or secrets.token_urlsafe(18), method=config.get("PASSWORD_HASH_METHOD", "scrypt"))
@@ -125,12 +144,12 @@ def seed_initial_data(conn: sqlite3.Connection, config) -> None:
     conn.execute("BEGIN")
     cur = conn.execute(
         "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)",
-        ("Global Logistics Ltd (SME Demo)", "demo@globallogistics.com", sme_pwd, "sme", now),
+        ("Global Logistics Ltd (SME Demo)", "demo@globallogistics.com", sme_pwd, "sme", opened),
     )
     sme_id = cur.lastrowid
     conn.execute(
         "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)",
-        ("Compliance Administrator", "admin@crosspay.org", admin_pwd, "admin", now),
+        ("Compliance Administrator", "admin@crosspay.org", admin_pwd, "admin", opened),
     )
     conn.execute(
         """INSERT INTO kyc (user_id, business_name, country, business_type, government_id, address,
@@ -151,8 +170,9 @@ def seed_initial_data(conn: sqlite3.Connection, config) -> None:
          "HIGH", 94.6, "BLOCKED", "NOT RECORDED (POLICY REJECT)", "REJECTED_BLOCKED", None,
          "Unverified overseas offshore consulting fee"),
     ]
-    for (tx_id, receiver, rc, amount, tgt, rate, conv, freq, prev, susp, age, corr, level, score, decision,
-         bhash, sc_status, block, notes) in seed:
+    for days_ago, (tx_id, receiver, rc, amount, tgt, rate, conv, freq, prev, susp, age, corr, level, score, decision,
+                   bhash, sc_status, block, notes) in zip((45, 20, 9), seed):
+        ts = _iso(now_dt - timedelta(days=days_ago))
         conn.execute(
             """INSERT INTO transactions (
                 transaction_id, user_id, sender, receiver, sender_country, receiver_country,
@@ -162,7 +182,7 @@ def seed_initial_data(conn: sqlite3.Connection, config) -> None:
                 risk_level, risk_score, decision, blockchain_hash, smart_contract_status, block_number, notes, timestamp
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (tx_id, sme_id, "Global Logistics SME Ltd", receiver, "United States", rc, "USD", amount, "USD", tgt,
-             rate, conv, "ExchangeRate-API", now, amount, freq, prev, susp, age, corr, level, score, decision, bhash,
-             sc_status, block, notes, now),
+             rate, conv, "ExchangeRate-API", ts, amount, freq, prev, susp, age, corr, level, score, decision, bhash,
+             sc_status, block, notes, ts),
         )
     conn.execute("COMMIT")

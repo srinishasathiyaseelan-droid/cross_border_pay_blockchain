@@ -57,6 +57,9 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     app.extensions["blockchain"] = chain
     app.extensions["contract"] = SmartContractEngine(chain)
     app.extensions["model"] = _load_model(app)
+    from .services.scoring import Scorer
+
+    app.extensions["scorer"] = Scorer(app.extensions["model"])
     app.extensions["metrics"] = _load_metrics(app)
 
     from .blueprints import admin, api, auth, kyc, payments

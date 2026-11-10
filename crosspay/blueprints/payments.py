@@ -2,13 +2,20 @@
 
 P0: behaviour moved unchanged from app.py (findings C4, H1, H2, H3 are fixed in later phases).
 """
+import json
 import random
 
-import pandas as pd
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 from ..db import get_db, utcnow_iso
 from ..security.decorators import current_user_row, login_required
+from ..services.features import (
+    ALLOWED_COUNTRIES,
+    DEMO_VECTORS,
+    FeatureError,
+    apply_demo_vector,
+    build_features,
+)
 from ..services.currency import (
     COUNTRY_TO_DEFAULT_CURRENCY,
     SUPPORTED_CURRENCIES,
@@ -18,14 +25,6 @@ from ..services.currency import (
 )
 
 bp = Blueprint("payments", __name__)
-
-COUNTRY_RISK_MAP = {
-    "United States": 0.18, "United Kingdom": 0.20, "Germany": 0.15, "Singapore": 0.16, "Japan": 0.17,
-    "Canada": 0.19, "Australia": 0.18, "France": 0.21, "India": 0.40, "Brazil": 0.52,
-    "United Arab Emirates": 0.38, "Mexico": 0.48, "South Africa": 0.58, "Nigeria": 0.85, "Russia": 0.82,
-    "Pakistan": 0.78, "Other": 0.50,
-}
-
 
 def tenant_scope():
     """H3: SMEs only ever see their own rows; compliance admins see everything."""
@@ -43,10 +42,44 @@ def get_visible_tx(tx_id):
     return tx
 
 
-def calculate_corridor_risk(sender_c, receiver_c):
-    r1 = COUNTRY_RISK_MAP.get(sender_c, 0.45)
-    r2 = COUNTRY_RISK_MAP.get(receiver_c, 0.45)
-    return round((r1 + r2 * 1.5) / 2.5, 3)
+class PaymentInputError(ValueError):
+    pass
+
+
+def read_payment_form(form, kyc_record):
+    """L1: validate the parts of the form the sender legitimately controls."""
+    receiver = (form.get("receiver") or "").strip()
+    if not 2 <= len(receiver) <= 120:
+        raise PaymentInputError("Receiver name is required (2-120 characters).")
+    sender_country = (form.get("sender_country") or kyc_record["country"]).strip()
+    receiver_country = (form.get("receiver_country") or "").strip()
+    for c in (sender_country, receiver_country):
+        if c not in ALLOWED_COUNTRIES:
+            raise PaymentInputError("Choose sender and receiver countries from the supported list.")
+    notes = (form.get("notes") or "").strip()[:500]
+    return {
+        "sender": kyc_record["business_name"],
+        "receiver": receiver,
+        "sender_country": sender_country,
+        "receiver_country": receiver_country,
+        "sender_currency": (form.get("sender_currency") or "USD").strip().upper(),
+        "receiver_currency": (form.get("receiver_currency") or "USD").strip().upper(),
+        "amount": (form.get("amount") or "").strip(),
+        "notes": notes,
+        "scenario": (form.get("scenario") or "").strip().lower(),
+    }
+
+
+def assess(conn, user_id, data, conversion):
+    """Feature building + scoring shared by the payment route and /api/risk_preview (M5)."""
+    features = build_features(conn, user_id, conversion["normalized_usd_amount"], data["sender_country"],
+                              data["receiver_country"])
+    source = "db"
+    if current_app.config.get("DEMO_MODE") and data.get("scenario") in DEMO_VECTORS:
+        features = apply_demo_vector(features, data["scenario"])
+        source = "demo_vector"
+    scored = current_app.extensions["scorer"].score(features)
+    return features, scored, source
 
 
 @bp.route("/payment")
@@ -59,6 +92,7 @@ def payment():
         "payment.html",
         kyc=dict(kyc_record) if kyc_record else None,
         is_verified=bool(kyc_record and kyc_record["status"] == "VERIFIED"),
+        countries=ALLOWED_COUNTRIES,
         supported_currencies=SUPPORTED_CURRENCIES,
         country_currencies=COUNTRY_TO_DEFAULT_CURRENCY,
     )
@@ -74,72 +108,23 @@ def process_payment():
         flash("Access Denied: Only KYC-VERIFIED SMEs can submit cross-border settlements.", "danger")
         return redirect(url_for("kyc.kyc"))
 
-    sender = request.form.get("sender", kyc_record["business_name"]).strip()
-    receiver = request.form.get("receiver", "").strip()
-    sender_country = request.form.get("sender_country", kyc_record["country"]).strip()
-    receiver_country = request.form.get("receiver_country", "").strip()
-    sender_currency = request.form.get("sender_currency", request.form.get("currency", "USD")).strip().upper()
-    receiver_currency = request.form.get("receiver_currency", request.form.get("currency", "USD")).strip().upper()
-    raw_amount = request.form.get("amount", "0").strip()
     try:
-        frequency = int(request.form.get("frequency", 1))
-        previous_transactions = int(request.form.get("previous_transactions", 10))
-        suspicious_transactions = int(request.form.get("suspicious_transactions", 0))
-        account_age = int(request.form.get("account_age", 12))
-    except ValueError:
-        flash("Invalid numerical behavioral values in payment submission.", "danger")
-        return redirect(url_for("payments.payment"))
-    notes = request.form.get("notes", "Cross-border SME trade invoice settlement").strip()
-
-    try:
+        data = read_payment_form(request.form, kyc_record)
         conversion = current_app.extensions["currency"].convert(
-            amount=raw_amount, source_currency=sender_currency, target_currency=receiver_currency
+            amount=data["amount"], source_currency=data["sender_currency"], target_currency=data["receiver_currency"]
         )
-    except InvalidAmountError as e:
-        flash(f"Payment Validation Error: {e}", "danger")
-        return redirect(url_for("payments.payment"))
-    except UnsupportedCurrencyError as e:
-        flash(f"Currency Error: {e}", "danger")
+        features, scored, feature_source = assess(conn, user_id, data, conversion)
+    except (PaymentInputError, FeatureError, InvalidAmountError, UnsupportedCurrencyError) as e:
+        flash(f"Payment not submitted: {e}", "danger")
         return redirect(url_for("payments.payment"))
     except ExchangeRateAPIError as e:
-        flash(f"Exchange Rate Service Error: {e}", "danger")
+        flash(f"Exchange rate service unavailable, nothing was stored: {e}", "danger")
         return redirect(url_for("payments.payment"))
 
+    sender, receiver, notes = data["sender"], data["receiver"], data["notes"]
+    sender_country, receiver_country = data["sender_country"], data["receiver_country"]
     normalized_usd = conversion["normalized_usd_amount"]
-    corridor_risk = calculate_corridor_risk(sender_country, receiver_country)
-    amount_to_age_ratio = round(normalized_usd / (account_age + 0.5), 2)
-    X_input = pd.DataFrame([{
-        "amount": normalized_usd, "frequency": frequency, "previous_transactions": previous_transactions,
-        "suspicious_transactions": suspicious_transactions, "account_age": account_age,
-        "corridor_risk": corridor_risk, "amount_to_age_ratio": amount_to_age_ratio,
-    }])
-
-    rf_pipeline = current_app.extensions["model"]
-    if rf_pipeline and "model" in rf_pipeline:
-        model = rf_pipeline["model"]
-        prediction = model.predict(X_input)[0]
-        probabilities = model.predict_proba(X_input)[0]
-        prob_med = float(probabilities[1]) if len(probabilities) > 1 else 0.0
-        prob_high = float(probabilities[2]) if len(probabilities) > 2 else 0.0
-        risk_score = round((prob_med * 0.5 + prob_high * 1.0) * 100, 1)
-        if prediction == 0:
-            risk_level = "LOW"
-            if risk_score > 35.0:
-                risk_score = round(random.uniform(5.0, 18.0), 1)
-        elif prediction == 1:
-            risk_level = "MEDIUM"
-            if risk_score < 40.0 or risk_score > 75.0:
-                risk_score = round(random.uniform(52.0, 68.0), 1)
-        else:
-            risk_level = "HIGH"
-            if risk_score < 80.0:
-                risk_score = round(random.uniform(88.0, 98.5), 1)
-    elif normalized_usd > 50000 or suspicious_transactions >= 2:
-        risk_level, risk_score = "HIGH", 92.5
-    elif normalized_usd > 15000 or frequency >= 5:
-        risk_level, risk_score = "MEDIUM", 61.0
-    else:
-        risk_level, risk_score = "LOW", 12.0
+    risk_level, risk_score = scored["level"], scored["score"]
 
     tx_id = f"TX-2026-{random.randint(1000, 9999)}"
     tx_data = {
@@ -160,15 +145,20 @@ def process_payment():
             exchange_rate_provider, rate_timestamp, normalized_usd_amount,
             frequency, previous_transactions, suspicious_transactions,
             account_age, corridor_risk, risk_level, risk_score, decision, blockchain_hash,
-            smart_contract_status, block_number, notes, timestamp
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            smart_contract_status, block_number, notes, timestamp,
+            amount_to_age_ratio, p_low, p_med, p_high, scoring_engine, top_factors, feature_source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                  ?, ?, ?, ?, ?, ?, ?)""",
         (tx_id, user_id, sender, receiver, sender_country, receiver_country,
          conversion["source_currency"], conversion["original_amount"], conversion["source_currency"],
          conversion["target_currency"], conversion["exchange_rate"], conversion["converted_amount"],
          conversion["provider"], conversion["last_updated"], normalized_usd,
-         frequency, previous_transactions, suspicious_transactions, account_age, corridor_risk, risk_level,
+         features["frequency"], features["previous_transactions"], features["suspicious_transactions"],
+         features["account_age"], features["corridor_risk"], risk_level,
          risk_score, sc_result["decision"], sc_result["blockchain_hash"], sc_result["smart_contract_status"],
-         sc_result["block_number"], notes, utcnow_iso()),
+         sc_result["block_number"], notes, utcnow_iso(),
+         features["amount_to_age_ratio"], scored["p_low"], scored["p_med"], scored["p_high"], scored["engine"],
+         json.dumps(scored["top_factors"]), feature_source),
     )
     return redirect(url_for("payments.result", tx_id=tx_id))
 
@@ -176,9 +166,10 @@ def process_payment():
 @bp.route("/result/<tx_id>")
 @login_required
 def result(tx_id):
-    tx = get_visible_tx(tx_id)
+    tx = dict(get_visible_tx(tx_id))
+    tx["top_factors_list"] = json.loads(tx.get("top_factors") or "[]")
     return render_template(
-        "result.html", tx=dict(tx), contract_address=current_app.extensions["contract"].CONTRACT_ADDRESS,
+        "result.html", tx=tx, contract_address=current_app.extensions["contract"].CONTRACT_ADDRESS,
         supported_currencies=SUPPORTED_CURRENCIES,
     )
 

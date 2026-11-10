@@ -82,26 +82,16 @@
         {% endif %}
     </div>
 
-    <!-- Simulated KYC Status Controls -->
-    <div class="card" style="margin-bottom: 24px; background: rgba(30, 41, 59, 0.4); border: 1px dashed rgba(255, 255, 255, 0.2);">
-        <div style="font-size: 0.82rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 8px;">
-            ⚡ Simulated Verification Controls (Admin / Test Mode)
-        </div>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
-            Simulate any KYC state to verify workflow gate enforcement:
-        </p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button type="button" onclick="setSimulateMode('verify')" class="btn btn-success btn-sm">
-                ✅ Set KYC Status: VERIFIED (Enables Payments)
-            </button>
-            <button type="button" onclick="setSimulateMode('pending')" class="btn btn-warning btn-sm">
-                ⏳ Set KYC Status: PENDING (Gate Test)
-            </button>
-            <button type="button" onclick="setSimulateMode('reject')" class="btn btn-danger btn-sm">
-                ❌ Set KYC Status: REJECTED (Gate Test)
-            </button>
+    {% if demo_mode %}
+    <div class="card demo-card">
+        <div class="preset-title">Demo provider simulation (DEMO_MODE only)</div>
+        <p class="muted-sm">Stands in for a KYC provider called on the server. Outside demo mode a compliance officer must verify every SME.</p>
+        <div class="preset-buttons">
+            <button type="button" onclick="setSimulateMode('demo_verify')" class="btn btn-success btn-sm">Simulate provider: pass</button>
+            <button type="button" onclick="setSimulateMode('demo_reject')" class="btn btn-danger btn-sm">Simulate provider: fail</button>
         </div>
     </div>
+    {% endif %}
 
     <!-- KYC Submission / Update Form -->
     <div class="card">
@@ -114,7 +104,7 @@
 
         <form id="kyc-form" method="POST" action="{{ url_for('kyc.kyc') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" id="simulate_action" name="simulate_action" value="auto_validate">
+            <input type="hidden" id="simulate_action" name="simulate_action" value="">
 
             <div class="form-grid">
                 <div class="form-group">
@@ -192,7 +182,7 @@
 
             <div style="margin-top: 14px; display: flex; justify-content: flex-end; gap: 12px;">
                 <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
-                    Submit & Run KYC Verification
+                    Submit for compliance review
                 </button>
             </div>
         </form>
@@ -203,16 +193,8 @@
 {% block scripts %}
 <script>
 function setSimulateMode(mode) {
-    const actionInput = document.getElementById('simulate_action');
-    const form = document.getElementById('kyc-form');
-    if (mode === 'verify') {
-        actionInput.value = 'auto_validate';
-    } else if (mode === 'pending') {
-        actionInput.value = 'pending';
-    } else if (mode === 'reject') {
-        actionInput.value = 'reject';
-    }
-    form.submit();
+    document.getElementById('simulate_action').value = mode;
+    document.getElementById('kyc-form').requestSubmit();
 }
 </script>
 {% endblock %}

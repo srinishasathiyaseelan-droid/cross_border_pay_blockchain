@@ -41,6 +41,7 @@
                 </a></li>
                 <li><a href="{{ url_for('payments.payment') }}" class="nav-link {% if request.endpoint == 'payments.payment' %}active{% endif %}">Send Payment</a></li>
                 <li><a href="{{ url_for('payments.transactions') }}" class="nav-link {% if request.endpoint == 'payments.transactions' %}active{% endif %}">Transactions</a></li>
+                {% if is_admin %}<li><a href="{{ url_for('admin.kyc_queue') }}" class="nav-link {% if request.endpoint == 'admin.kyc_queue' %}active{% endif %}">KYC Queue</a></li>{% endif %}
                 <li><a href="{{ url_for('payments.blockchain_explorer') }}" class="nav-link {% if request.endpoint == 'payments.blockchain_explorer' %}active{% endif %}">Blockchain Ledger</a></li>
             </ul>
 

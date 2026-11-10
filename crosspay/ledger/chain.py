@@ -169,6 +169,10 @@ class SmartContractEngine:
     def __init__(self, blockchain_instance):
         self.blockchain = blockchain_instance
 
+    @staticmethod
+    def preview_decision(scored):
+        return {"LOW": "APPROVED", "MEDIUM": "HOLD"}.get(scored["level"], "BLOCKED")
+
     def evaluate_settlement(self, kyc_status, tx_data, risk_level, risk_score):
         """
         Executes smart contract settlement rules:

@@ -182,7 +182,18 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="color: var(--text-muted);">Calculated Risk Probability</td>
+                    <td style="color: var(--text-muted);">Scoring engine</td>
+                    <td><strong>{{ 'Random Forest model' if tx.scoring_engine == 'model' else ('Fallback rules' if tx.scoring_engine == 'fallback' else 'Seed record') }}</strong>
+                        {% if tx.feature_source == 'demo_vector' %}<span class="badge badge-med">DEMO VECTOR</span>{% endif %}</td>
+                </tr>
+                {% if tx.p_low is not none %}
+                <tr>
+                    <td style="color: var(--text-muted);">Class probabilities</td>
+                    <td class="font-mono">LOW {{ '%.3f'|format(tx.p_low) }} · MEDIUM {{ '%.3f'|format(tx.p_med) }} · HIGH {{ '%.3f'|format(tx.p_high) }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td style="color: var(--text-muted);">Risk score (0-100)</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <div style="flex: 1; height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden;">

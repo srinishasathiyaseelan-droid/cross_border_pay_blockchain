@@ -66,3 +66,34 @@ def convert_currency():
         return jsonify({"success": False, "error": str(e)}), 400
     except ExchangeRateAPIError as e:
         return jsonify({"success": False, "error": str(e)}), 503
+
+
+@bp.route("/risk_preview", methods=["POST"])
+@login_required
+def risk_preview():
+    """M5: the live preview runs the same feature builder and model as the real payment. Nothing is written."""
+    from flask import session
+
+    from ..db import get_db
+    from ..services.features import FeatureError
+    from .payments import PaymentInputError, assess, read_payment_form
+
+    conn = get_db()
+    kyc = conn.execute("SELECT * FROM kyc WHERE user_id = ? ORDER BY id DESC LIMIT 1", (session["user_id"],)).fetchone()
+    if kyc is None:
+        return jsonify({"success": False, "error": "KYC record missing"}), 400
+    payload = request.get_json(silent=True) or {}
+    payload.setdefault("receiver", "preview")
+    try:
+        data = read_payment_form(payload, kyc)
+        conversion = current_app.extensions["currency"].convert(
+            amount=data["amount"], source_currency=data["sender_currency"], target_currency=data["receiver_currency"])
+        features, scored, source = assess(conn, session["user_id"], data, conversion)
+    except (PaymentInputError, FeatureError, InvalidAmountError, UnsupportedCurrencyError) as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except ExchangeRateAPIError as e:
+        return jsonify({"success": False, "error": str(e)}), 503
+    decision = current_app.extensions["contract"].preview_decision(scored)
+    return jsonify({"success": True, "level": scored["level"], "score": scored["score"], "engine": scored["engine"],
+                    "decision": decision, "feature_source": source, "features": features,
+                    "top_factors": scored["top_factors"]})

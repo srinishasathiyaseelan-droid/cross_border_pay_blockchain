@@ -68,3 +68,36 @@ role cookie → 403; cross-tenant receipt → 404; POST without CSRF token → 4
 masked government ID; logout needs POST.
 
 **How verified:** `pytest -q` → 45 passed, working tree unchanged after the run.
+
+## P2 — Honest risk pipeline (C4, C5, H1, H5, M5, L1)
+
+**Findings fixed**
+- **C4** `crosspay/services/features.py::build_features()` derives all seven model features on the server:
+  frequency = this SME's payments in the last 30 days, previous_transactions = total, suspicious_transactions =
+  HOLD + BLOCKED + REJECTED (+ any payment that went through hold review), account_age = whole months since
+  `users.created_at` (min 1), corridor_risk from the country table, amount_to_age_ratio. The four behavioural form
+  fields are gone and are ignored if posted. In DEMO_MODE the scenario buttons send `scenario=low|medium|high`, which
+  loads a fixed server-side vector; the receipt shows a **DEMO VECTOR** badge. Outside DEMO_MODE `scenario` is ignored.
+- **C5** a KYC submission goes to PENDING. Only an admin (`/admin/kyc`, reason ≥ 10 characters, reviewer recorded)
+  sets VERIFIED. The "simulated provider" buttons exist only in DEMO_MODE and are labelled DEMO SIMULATION.
+- **H1** `crosspay/services/scoring.py::Scorer.score()` stores p_low/p_med/p_high, the engine and
+  score = round((p_med·0.5 + p_high)·100, 1). No `random` anywhere in scoring; the fallback engine uses transparent
+  rule points and never invents probabilities.
+- **H5** the target rate and the USD reference rate come from the same base response (one API call); a missing USD
+  rate raises `ExchangeRateAPIError`, the user sees "nothing was stored".
+- **M5** the payment page's live preview calls `POST /api/risk_preview`, which runs the same `build_features` +
+  `Scorer` path and writes nothing.
+- **L1** receiver 2–120 characters; both countries must be in the corridor table (no silent 0.45 default).
+
+**Files:** `crosspay/services/features.py`, `crosspay/services/scoring.py`, `crosspay/services/currency.py`,
+`crosspay/blueprints/{payments,kyc,admin,api}.py`, `templates/{payment,kyc,result,base,admin_kyc}.html`,
+`static/js/script.js` (rewritten), `crosspay/db.py` (new columns; demo SME opened 26 months ago, history dated
+45/20/9 days back).
+
+**Tests added:** `tests/test_risk_pipeline_p2.py` — posted `suspicious_transactions=0` ignored; same input → same
+score ×10; INR→EUR with USD missing → clear error and no row; USD amount from one response; new user stays PENDING
+for every `simulate_action` when DEMO_MODE=0; admin queue verifies with a reason; SME gets 403 on the queue; receiver
+and country validation; preview equals the stored score and writes nothing; demo vector badge; scenario ignored
+outside DEMO_MODE.
+
+**How verified:** `pytest -q` → 60 passed.

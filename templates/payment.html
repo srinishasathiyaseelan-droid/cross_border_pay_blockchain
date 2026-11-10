@@ -2,6 +2,10 @@
 
 {% block title %}Initiate Cross-Border Payment{% endblock %}
 
+{% block scripts %}
+<script>window.CROSSPAY_COUNTRY_CURRENCY = {{ country_currencies|tojson }};</script>
+{% endblock %}
+
 {% block content %}
 <div style="max-width: 960px; margin: 20px auto;">
     <!-- Top Pipeline -->
@@ -50,23 +54,16 @@
             </div>
         </div>
     {% else %}
-        <!-- Test Scenario Quick-Bar for Risk Profiles -->
+        {% if demo_mode %}
         <div class="demo-preset-bar">
-            <div class="preset-title">
-                <span>⚡</span> 1-Click Test Scenarios (Risk Engine Validation):
-            </div>
+            <div class="preset-title">Demo scenarios (DEMO_MODE): fixed server-side behaviour vectors</div>
             <div class="preset-buttons">
-                <button type="button" id="btn-scenario-low" class="btn btn-success btn-sm">
-                    🟢 Scenario 1: Low Risk (Auto-Approve)
-                </button>
-                <button type="button" id="btn-scenario-med" class="btn btn-warning btn-sm">
-                    🟡 Scenario 2: Medium Risk (Hold in Escrow)
-                </button>
-                <button type="button" id="btn-scenario-high" class="btn btn-danger btn-sm">
-                    🔴 Scenario 3: High Risk (Block & Prevent)
-                </button>
+                <button type="button" data-scenario="low" class="btn btn-success btn-sm">Scenario 1: Low risk</button>
+                <button type="button" data-scenario="medium" class="btn btn-warning btn-sm">Scenario 2: Medium risk</button>
+                <button type="button" data-scenario="high" class="btn btn-danger btn-sm">Scenario 3: High risk</button>
             </div>
         </div>
+        {% endif %}
 
         <!-- Payment Submission Card -->
         <div class="card payment-form-card">
@@ -79,34 +76,28 @@
                         Sender: <strong>{{ kyc.business_name if kyc else 'Verified SME' }}</strong> (KYC Verified ✓)
                     </p>
                 </div>
-                <!-- Dynamic Live Risk Preview -->
-                <div style="text-align: right;">
-                    <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;">Anticipated Risk Profile</div>
-                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                        <span id="live-risk-badge" class="badge badge-low">
-                            <span class="dot dot-low"></span> LOW RISK
-                        </span>
-                        <span id="live-decision-badge" class="badge badge-approved">
-                            DECISION: APPROVE
-                        </span>
-                    </div>
+                <div id="risk-preview" class="risk-preview" data-level="unknown">
+                    <div class="muted-sm">Model preview (nothing is saved)</div>
+                    <div><strong id="live-risk-level">—</strong> · score <span id="live-risk-score">—</span> · <span id="live-decision">—</span></div>
+                    <div class="muted-sm" id="live-risk-detail"></div>
                 </div>
             </div>
 
-            <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form">
+            <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form" data-once>
+                <input type="hidden" id="scenario" name="scenario" value="">
+                <div id="scenario-chip" class="scenario-chip" hidden><span id="scenario-chip-label"></span> <button type="button" id="scenario-clear">clear</button></div>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <!-- SME Entities Grid -->
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label" for="sender">Originating SME (Sender)</label>
-                        <input type="text" id="sender" name="sender" class="form-control" 
-                               value="{{ kyc.business_name if kyc else 'Global Logistics SME Ltd' }}" required>
+                        <input type="text" id="sender" class="form-control" value="{{ kyc.business_name if kyc else '' }}" readonly>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label" for="receiver">Beneficiary SME (Receiver)</label>
                         <input type="text" id="receiver" name="receiver" class="form-control" 
-                               value="EuroTech Industrial Gmbh" placeholder="e.g. EuroTech Industrial Gmbh" required>
+                               value="" placeholder="e.g. EuroTech Industrial GmbH" minlength="2" maxlength="120" required>
                     </div>
                 </div>
 
@@ -271,40 +262,13 @@
                     </div>
                 </div>
 
-                <!-- Transaction Behavior & Risk-Related Features for Random Forest -->
-                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 20px;">
-                    <div style="font-size: 0.82rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; margin-bottom: 12px; display:flex; justify-content:space-between;">
-                        <span>🧠 ML Feature Vectors (Analyzed by Random Forest)</span>
-                        <span style="font-weight:400; color:var(--text-dim);">Trained on 6,000 SME Transactions</span>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="frequency" style="font-size:0.8rem;">Velocity (Txs/Week)</label>
-                            <input type="number" id="frequency" name="frequency" class="form-control" value="2" min="1" max="50" required>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="previous_transactions" style="font-size:0.8rem;">Previous Successful Txs</label>
-                            <input type="number" id="previous_transactions" name="previous_transactions" class="form-control" value="48" min="0" max="1000" required>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="suspicious_transactions" style="font-size:0.8rem;">Prior Suspicious Flags</label>
-                            <input type="number" id="suspicious_transactions" name="suspicious_transactions" class="form-control" value="0" min="0" max="20" required>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="account_age" style="font-size:0.8rem;">Account Age (Months)</label>
-                            <input type="number" id="account_age" name="account_age" class="form-control" value="26" min="1" max="120" required>
-                        </div>
-                    </div>
-                </div>
+                <div class="alert alert-info">Risk features (payment frequency, history, prior holds, account age) are computed
+                    by the server from your account history. They are not form fields.</div>
 
                 <div class="form-group">
                     <label class="form-label" for="notes">Trade Context / Settlement Note</label>
                     <input type="text" id="notes" name="notes" class="form-control" 
-                           value="Routine supply chain invoice settlement - legitimate SME corridor">
+                           value="" maxlength="500" placeholder="e.g. Invoice 4471 - HS 8471 laptops, 30-day terms">
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">

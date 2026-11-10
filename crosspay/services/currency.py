@@ -383,28 +383,38 @@ class CurrencyService:
         src = self.validate_currency(source_currency)
         tgt = self.validate_currency(target_currency)
 
-        rate_info = self.get_exchange_rate(src, tgt)
-        rate_dec = rate_info["rate"]
-
-        # Calculate converted amount using Python's Decimal
-        converted_raw = amount_dec * rate_dec
-        converted_dec = self.quantize_amount(converted_raw, tgt)
-
-        # Calculate normalized USD reference amount for Random Forest ML model
-        # The ML model expects amounts in USD (distribution: 500-14k Low, 15k-48k Med, 55k-300k High)
-        if src == "USD":
-            normalized_usd = self.quantize_amount(amount_dec, "USD")
+        # H5: the target rate and the USD reference rate come from the SAME base response. If the USD rate is
+        # missing the payment fails; a foreign amount is never treated as USD.
+        rates_data = None
+        if not (src == tgt == "USD"):
+            rates_data = self.get_rates(src)
+        if src == tgt:
+            rate_dec = Decimal("1")
         else:
-            try:
-                usd_rate_info = self.get_exchange_rate(src, "USD")
-                normalized_raw = amount_dec * usd_rate_info["rate"]
-                normalized_usd = self.quantize_amount(normalized_raw, "USD")
-            except Exception:
-                # If USD lookup fails, fallback to inverted target if target is USD
-                if tgt == "USD":
-                    normalized_usd = converted_dec
-                else:
-                    normalized_usd = amount_dec
+            rate_dec = rates_data["rates"].get(tgt)
+            if rate_dec is None:
+                raise UnsupportedCurrencyError(
+                    f"Target currency '{tgt}' not available from rate provider for base '{src}'."
+                )
+        if src == "USD":
+            usd_rate = Decimal("1")
+        else:
+            usd_rate = rates_data["rates"].get("USD")
+            if usd_rate is None:
+                raise ExchangeRateAPIError(
+                    f"USD reference rate for {src} is unavailable, so the payment cannot be risk-scored. Try again later."
+                )
+        if rates_data is None:
+            rate_info = {"provider": "Direct Parity (1:1)",
+                         "last_updated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
+                         "is_cached": False}
+        else:
+            rate_info = {"provider": rates_data.get("provider", self.provider_name),
+                         "last_updated": rates_data.get("last_updated"),
+                         "is_cached": rates_data.get("from_cache", False)}
+
+        converted_dec = self.quantize_amount(amount_dec * rate_dec, tgt)
+        normalized_usd = self.quantize_amount(amount_dec * usd_rate, "USD")
 
         return {
             "source_currency": src,
