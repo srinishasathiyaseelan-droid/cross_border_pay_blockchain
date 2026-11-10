@@ -4,14 +4,29 @@
 
 - Repo: <https://github.com/srinishasathiyaseelan-droid/cross_border_pay_blockchain>.
 - Live: <https://crosspay-i4gl.onrender.com> (Render, auto-deploys from `main`).
-- `main` = `acd0d53` (PR #7). Everything through PR #7 is merged and live: hardening, the advisory AI layer and its
-  guards, the redesigned UI, the live console (`/admin/live`), the VELOCITY_BURST rule, the simulator scenarios, the AI
-  self-test, the rate-limit pacing, the report-figures fix, the README and `docs/DEPLOY_RENDER.md`.
+- `main` = `6821f18` (PR #8, the demo dataset). Live is still `acd0d53` (PR #7): the PR #8 deploy FAILED on Render.
+  Everything through PR #7 is live: hardening, the advisory AI layer and its guards, the redesigned UI, the live
+  console (`/admin/live`), the VELOCITY_BURST rule, the simulator scenarios, the AI self-test, the rate-limit pacing,
+  the report-figures fix, the README and `docs/DEPLOY_RENDER.md`.
 - `fix/report-figures` is redundant (its commit reached `main` via PR #7). Close it or delete it.
 
-## Open branch: `feat/demo-dataset` (finished, NOT merged)
+## Open branch: `fix/demo-seed-startup` (fixes the failed PR #8 deploy, NOT merged)
 
-Compare and merge: <https://github.com/srinishasathiyaseelan-droid/cross_border_pay_blockchain/compare/main...feat/demo-dataset>
+Compare and merge: <https://github.com/srinishasathiyaseelan-droid/cross_border_pay_blockchain/compare/main...fix/demo-seed-startup>
+
+- Cause: PR #8 started the seed thread in the middle of `create_app`. The seed holds the SQLite write lock for tens of
+  seconds (locally 12.7 s, then 9.0 s for mining), so the startup writes after it (LLM log purge, `ai_jobs` reset)
+  waited for the lock. Locally `create_app` went from 10.1 s to 31.9 s; on Render's smaller CPU the wait passes the
+  30 s `busy_timeout`, "database is locked" is raised and the gunicorn worker fails to boot. (Inferred from the local
+  reproduction; the Render deploy log itself was not read.)
+- Fix: the seed starts as the last step of `create_app`, after every startup write, and waits `DEMO_DATASET_DELAY`
+  seconds (default 20) in a daemon timer, so the worker is serving and the health check passes first. Locally
+  `create_app` is back to 9.2 s. Two regression tests cover the order and the timer.
+- Still true: for the one seed run (about a minute on Render, once, ~20 s after the first deploy) other DB *writes*
+  wait for the lock; reads are unaffected (WAL). Don't submit payments in the first two minutes after this deploy.
+- After the merge: watch the Render deploy go Live, then check the dashboard shows the "Demo …" SMEs.
+
+## Merged: `feat/demo-dataset` (PR #8)
 
 - In DEMO_MODE only, it adds once (marker `demo_dataset_v1` in `ai_settings`; `DEMO_DATASET=0` turns it off):
   - 10 "Demo …" SMEs with verified KYC
@@ -19,11 +34,10 @@ Compare and merge: <https://github.com/srinishasathiyaseelan-droid/cross_border_
 - Every payment is decided by the real feature builder, model and policy engine (including VELOCITY_BURST), then
   signed and mined by `bootstrap_ledger`, so `Ledger.verify` stays valid.
 - No FX or AI calls (fixed, labelled demo rates) and no officer reviews.
-- It runs in a background thread after startup (about 20 s). There is also `flask seed-demo`; run it with
-  `AI_BACKFILL=0`, or the process waits for the spaced AI jobs before it exits.
-- Status: tests pass (291 passed, 1 deselected), ruff is clean, gitleaks found no leaks. Local result: 2 → 12 users,
-  5 → 145 payments (112 approved / 13 hold / 20 blocked); the ledger verifies.
-- Left to do: Sandeep merges it, then checks the dashboard and `/admin/live` on Render after the redeploy.
+- It runs in a background thread after startup (`DEMO_DATASET_DELAY`, 20 s, once `fix/demo-seed-startup` is merged).
+  There is also `flask seed-demo`; run it with `AI_BACKFILL=0`, or the process waits for the spaced AI jobs before
+  it exits.
+- Local result: 2 → 12 users, 5 → 145 payments (112 approved / 13 hold / 20 blocked); the ledger verifies.
 
 Re-check commands (Windows, from the repo folder):
 

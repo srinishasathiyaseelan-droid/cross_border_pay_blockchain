@@ -76,13 +76,6 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     app.extensions["model"] = bundle
     app.extensions["scorer"] = Scorer(bundle, reason)
     app.extensions["metrics"] = _load_metrics(app)
-    if app.config.get("DEMO_MODE") and app.config.get("DEMO_DATASET"):
-        if app.config.get("TESTING"):
-            _demo_dataset(app)
-        else:  # scoring + mining ~140 payments takes a while: never delay the server binding its port
-            import threading
-
-            threading.Thread(target=_demo_dataset, args=(app,), name="crosspay-demo-seed", daemon=True).start()
 
     @app.cli.command("seed-demo")
     def seed_demo_command():
@@ -177,6 +170,10 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
         return render_template("error.html", code=400, message="The form expired or was not sent from this site. "
                                "Reload the page and try again."), 400
 
+    # Last, after every startup write above: the seed holds the DB write lock for tens of seconds, and started any
+    # earlier it made those writes time out ("database is locked"), so the worker failed to boot.
+    if app.config.get("DEMO_MODE") and app.config.get("DEMO_DATASET"):
+        _start_demo_dataset(app)
     return app
 
 
@@ -195,6 +192,20 @@ def _local_secret(app, name: str) -> str:
 
 
 _MODEL_CACHE = {}
+
+
+def _start_demo_dataset(app):
+    """Tests seed inline. Otherwise wait DEMO_DATASET_DELAY seconds in a daemon thread, so the worker is already
+    serving (and the health check passing) before the seed takes the write lock. -> the timer, or None."""
+    if app.config.get("TESTING"):
+        _demo_dataset(app)
+        return None
+    import threading
+
+    timer = threading.Timer(float(app.config.get("DEMO_DATASET_DELAY", 20)), _demo_dataset, args=(app,))
+    timer.name, timer.daemon = "crosspay-demo-seed", True
+    timer.start()
+    return timer
 
 
 def _demo_dataset(app):
