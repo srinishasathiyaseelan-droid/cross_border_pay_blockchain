@@ -33,7 +33,7 @@
             {% for name, st in providers.items() %}
             <tr><td><strong>{{ name }}</strong></td><td class="num xsmall">{{ st.model or '—' }}</td>
                 <td>{{ 'yes' if st.configured else 'no key' }}</td>
-                <td><span class="badge {{ 'badge-danger' if st.open else 'badge-success' }}">{{ 'open, skipped 60 s' if st.open else 'closed' }}</span></td>
+                <td><span class="badge {{ 'badge-danger' if st.open else ('badge-warning' if st.rate_limited else 'badge-success') }}">{{ 'open, skipped 60 s' if st.open else ('rate limited, cooling off' if st.rate_limited else 'closed') }}</span></td>
                 <td class="num">{{ st.failures }}</td></tr>
             {% endfor %}
             </tbody>
@@ -88,12 +88,12 @@
     </div>
     {% if selftest %}
     <div class="table-wrap mt-3"><table class="table">
-        <thead><tr><th scope="col">Feature</th><th scope="col">Result</th></tr></thead>
-        <tbody>{% for task, status in selftest %}
-        <tr><td>{{ task }}</td><td><span class="badge {{ 'badge-success' if status == 'OK' else ('badge-warning' if status.startswith('REJECTED_GUARD') or status == 'BLOCKED_INPUT' else 'badge-neutral') }} num">{{ status }}</span></td></tr>
+        <thead><tr><th scope="col">Feature</th><th scope="col">Result</th><th scope="col">Detail</th></tr></thead>
+        <tbody>{% for task, status, detail in selftest %}
+        <tr><td>{{ task }}</td><td><span class="badge {{ 'badge-success' if status == 'OK' else ('badge-warning' if status.startswith('REJECTED_GUARD') or status == 'BLOCKED_INPUT' else 'badge-neutral') }} num">{{ status }}</span></td><td class="xsmall text-2">{{ detail }}</td></tr>
         {% endfor %}</tbody>
     </table></div>
-    <p class="xsmall muted mt-2">OK = real model output that passed the guards. REJECTED_GUARD = the model answered but the output guard refused it. UNAVAILABLE = no provider answered in time, or the daily budget is spent. DISABLED = LLM off, kill switch on, or the feature flag is off.</p>
+    <p class="xsmall muted mt-2">OK = real model output that passed the guards. REJECTED_GUARD = the model answered but the output guard refused it. UNAVAILABLE = no provider answered: the detail lists each provider's reason (RATE_LIMITED, TIMEOUT, CIRCUIT_OPEN) or DAILY_BUDGET_REACHED. DISABLED = LLM off, kill switch on, or the feature flag is off.</p>
     {% endif %}
 </section>
 

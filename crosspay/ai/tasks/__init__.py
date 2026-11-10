@@ -42,7 +42,7 @@ def queue_explanation(conn, tx_id: str) -> str:
 
 
 BACKFILL_LIMIT = 10
-BACKFILL_SPACING_S = 12.0  # free-tier providers allow only a few large prompts a minute; never starve live traffic
+BACKFILL_SPACING_S = 20.0  # free-tier providers allow only a few large prompts a minute; never starve live traffic
 
 
 def _spaced(fn, delay: float):
@@ -66,6 +66,10 @@ def backfill(app, conn, limit: int = BACKFILL_LIMIT) -> dict:
     with app.app_context():
         if not ai_enabled(conn) or over_budget(conn):
             return out
+        from ..log import spend_today
+
+        if spend_today(conn) >= 0.5 * float(app.config.get("LLM_DAILY_BUDGET_USD") or 0):
+            return out  # leave at least half the daily budget for live traffic
         # A separate single-worker runner, so spaced backfill jobs never delay explanations for new payments.
         runner = app.extensions.get("ai_backfill_jobs") or app.extensions["ai_jobs"]
         flags = app.config.get("AI_FLAGS", {})
@@ -298,8 +302,14 @@ SELFTEST_INVOICE = ("COMMERCIAL INVOICE No. 4471\nSeller: Selftest Components Gm
                     "Description: CNC spindle parts, 40 units\nTotal: 18,500.00 USD\nDate: 2026-01-01")
 
 
-def self_test(conn, user_id: int) -> list:
-    """-> [(task, status)] with status OK, UNAVAILABLE, DISABLED, BLOCKED_INPUT or REJECTED_GUARD:<code>."""
+SELFTEST_SPACING_S = 2.0
+
+
+def self_test(conn, user_id: int, delay: float = None) -> list:
+    """-> [(task, status, detail)]. status is OK, UNAVAILABLE, DISABLED, BLOCKED_INPUT or REJECTED_GUARD:<code>;
+    detail names the provider that answered, or every provider's reason when none did."""
+    if delay is None:
+        delay = 0.0 if current_app.config.get("TESTING") else SELFTEST_SPACING_S
     tx = dict(SELFTEST_TX)
     ctxs = [
         ("explain", context.explain(conn, tx)),
@@ -310,10 +320,23 @@ def self_test(conn, user_id: int) -> list:
         ("assistant", context.assistant(conn, tx, "Which documents would help the review of this payment?")),
         ("report", context.weekly_report(conn)),
     ]
+    import time
+
     out = []
-    for task, ctx in ctxs:
+    for i, (task, ctx) in enumerate(ctxs):
+        if i and delay > 0:
+            time.sleep(delay)  # sequential and spaced: free-tier providers rate-limit bursts
         try:
-            out.append((task, run_task(task, ctx, user_id, conn).status))
+            res = run_task(task, ctx, user_id, conn)
         except Exception:  # noqa: BLE001 — a self-test never raises to the page
-            out.append((task, "ERROR"))
+            out.append((task, "ERROR", ""))
+            continue
+        why = ""
+        if res.status == "UNAVAILABLE":
+            why = ", ".join(res.meta.get("errors") or []) or res.meta.get("error_code") or "NO_PROVIDER"
+        elif res.status == "OK" and res.meta.get("provider"):
+            why = res.meta["provider"] + (" (fallback)" if res.meta.get("fallback_used") else "")
+        elif res.meta.get("cached"):
+            why = "cached"
+        out.append((task, res.status, why))
     return out

@@ -68,7 +68,7 @@ services:
       - key: LLM_ENABLED
         value: "1"
       - key: LLM_PROVIDERS
-        value: groq,nvidia,cloudflare
+        value: groq,cloudflare,nvidia     # NVIDIA's free endpoint often times out at 15 s: keep it last
       - key: LLM_TIMEOUT
         value: "15"
       - key: LLM_DAILY_BUDGET_USD
