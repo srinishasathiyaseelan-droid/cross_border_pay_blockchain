@@ -1,0 +1,35 @@
+# Optional Render deployment (adapted from Netvrio's render.yaml). Secrets are set in the Render dashboard, never here.
+services:
+  - type: web
+    name: crosspay
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 2 --threads 4 --bind 0.0.0.0:$PORT "crosspay:create_app('prod')"
+    disk:
+      name: crosspay-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: CROSSPAY_ENV
+        value: prod
+      - key: DEMO_MODE
+        value: "1"
+      - key: DB_PATH
+        value: /var/data/crosspay.db
+      - key: LEDGER_PATH
+        value: /var/data/blockchain_ledger.json
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: LLM_ENABLED
+        value: "1"
+      - key: LLM_DAILY_BUDGET_USD
+        value: "0.50"
+      - key: SECRET_KEY
+        sync: false
+      - key: LEDGER_SIGNING_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b

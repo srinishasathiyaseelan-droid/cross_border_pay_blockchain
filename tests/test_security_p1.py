@@ -100,7 +100,7 @@ def test_prod_requires_secret_key(tmp_path, monkeypatch):
 
 
 def test_register_rules(client, db):
-    r = client.post("/register", data={"name": "A", "email": "not-an-email", "password": "x" * 12})
+    client.post("/register", data={"name": "A", "email": "not-an-email", "password": "x" * 12})
     assert db.execute("SELECT COUNT(*) FROM users WHERE email='not-an-email'").fetchone()[0] == 0
     client.post("/register", data={"name": "A", "email": "a@b.co", "password": "short"})
     assert db.execute("SELECT COUNT(*) FROM users WHERE email='a@b.co'").fetchone()[0] == 0

@@ -39,7 +39,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from crosspay.policy import engine as policy  # noqa: E402
-from crosspay.services.features import COUNTRY_RISK_MAP, FEATURE_NAMES, corridor_risk  # noqa: E402
+from crosspay.services.features import FEATURE_NAMES, corridor_risk  # noqa: E402
 
 SEED = 42
 N_SAMPLES = 6000

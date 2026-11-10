@@ -19,7 +19,7 @@ import time
 import threading
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 import requests
 
 # -------------------------------------------------------------------------
@@ -166,7 +166,7 @@ class CurrencyService:
             except ValueError:
                 max_stale_hours = 24.0
         self.max_stale_seconds = max_stale_hours * 3600
-        
+
     @property
     def api_key(self) -> Optional[str]:
         return os.environ.get("EXCHANGE_RATE_API_KEY", "").strip() or None

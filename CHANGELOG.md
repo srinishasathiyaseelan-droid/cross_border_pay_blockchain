@@ -314,3 +314,16 @@ APPROVED, mismatch → HOLD, another user's upload token is ignored, non-PDF →
 tenant-scoped; assistant refusal, DLP block and other-tenant 404; report drafts stay DRAFT until signed, export
 Markdown, and a draft with an invented number is never saved; every AI page renders with AI off.
 P6.8 (optional KYC document and sanctions assistant) is not built.
+
+## P7 — CI, docs, evaluation
+
+- `.github/workflows/ci.yml` (from Netvrio): Python 3.12, ruff, `pytest --cov-fail-under=75` (measured coverage 86%),
+  pip-audit, gitleaks; `codeql.yml` for Python and JavaScript. `.gitleaks.toml` allowlists only the deleted
+  `_legacy_archive/` paths that remain in history (documented as compromised).
+- `docs/AI_EVALUATION.md` + `model/evaluation/ai_golden_eval.py`: live golden set on Groq — explainer 17/20 passed every
+  guard (2 `DECISION_CLAIM`, 1 timeout), 17/17 evidence-faithful, p50 2.05 s / p95 7.15 s, ≈ $0.038 per 100 payments;
+  purpose tagger escalation precision 1.00, recall 0.90 against author labels. Not hand-reviewed by an officer (TODO).
+- `docs/THREAT_MODEL.md`, `docs/VIVA_DEMO.md` (7-minute script), `render.yaml`; README rewritten with measured
+  metrics, architecture, env vars, demo mode, AI limits and security notes.
+- Lint: 13 ruff findings fixed (unused imports/variables).
+- Not done: opening a PR (the user asked for local commits only).

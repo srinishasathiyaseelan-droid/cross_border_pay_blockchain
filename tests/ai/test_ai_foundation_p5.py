@@ -5,12 +5,11 @@ import httpx
 import pytest
 
 from crosspay.ai import guard, pipeline
-from crosspay.ai.errors import ProviderError
 from crosspay.ai.pipeline import TaskContext, run_task
 from crosspay.ai.providers import FakeLLMClient
-from crosspay.ai.providers.base import Completion, LLMProvider
+from crosspay.ai.providers.base import LLMProvider
 from crosspay.ai.router import CIRCUIT_THRESHOLD, Router
-from crosspay.ai.schemas import ExplainOut, PurposeOut
+from crosspay.ai.schemas import PurposeOut
 
 BASE = {"receiver": "EuroTech Industrial GmbH", "sender_country": "United States", "receiver_country": "Germany",
         "sender_currency": "USD", "receiver_currency": "EUR", "amount": "4500"}

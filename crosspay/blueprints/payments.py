@@ -6,7 +6,7 @@ import json
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
-from ..db import get_db, utcnow_iso
+from ..db import get_db
 from ..security.decorators import current_user_row, login_required
 from ..security.idempotency import new_key
 from ..services.settlement import DuplicateSubmission, settle_payment

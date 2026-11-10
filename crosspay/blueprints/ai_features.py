@@ -8,10 +8,10 @@ from flask import Blueprint, abort, current_app, jsonify, request, session
 
 from ..ai import tasks
 from ..db import get_db, utcnow_iso
-from ..security.decorators import current_user_row, login_required
+from ..security.decorators import login_required
 from ..security.limiter import ai_limit, limiter
 from ..services.features import ALLOWED_COUNTRIES
-from .payments import get_visible_tx, tenant_scope
+from .payments import get_visible_tx
 
 bp = Blueprint("ai_features", __name__, url_prefix="/api/ai")
 

@@ -1,286 +1,120 @@
-# Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments
+# CrossPay: risk-adaptive cross-border settlement for SMEs
 
 > **Security note (Nov 2026).** The removed `_legacy_archive/` folder contained the public Hardhat account #0
 > private key and Ganache keys in `scripts/deploy*.js` and `docker-compose.yml`, plus credentials in
 > `application.properties`. Treat every one of those keys and passwords as compromised and never fund or reuse them.
 > They are still in git history (commit d12451c); purging them needs a history rewrite, which has not been done.
 
+Academic prototype. A KYC-verified SME submits a cross-border payment. CrossPay converts it at a live exchange rate,
+scores it with a Random Forest built from the SME's own payment history, and a deterministic policy either approves it
+onto a signed ledger, holds it for a compliance officer, or blocks it. An optional LLM layer explains decisions and
+helps officers, but **never makes a decision**.
 
-An academic prototype web application integrating **KYC Verification**, **Machine Learning Risk Prediction (Random Forest)**, and **Risk-Adaptive Smart Contract Blockchain Settlement** for Small and Medium Enterprises (SMEs).
+## The problem
 
----
+SMEs pay suppliers across borders with little room for manual compliance. A rule set that is too loose lets risky
+payments through; one that is too strict buries officers in reviews. CrossPay adapts settlement to risk and keeps every
+decision explainable and verifiable.
 
-## 📌 Project Overview
+## Architecture
 
-Cross-border trade finance is critical for Small and Medium Enterprises (SMEs), yet traditional correspondent banking systems suffer from high remittance fees (up to 7–10%), long settlement delays (3–5 business days), lack of transparency, and vulnerability to financial fraud. 
-
-This project implements a **Risk-Adaptive Smart Contract Settlement Engine** that dynamically evaluates SME transaction risk before committing settlement onto a distributed ledger.
-
-### Core Objectives
-1. **SME Identity Compliance:** Verify SME identity and credentials prior to initiating transactions via a simulated KYC process.
-2. **Machine Learning Risk Prediction:** Use a scikit-learn **Random Forest Classifier** to evaluate cross-border transaction behavioral parameters (amount, velocity, historical suspicious count, account age, corridor risk) into **LOW**, **MEDIUM**, or **HIGH** risk.
-3. **Risk-Adaptive Decision Engine:**
-   - **LOW RISK** $\rightarrow$ **APPROVE** $\rightarrow$ Settle and record on Blockchain via Smart Contract.
-   - **MEDIUM RISK** $\rightarrow$ **HOLD** $\rightarrow$ Place in compliance escrow for secondary audit.
-   - **HIGH RISK** $\rightarrow$ **BLOCK** $\rightarrow$ Reject settlement; prevent blockchain ledger recording.
-4. **Smart Contract & Cryptographic Blockchain:** Enforce settlement rules via Solidity Smart Contract logic and record approved settlements on a tamper-resistant SHA-256 Proof-of-Work blockchain ledger.
-5. **Traceable Audit & Dashboard:** Provide an interactive analytics dashboard and searchable transaction history.
-
----
-
-## 🏗️ System Workflow
-
-The entire application strictly follows this proposed methodology:
-
-```
-USER / SME
-    ↓
-KYC VERIFICATION (Simulated Entity Check)
-    ↓
-PAYMENT REQUEST (Corridor, Amount, Velocity, History)
-    ↓
-RANDOM FOREST RISK PREDICTION (Scikit-Learn Classifier)
-    ↓
-RISK-BASED DECISION
-    ├─► LOW RISK    ──► APPROVE ──► SMART CONTRACT ──► BLOCKCHAIN BLOCK MINED ──► SETTLED
-    ├─► MEDIUM RISK ──► HOLD    ──► ESCROW HOLD    ──► AWAITING COMPLIANCE AUDIT
-    └─► HIGH RISK   ──► BLOCK   ──► POLICY REJECT  ──► NOT RECORDED ON CHAIN
-    ↓
-TRANSACTION HISTORY & ANALYTICS DASHBOARD
+```mermaid
+flowchart LR
+    F[Payment form] --> FB[Feature builder<br/>from DB history]
+    FB --> RF[Random Forest<br/>LOW / MED / HIGH]
+    RF --> P[Policy engine<br/>REVIEW_AT 40 · BLOCK_AT 80]
+    P -->|APPROVED| L[(SQLite + HMAC audit chain<br/>+ PoW block)]
+    P -->|HOLD| O[Compliance officer]
+    O --> L
+    P -->|BLOCKED| L
+    subgraph Advisory AI (guarded, optional)
+      PT[Purpose tagger] -. escalate-only .-> P
+      IV[Invoice diff] -. stricter-only .-> P
+      EX[Explainer] -.-> R[Receipt]
+      CP[HOLD copilot] -.-> O
+    end
 ```
 
----
+- `crosspay/services/features.py` builds all seven model features on the server; nothing the sender types reaches the
+  model except the amount and corridor.
+- `crosspay/policy/engine.py` is the only place a decision is made. AI signals can only move APPROVED to HOLD.
+- `crosspay/services/settlement.py` inserts, decides, mines and signs in **one** database transaction.
+- `crosspay/ledger/audit.py` is an HMAC-SHA256 chain with a fork guard; the explorer view is rebuilt from it.
+- `crosspay/ai/pipeline.py::run_task()` is the single guarded path for every AI call.
 
-## 💻 Technologies Used
+## Run it
 
-| Layer | Technology | Description |
+```bash
+python -m venv .venv
+.venv\Scripts\pip install -r requirements-dev.txt        # Windows (use .venv/bin/pip elsewhere)
+copy .env.example .env                                   # then fill in SECRET_KEY, LEDGER_SIGNING_KEY, keys
+.venv\Scripts\python app.py                              # http://localhost:5000
+```
+
+Production: `gunicorn "crosspay:create_app('prod')"` (see `Procfile`, `render.yaml`). Tests: `pytest -q` (no network;
+FX mocked, AI faked). Retrain the model: `python model/train_model.py`.
+
+### Key environment variables (full list in `.env.example`)
+
+| Variable | Default | Purpose |
 |---|---|---|
-| **Frontend** | HTML5, CSS3, JavaScript (ES6+), Chart.js | Modern fintech dark UI, glassmorphism, responsive status badges, interactive charts |
-| **Backend** | Python 3.12, Flask 3.1 | REST API routes, session management, rule engine |
-| **Machine Learning** | Python, Scikit-learn, NumPy, Pandas | **Random Forest Classifier** (`random_state=42`), Test accuracy **72.9%**, macro F1 **70.0%** (synthetic, time-split) |
-| **Database** | SQLite (`database/database.db`) | Relational storage for users, KYC records, and transactions |
-| **Blockchain** | Python (`blockchain.py`), SHA-256, Proof-of-Work | Local tamper-proof ledger with cryptographic chain integrity validation |
-| **Smart Contract** | Solidity (`smart_contract.sol`) + Simulation Engine | Conditional execution rules for SME payments |
+| `CROSSPAY_ENV` | `dev` | `dev`, `demo` or `prod` (`prod` refuses to start without `SECRET_KEY` and `LEDGER_SIGNING_KEY`) |
+| `DEMO_MODE` | `0` | quick logins, KYC simulation and fixed demo scenarios, all labelled |
+| `REVIEW_AT` / `BLOCK_AT` | `40` / `80` | policy thresholds on the 0–100 risk score |
+| `LLM_ENABLED` | `0` | the app is fully usable with AI off |
+| `LLM_PROVIDERS` | `groq,nvidia,cloudflare` | fallback order; providers without keys are skipped |
+| `LLM_DAILY_BUDGET_USD` | `1.00` | AI calls stop for the day once reached |
+| `EXCHANGE_RATE_MAX_STALE_HOURS` | `24` | serve cached rates (flagged STALE) when the API is down |
 
----
+## Demo mode
 
-## 📁 Project Structure
+`DEMO_MODE=1` adds one-click SME and officer logins, a labelled "demo provider" KYC simulation, and three scenario
+buttons that load fixed server-side behaviour vectors (badged **DEMO VECTOR** on the receipt). See `docs/VIVA_DEMO.md`
+for a 7-minute script.
 
-```
-CrossPay-main/
-│
-├── app.py                      # Main Flask application and API routes
-├── requirements.txt            # Python dependencies (flask, scikit-learn, joblib, pandas)
-├── README.md                   # Complete project documentation
-│
-├── model/
-│   ├── train_model.py          # Synthetic dataset generator & Random Forest training pipeline
-│   ├── random_forest_model.pkl # Trained Random Forest model binary
-│   ├── dataset.csv             # 6,000 SME transaction training samples
-│   └── metrics.json            # Model evaluation metrics (Accuracy, Precision, Recall, F1)
-│
-├── database/
-│   ├── db.py                   # SQLite schema initialization and seed data
-│   └── database.db             # SQLite database file
-│
-├── blockchain/
-│   ├── blockchain.py           # Cryptographic SHA-256 blockchain & smart contract runtime
-│   ├── smart_contract.sol      # Solidity smart contract specification
-│   └── blockchain_ledger.json  # Persistent JSON blockchain ledger
-│
-├── templates/
-│   ├── base.html               # Master layout with navigation and footer
-│   ├── index.html              # Landing page with interactive workflow diagram
-│   ├── login.html              # User login with 1-click demo accounts
-│   ├── register.html           # New SME registration
-│   ├── kyc.html                # KYC verification form with simulated states
-│   ├── payment.html            # Payment request form with 1-Click Demo Scenarios
-│   ├── result.html             # Risk prediction and smart contract decision result
-│   ├── dashboard.html          # Analytics dashboard with Chart.js
-│   ├── transactions.html       # Searchable transaction history and compliance hold release
-│   └── blockchain.html         # Visual blockchain ledger explorer and integrity auditor
-│
-└── static/
-    ├── css/
-    │   └── style.css           # Premium fintech styling and responsive layouts
-    └── js/
-        └── script.js           # Scenario autofill, live risk preview, blockchain verifier
-```
+## Measured model performance
 
----
+Synthetic data (6,000 rows, overlapping classes, 7% label noise), split by time 70/15/15, seed 42 — `model/metrics.json`:
 
-## 🚀 Quick Start & Installation
+| Metric (test set, newest 900 rows) | Value |
+|---|---|
+| Accuracy | 72.9% |
+| Macro F1 | 0.700 |
+| HIGH-class recall / PR-AUC | 0.840 / 0.801 |
+| Brier score (3-class) | 0.383 |
+| 5-fold CV accuracy (training period) | 69.7% ± 1.3% |
+| HIGH payments auto-approved at 40/80 | 0.0% |
 
-### 1. Prerequisites
-Ensure you have Python 3.10+ installed on your computer.
+These describe how well the model recovers the generator's rule, not real-world fraud detection. The earlier
+near-perfect accuracy figure came from non-overlapping synthetic classes and has been withdrawn.
 
-### 2. Install Dependencies
-Open your terminal (PowerShell or Command Prompt) in the project directory:
+## AI features and their limits
 
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Train the Random Forest Machine Learning Model
-Train the model on the SME transaction dataset:
-
-```bash
-python model/train_model.py
-```
-*Output (seed 42): test accuracy 72.9%, macro F1 70.0%, HIGH-class recall 84.0% on a time-based hold-out of 900 synthetic payments. See `model/metrics.json`.*
-
-### 4. Initialize the Database
-Set up the SQLite database and seed initial demo accounts:
-
-```bash
-python database/db.py
-```
-
-### 5. Launch the Web Application
-Start the Flask development server:
-
-```bash
-python app.py
-```
-
-### 6. Open in Browser
-Navigate to:
-```
-http://127.0.0.1:5000
-```
-
----
-
-## 🎯 System Validation Scenarios
-
-The **Payment Request** page features **1-Click Scenario Buttons** for validating the three risk profiles:
-
-### Scenario 1 – Low Risk (Auto-Approve)
-- **Settlement Amount:** $4,500.00 USD
-- **Corridor:** United States $\rightarrow$ Germany (Low risk)
-- **Velocity:** 2 transactions/week
-- **Previous Successful Transactions:** 48
-- **Previous Suspicious Flags:** 0
-- **Account Age:** 26 months
-- **Expected Result:**
-  - Random Forest ML: **LOW RISK (8.4% Risk Probability)**
-  - Decision: **APPROVED**
-  - Smart Contract: **EXECUTED_SETTLED**
-  - Blockchain: **Mined into new Block with SHA-256 Tx Hash**
-
----
-
-### Scenario 2 – Medium Risk (Hold in Escrow)
-- **Settlement Amount:** $28,500.00 EUR
-- **Corridor:** United States $\rightarrow$ Brazil (Medium risk)
-- **Velocity:** 7 transactions/week (Unusual spike)
-- **Previous Successful Transactions:** 6
-- **Previous Suspicious Flags:** 1
-- **Account Age:** 6 months (Relatively new account)
-- **Expected Result:**
-  - Random Forest ML: **MEDIUM RISK (62.8% Risk Probability)**
-  - Decision: **HOLD**
-  - Smart Contract: **HELD_IN_ESCROW**
-  - Blockchain: **PENDING ADDITIONAL VERIFICATION**
-  - *Action:* Demonstrate compliance officer resolving hold in **Transaction History** $\rightarrow$ clicks **Release** $\rightarrow$ newly mined to blockchain!
-
----
-
-### Scenario 3 – High Risk (Block & Prevent)
-- **Settlement Amount:** $145,000.00 USD
-- **Corridor:** United States $\rightarrow$ Nigeria (Elevated corridor risk)
-- **Velocity:** 19 transactions/week (Severe anomaly)
-- **Previous Successful Transactions:** 1
-- **Previous Suspicious Flags:** 4
-- **Account Age:** 1 month (Brand new SME account)
-- **Expected Result:**
-  - Random Forest ML: **HIGH RISK (94.6% Risk Probability)**
-  - Decision: **BLOCKED**
-  - Smart Contract: **REJECTED_BLOCKED**
-  - Blockchain: **NOT RECORDED (Security Block)**
-
----
-
----
-
-## 💱 Real-Time Currency Conversion Module
-
-The application includes an authentic **Multi-Currency Cross-Border Settlement Engine** integrated directly into the payment workflow:
-
-### Supported Global Currencies
-| Code | Currency Name | Symbol | Decimals | Reference Country |
-|---|---|---|---|---|
-| **USD** | US Dollar | `$` | 2 | United States 🇺🇸 |
-| **EUR** | Euro | `€` | 2 | Germany 🇩🇪 |
-| **GBP** | British Pound | `£` | 2 | United Kingdom 🇬🇧 |
-| **INR** | Indian Rupee | `₹` | 2 | India 🇮🇳 |
-| **SGD** | Singapore Dollar | `S$` | 2 | Singapore 🇸🇬 |
-| **AED** | UAE Dirham | `AED` | 2 | United Arab Emirates 🇦🇪 |
-| **AUD** | Australian Dollar | `A$` | 2 | Australia 🇦🇺 |
-| **CAD** | Canadian Dollar | `C$` | 2 | Canada 🇨🇦 |
-| **JPY** | Japanese Yen | `¥` | 0 | Japan 🇯🇵 |
-
-### Conversion Calculation Formula
-$$\text{Converted Amount} = \text{Transaction Amount} \times \text{Exchange Rate}$$
-
-- **Decimal Precision**: All financial calculations use Python's `Decimal` with `ROUND_HALF_UP` rounding to avoid IEEE 754 floating-point inaccuracies.
-- **JPY Special Case**: Quantized to integer (0 decimal places), while other fiat currencies are quantized to 2 decimal places.
-- **Rate Snapshots**: When a user confirms a settlement, the exact confirmed exchange rate, provider, and timestamp are captured as an immutable snapshot stored in SQLite and cryptographically hashed into the blockchain block.
-
-### Exchange-Rate API Configuration & Environment Variables
-The application connects to **ExchangeRate-API** to fetch real-time market rates. It works out-of-the-box via open public endpoints, and also supports personal API keys via environment variables:
-
-| Environment Variable | Description | Default Value |
+| Feature | Where | Limit |
 |---|---|---|
-| `EXCHANGE_RATE_API_KEY` | Optional API key from [ExchangeRate-API](https://www.exchangerate-api.com/) | *None (uses open endpoint)* |
-| `EXCHANGE_RATE_API_URL` | Custom endpoint template (e.g. `https://v6.exchangerate-api.com/v6/{api_key}/latest/{base}`) | `https://open.er-api.com/v6/latest/{base}` |
-| `EXCHANGE_RATE_PROVIDER` | Display name of the rate provider | `ExchangeRate-API` |
-| `EXCHANGE_RATE_CACHE_TTL` | Cache duration in seconds before refreshing rates | `3600` (1 hour) |
-| `EXCHANGE_RATE_TIMEOUT` | HTTP request timeout in seconds | `8.0` |
+| Risk explainer | receipt, "Why this decision" | rejected if it cites unknown evidence, invents a number or claims another outcome |
+| Purpose tagger | on submit | escalate-only (to HOLD); never a model feature |
+| HOLD copilot | `/admin/review/<tx>` | collapsed by default, no verdict field; the officer's reason must be their own words |
+| Invoice reader | payment page (PDF) | an exact text check cross-checks the AI; mismatches only tighten the policy |
+| Natural-language filter | transactions | becomes validated filter chips, never SQL; always tenant-scoped |
+| SME assistant | receipt | own record + FAQ only; refuses evasion and other customers; 10 questions per payment per day |
+| Report drafts | `/admin/reports` | numbers must come from the database; DRAFT until an officer signs |
 
-#### How to Configure in PowerShell:
-```powershell
-$env:EXCHANGE_RATE_API_KEY="your_api_key_here"
-python app.py
-```
+Measured on a live golden set: explainer 17/20 passed every guard, purpose tagger escalation precision 1.00 / recall
+0.90 (`docs/AI_EVALUATION.md`). Red-team suite: 45/45 cases safe with a model scripted to obey every attack, and 45/45
+live (`docs/AI_GUARDRAIL_MATRIX.md`, `docs/AI_REDTEAM_REPORT.md`).
 
-### Machine Learning Compatibility (Reference Currency Normalization)
-The Random Forest model evaluates 7 behavioural features calibrated on USD scale:
-1. `amount` (Normalized USD equivalent)
-2. `frequency`
-3. `previous_transactions`
-4. `suspicious_transactions`
-5. `account_age`
-6. `corridor_risk`
-7. `amount_to_age_ratio`
+## Security
 
-When a transaction is submitted in non-USD currencies (e.g. INR or JPY), CrossPay dynamically converts the transaction amount to its **normalized USD reference equivalent** before risk inference. This preserves the trained Random Forest feature distribution, preventing large currency denominations (e.g. ₹500,000 INR or ¥1,000,000 JPY) from being falsely flagged as high-risk anomalies, while preserving the exact original and converted amounts in the database and blockchain ledger.
+Admin-only hold release, tenant isolation, CSRF protection, encrypted government IDs, a checksum-verified model file,
+DLP on every AI payload, rate limits, and an HMAC-signed audit chain whose verification also detects edited
+transaction rows. Threats, fixes and residual risks: `docs/THREAT_MODEL.md`. Full change history by finding ID:
+`CHANGELOG.md`.
 
----
+The Solidity contract in `blockchain/smart_contract.sol` is a **reference design, never deployed**; the address shown in
+the UI is labelled "simulated".
 
-## 🧪 Automated Testing
+## Project documentation
 
-Run the automated test suites:
-
-### 1. Currency Conversion Unit & Mocked Tests (12 Tests)
-```bash
-python -m unittest tests/test_currency_conversion.py
-```
-*Validates successful conversion, decimal precision, JPY rounding, same-currency parity, invalid/zero/negative amounts, unsupported codes, API timeouts/failures, snapshot immutability, KYC enforcement, and ML risk decision handling.*
-
-### 2. End-to-End System Integration Flow (12 Verification Checks)
-```bash
-python tests/test_flow.py
-```
-*Validates the full pipeline: Home $\rightarrow$ SME Login $\rightarrow$ KYC Verification $\rightarrow$ Payment Request $\rightarrow$ Currency APIs $\rightarrow$ 3 Risk Scenarios $\rightarrow$ Blockchain Audit $\rightarrow$ Dashboard Analytics $\rightarrow$ Transaction History.*
-
----
-
-## ⚠️ Academic Prototype Scope & Limitations
-
-As required for academic rigor:
-1. **KYC Verification:** The KYC module uses a realistic simulated verification engine and does not connect to live governmental tax/registry APIs.
-2. **Machine Learning Model:** Trained on calibrated synthetic SME transaction distributions for algorithmic feasibility demonstration; real-world production deployment would incorporate live banking telemetry.
-3. **Blockchain & Smart Contract:** Operates on an authentic local cryptographic SHA-256 ledger with Solidity specifications (`smart_contract.sol`) rather than mainnet Ethereum to guarantee fast, gas-free execution on a student laptop.
-4. **Financial Settlement:** This is an academic research prototype and does not execute real fiat monetary wire transfers or live bank clearing.
-
+`docs/THREAT_MODEL.md` · `docs/AI_GUARDRAIL_MATRIX.md` · `docs/AI_EVALUATION.md` · `docs/AI_REDTEAM_REPORT.md` ·
+`docs/VIVA_DEMO.md` · `docs/REUSE_INVENTORY.md` · `PROJECT_INTELLIGENCE_DOCUMENTATION.md` (original write-up, metrics updated).

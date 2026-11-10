@@ -1,5 +1,4 @@
 """Live decision feed: tenant scoping, publish-after-commit, SSE framing, dry-run simulator."""
-import json
 import random
 
 from crosspay.realtime import ADMIN, EventBus, TrafficSimulator

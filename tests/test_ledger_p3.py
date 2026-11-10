@@ -141,7 +141,7 @@ def test_ten_concurrent_submits(app, db):
 
 
 def test_hold_release_requires_reason_and_records_review(admin_client, app, db):
-    r = admin_client.post("/resolve_hold/TX-2026-8802", data={"action": "approve", "reason": "too short"})
+    admin_client.post("/resolve_hold/TX-2026-8802", data={"action": "approve", "reason": "too short"})
     assert db.execute("SELECT decision FROM transactions WHERE transaction_id='TX-2026-8802'").fetchone()[0] == "HOLD"
     admin_client.post("/resolve_hold/TX-2026-8802",
                       data={"action": "approve", "reason": "Invoice and bill of lading match the shipment"})
