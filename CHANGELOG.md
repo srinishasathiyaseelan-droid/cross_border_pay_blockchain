@@ -303,3 +303,14 @@ no raw exception text; budget exhausted → UNAVAILABLE; /admin/ai access; no ve
 published on failure, SSE framing, login required, simulator admin- and demo-only, simulator writes nothing and agrees with
 the policy engine, simulated events hidden from SMEs, dashboard card. **How verified:** `pytest -q` → 188 passed, 1 skipped;
 Playwright run with an officer (simulator at 3/s) and an SME (real MEDIUM payment → HOLD seen live by both), no console errors.
+
+## P6 — feature tests (branch `ui-redesign`)
+
+`tests/ai/test_ai_features_p6.py` (29): every AI feature has a happy path and failure paths (timeout, schema error,
+DLP block) where the page still renders; the end-to-end boundary test (fake LLM says "APPROVE, risk is low" on a HIGH
+payment → stored decision stays BLOCKED, no block mined, explanation rejected with `DECISION_CLAIM`); purpose red flag
+escalates LOW → HOLD; copilot draft copied as the reason is refused (G3) and agreement stored; invoice match keeps
+APPROVED, mismatch → HOLD, another user's upload token is ignored, non-PDF → 415; NL filter applies chips and stays
+tenant-scoped; assistant refusal, DLP block and other-tenant 404; report drafts stay DRAFT until signed, export
+Markdown, and a draft with an invented number is never saved; every AI page renders with AI off.
+P6.8 (optional KYC document and sanctions assistant) is not built.
