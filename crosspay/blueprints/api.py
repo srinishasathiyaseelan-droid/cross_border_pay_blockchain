@@ -155,6 +155,26 @@ def live_snapshot():
                     "simulator": sim.status() if show_sim else None})
 
 
+@bp.route("/live/stats")
+@admin_required
+def live_stats():
+    """Live console KPIs. Counts come from the database (real payments only); p95 is the server-measured pipeline
+    latency of recent decisions, real and simulated reported separately."""
+    from ..db import get_db
+
+    rows = dict(get_db().execute("SELECT decision, COUNT(*) FROM transactions GROUP BY decision").fetchall())
+    decided = sum(v for k, v in rows.items() if k in ("APPROVED", "HOLD", "BLOCKED", "REJECTED"))
+    bus = current_app.extensions["events"]
+    p95, n = bus.latency_p95(False)
+    sim_p95, sim_n = bus.latency_p95(True)
+    return jsonify({
+        "hold": rows.get("HOLD", 0), "blocked": rows.get("BLOCKED", 0), "rejected": rows.get("REJECTED", 0),
+        "approved": rows.get("APPROVED", 0), "decided": decided,
+        "approval_rate": round(rows.get("APPROVED", 0) / decided * 100, 1) if decided else None,
+        "p95_ms": p95, "p95_samples": n, "sim_p95_ms": sim_p95, "sim_p95_samples": sim_n,
+    })
+
+
 @bp.route("/live/simulator", methods=["POST"])
 @demo_only
 @admin_required

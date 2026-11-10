@@ -100,3 +100,32 @@ def test_explain_button_guards(app, admin_client, sme_client, db, fake_llm):
     assert admin_client.post("/api/ai/explain/TX-NOPE-0000", json={}, headers=ORIGIN).status_code == 404
     app.config["LLM_ENABLED"] = False
     assert admin_client.post(f"/api/ai/explain/{tx}", json={}, headers=ORIGIN).status_code == 503
+
+
+# ---- AI self-test and live console -----------------------------------------------------------------------
+def test_selftest_runs_every_feature_and_logs(app, admin_client, db, fake_llm):
+    r = admin_client.post("/admin/ai", data={"action": "selftest"})
+    assert r.status_code == 200 and "AI self-test" in r.text
+    tasks = {row[0] for row in db.execute("SELECT DISTINCT task FROM llm_calls")}
+    assert tasks >= {"explain", "purpose", "copilot", "invoice", "nl_filter", "assistant", "report"}
+    assert db.execute("SELECT COUNT(*) FROM transactions WHERE transaction_id = 'TX-SELFTEST-0001'").fetchone()[0] == 0
+
+
+def test_selftest_reports_disabled_when_ai_off(app, admin_client, db):
+    r = admin_client.post("/admin/ai", data={"action": "selftest"})
+    assert r.status_code == 200 and "DISABLED" in r.text
+
+
+def test_selftest_is_admin_only(sme_client):
+    assert sme_client.post("/admin/ai", data={"action": "selftest"}).status_code in (302, 403)
+
+
+def test_live_console_and_stats(app, admin_client, sme_client, db):
+    page = admin_client.get("/admin/live")
+    assert page.status_code == 200 and 'id="live-ops"' in page.text and "Needs a decision" in page.text
+    hold = db.execute("SELECT COUNT(*) FROM transactions WHERE decision='HOLD'").fetchone()[0]
+    assert page.text.count('class="ops-queue-item"') == min(hold, 25)
+    stats = admin_client.get("/api/live/stats").get_json()
+    assert stats["hold"] == hold and "approval_rate" in stats and "p95_ms" in stats
+    assert sme_client.get("/admin/live").status_code in (302, 403)
+    assert sme_client.get("/api/live/stats").status_code in (302, 403)

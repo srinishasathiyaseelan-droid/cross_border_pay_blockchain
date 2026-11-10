@@ -24,6 +24,7 @@ log = logging.getLogger(__name__)
 HISTORY_SIZE = 200
 SUBSCRIBER_QUEUE_SIZE = 500
 HEARTBEAT_SECONDS = 15.0
+LATENCY_SAMPLES = 500
 ADMIN = "admin"
 
 
@@ -35,6 +36,7 @@ class EventBus:
         self._history = deque(maxlen=history_size)
         self._subs = []  # (scope, queue): scope is ADMIN or an SME's user_id
         self._seq = itertools.count(1)
+        self._latency = {False: deque(maxlen=LATENCY_SAMPLES), True: deque(maxlen=LATENCY_SAMPLES)}  # simulated?
 
     @staticmethod
     def _visible(scope, event) -> bool:
@@ -46,6 +48,8 @@ class EventBus:
         enriched = {**event, "seq": next(self._seq), "ts": int(time.time() * 1000)}
         with self._lock:
             self._history.append(enriched)
+            if isinstance(event.get("latency_ms"), (int, float)) and event.get("type") == "decision":
+                self._latency[bool(event.get("simulated"))].append(float(event["latency_ms"]))
             subs = list(self._subs)
         for scope, q in subs:
             if not self._visible(scope, enriched):
@@ -74,6 +78,14 @@ class EventBus:
         with self._lock:
             items = [e for e in self._history if self._visible(scope, e)]
         return [public(e) for e in items[-limit:]]
+
+    def latency_p95(self, simulated: bool) -> tuple:
+        """-> (p95 in ms or None, sample count) over the most recent decisions measured by the server."""
+        with self._lock:
+            xs = sorted(self._latency[bool(simulated)])
+        if not xs:
+            return None, 0
+        return round(xs[min(len(xs) - 1, math.ceil(0.95 * len(xs)) - 1)], 1), len(xs)
 
     def subscriber_count(self) -> int:
         with self._lock:

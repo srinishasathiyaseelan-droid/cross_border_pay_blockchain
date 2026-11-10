@@ -261,3 +261,44 @@ def weekly_report(conn, user_id: int) -> GuardedResult:
 
 def sar_draft(conn, tx: dict, user_id: int) -> GuardedResult:
     return run_task("report", context.sar_narrative(conn, tx), user_id, conn)
+
+
+# ---- AI self-test (/admin/ai) -------------------------------------------------------------------------------
+# A fixed synthetic case, never stored as a payment: each feature runs once through the full pipeline (input guard,
+# DLP, router, output guard, llm_calls log) so an officer can see in one click which features return real output.
+SELFTEST_TX = {
+    "transaction_id": "TX-SELFTEST-0001", "user_id": 0, "decision": "HOLD", "risk_level": "MEDIUM", "risk_score": 52.4,
+    "p_low": 0.21, "p_med": 0.55, "p_high": 0.24, "scoring_engine": "model", "sender": "Selftest Exports Ltd",
+    "receiver": "Selftest Components GmbH", "sender_country": "India", "receiver_country": "Germany",
+    "amount": 18500.0, "currency": "USD", "source_currency": "USD", "target_currency": "EUR",
+    "exchange_rate": 0.92, "converted_amount": 17020.0, "exchange_rate_provider": "selftest",
+    "rate_timestamp": "2026-01-01T00:00:00Z", "normalized_usd_amount": 18500.0, "corridor_risk": 0.22,
+    "frequency": 6, "previous_transactions": 14, "suspicious_transactions": 1, "account_age": 9,
+    "top_factors": json.dumps([{"feature": "frequency", "label": "Payments in the last 30 days", "value": 6,
+                                "contribution": 8.5}]),
+    "policy_reasons": json.dumps(["RISK_SCORE_AT_OR_ABOVE_REVIEW_AT"]), "notes": "Invoice 4471 for machine parts",
+    "timestamp": "2026-01-01T00:00:00Z", "feature_source": "selftest",
+}
+SELFTEST_INVOICE = ("COMMERCIAL INVOICE No. 4471\nSeller: Selftest Components GmbH\nBuyer: Selftest Exports Ltd\n"
+                    "Description: CNC spindle parts, 40 units\nTotal: 18,500.00 USD\nDate: 2026-01-01")
+
+
+def self_test(conn, user_id: int) -> list:
+    """-> [(task, status)] with status OK, UNAVAILABLE, DISABLED, BLOCKED_INPUT or REJECTED_GUARD:<code>."""
+    tx = dict(SELFTEST_TX)
+    ctxs = [
+        ("explain", context.explain(conn, tx)),
+        ("purpose", context.purpose(tx["notes"], "India to Germany", tx["normalized_usd_amount"])),
+        ("copilot", context.copilot(conn, tx)),
+        ("invoice", context.invoice(SELFTEST_INVOICE)),
+        ("nl_filter", context.nl_filter("held payments to Germany over 10000 dollars")),
+        ("assistant", context.assistant(conn, tx, "Which documents would help the review of this payment?")),
+        ("report", context.weekly_report(conn)),
+    ]
+    out = []
+    for task, ctx in ctxs:
+        try:
+            out.append((task, run_task(task, ctx, user_id, conn).status))
+        except Exception:  # noqa: BLE001 — a self-test never raises to the page
+            out.append((task, "ERROR"))
+    return out

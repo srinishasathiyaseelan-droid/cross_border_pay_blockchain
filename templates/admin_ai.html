@@ -75,6 +75,28 @@
     </section>
 </div>
 
+<section class="card mt-6" aria-labelledby="h-selftest" data-reveal>
+    <div class="cluster between">
+        <div>
+            <h2 class="card-title" id="h-selftest">{{ tile('zap', 'ai', 'sm') }}AI self-test</h2>
+            <p class="card-sub">Runs every AI feature once on a fixed synthetic case (never stored as a payment), through the same guards and log as real calls. Repeat runs may be served from the cache.</p>
+        </div>
+        <form method="POST" action="{{ url_for('admin.ai_ops') }}" class="m-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" name="action" value="selftest" class="btn btn-ai btn-sm">{{ icon('sparkles') }}Run AI self-test</button>
+        </form>
+    </div>
+    {% if selftest %}
+    <div class="table-wrap mt-3"><table class="table">
+        <thead><tr><th scope="col">Feature</th><th scope="col">Result</th></tr></thead>
+        <tbody>{% for task, status in selftest %}
+        <tr><td>{{ task }}</td><td><span class="badge {{ 'badge-success' if status == 'OK' else ('badge-warning' if status.startswith('REJECTED_GUARD') or status == 'BLOCKED_INPUT' else 'badge-neutral') }} num">{{ status }}</span></td></tr>
+        {% endfor %}</tbody>
+    </table></div>
+    <p class="xsmall muted mt-2">OK = real model output that passed the guards. REJECTED_GUARD = the model answered but the output guard refused it. UNAVAILABLE = no provider answered in time, or the daily budget is spent. DISABLED = LLM off, kill switch on, or the feature flag is off.</p>
+    {% endif %}
+</section>
+
 <section class="card mt-6" aria-labelledby="h-flags" data-reveal>
     <h2 class="card-title mb-3" id="h-flags">{{ tile('filter', 'neutral', 'sm') }}Feature flags</h2>
     <div class="chips">{% for name, on in flags.items() %}<span class="badge {{ 'badge-success' if on else 'badge-neutral' }}">{{ name }}: {{ 'on' if on else 'off' }}</span>{% endfor %}</div>
