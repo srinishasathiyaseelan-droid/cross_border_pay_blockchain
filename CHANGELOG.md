@@ -30,3 +30,11 @@ C6 is also closed here as a side effect: `app.py` only enables debug when `FLASK
 `tests/test_currency.py` (unittest suite converted), `tests/test_flow.py` (script converted to test functions).
 
 **How verified:** `pytest -q` → 26 passed; `git status` unchanged after the run (DB and ledger live in `tmp_path`).
+
+## P0.5 — Reuse inventory
+
+**Files:** `docs/REUSE_INVENTORY.md` (module map for Netvrio @98bbc09 and Aegis Node @4e64429, secret-scan summary).
+
+**How verified:** `gitleaks dir --redact` over both reference folders (hits listed by file only; the `.env` files were
+never opened); `gitleaks git` over CrossPay history confirms H6 (Hardhat #0 key in `_legacy_archive/scripts/deploy*.js`).
+Approval to port: the user's chat request of 2026-11-10. Open item: Netvrio has no LICENSE file.
