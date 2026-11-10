@@ -26,7 +26,7 @@ ALLOWED_COUNTRIES = sorted(COUNTRY_RISK_MAP)
 # DEMO_MODE only: fixed behavioural vectors for the three viva scenarios. The receipt is badged "DEMO VECTOR".
 DEMO_VECTORS = {
     "low": {"frequency": 2, "previous_transactions": 48, "suspicious_transactions": 0, "account_age": 26},
-    "medium": {"frequency": 7, "previous_transactions": 6, "suspicious_transactions": 1, "account_age": 6},
+    "medium": {"frequency": 5, "previous_transactions": 12, "suspicious_transactions": 0, "account_age": 10},
     "high": {"frequency": 19, "previous_transactions": 1, "suspicious_transactions": 4, "account_age": 1},
 }
 

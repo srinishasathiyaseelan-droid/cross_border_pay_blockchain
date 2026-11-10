@@ -203,6 +203,12 @@
                         </div>
                     </td>
                 </tr>
+                {% if tx.top_factors_list %}
+                <tr>
+                    <td style="color: var(--text-muted);">Top factors (score points)</td>
+                    <td><ul class="factor-list">{% for f in tx.top_factors_list %}<li>{{ f.label or f.feature }}: <span class="font-mono">{{ f.value }}</span> ({{ '%+.1f'|format(f.contribution) }})</li>{% endfor %}</ul></td>
+                </tr>
+                {% endif %}
                 <tr>
                     <td style="color: var(--text-muted);">Smart Contract Address</td>
                     <td><span class="font-mono" style="font-size: 0.76rem; color: #a5b4fc;">{{ contract_address }}</span> <span class="badge badge-neutral">{{ contract_label }}</span></td>

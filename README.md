@@ -57,7 +57,7 @@ TRANSACTION HISTORY & ANALYTICS DASHBOARD
 |---|---|---|
 | **Frontend** | HTML5, CSS3, JavaScript (ES6+), Chart.js | Modern fintech dark UI, glassmorphism, responsive status badges, interactive charts |
 | **Backend** | Python 3.12, Flask 3.1 | REST API routes, session management, rule engine |
-| **Machine Learning** | Python, Scikit-learn, NumPy, Pandas | **Random Forest Classifier** (`random_state=42`), Accuracy: **98.67%**, F1: **98.66%** |
+| **Machine Learning** | Python, Scikit-learn, NumPy, Pandas | **Random Forest Classifier** (`random_state=42`), Test accuracy **72.9%**, macro F1 **70.0%** (synthetic, time-split) |
 | **Database** | SQLite (`database/database.db`) | Relational storage for users, KYC records, and transactions |
 | **Blockchain** | Python (`blockchain.py`), SHA-256, Proof-of-Work | Local tamper-proof ledger with cryptographic chain integrity validation |
 | **Smart Contract** | Solidity (`smart_contract.sol`) + Simulation Engine | Conditional execution rules for SME payments |
@@ -127,7 +127,7 @@ Train the model on the SME transaction dataset:
 ```bash
 python model/train_model.py
 ```
-*Output will display Accuracy: 98.67%, Precision: 98.67%, Recall: 98.67%, F1 Score: 98.66%.*
+*Output (seed 42): test accuracy 72.9%, macro F1 70.0%, HIGH-class recall 84.0% on a time-based hold-out of 900 synthetic payments. See `model/metrics.json`.*
 
 ### 4. Initialize the Database
 Set up the SQLite database and seed initial demo accounts:

@@ -66,10 +66,11 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
         ledger.export_view(conn)
     finally:
         conn.close()
-    app.extensions["model"] = _load_model(app)
     from .services.scoring import Scorer
 
-    app.extensions["scorer"] = Scorer(app.extensions["model"])
+    bundle, reason = _load_model(app)
+    app.extensions["model"] = bundle
+    app.extensions["scorer"] = Scorer(bundle, reason)
     app.extensions["metrics"] = _load_metrics(app)
 
     from .blueprints import admin, api, auth, kyc, payments
@@ -140,22 +141,23 @@ _MODEL_CACHE = {}
 
 
 def _load_model(app):
-    path = app.config["MODEL_PATH"]
-    if not os.path.exists(path):
-        log.warning("Model file not found at %s; run python model/train_model.py", path)
-        return None
-    st = os.stat(path)
-    key = (os.path.abspath(path), st.st_mtime_ns, st.st_size)
-    if key in _MODEL_CACHE:
-        return _MODEL_CACHE[key]
-    try:
-        import joblib
+    """Checksum, sklearn version and feature names are verified before use (M2); cached per file in-process."""
+    from .services.scoring import load_bundle
 
-        _MODEL_CACHE[key] = joblib.load(path)
+    path, card = app.config["MODEL_PATH"], app.config["MODEL_CARD_PATH"]
+    try:
+        st = os.stat(path)
+        key = (os.path.abspath(path), st.st_mtime_ns, st.st_size, os.path.abspath(card))
+    except OSError:
+        key = None
+    if key and key in _MODEL_CACHE:
         return _MODEL_CACHE[key]
-    except Exception as exc:  # noqa: BLE001
-        log.error("Could not load model: %s", exc)
-        return None
+    result = load_bundle(path, card)
+    if result[1]:
+        log.error("Random Forest not used, scoring falls back to rules: %s", result[1])
+    if key:
+        _MODEL_CACHE[key] = result
+    return result
 
 
 def _load_metrics(app):

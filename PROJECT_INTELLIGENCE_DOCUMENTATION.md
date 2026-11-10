@@ -9,7 +9,7 @@
 
 The platform pioneers a **multi-tiered autonomous architecture** that fuses three complementary computing paradigms:
 1. **Regulatory Identity Compliance (KYC Verification):** A gatekeeping layer ensuring that only authenticated, legally recognized corporate entities can participate in cross-border settlements.
-2. **Machine Learning Risk Intelligence (Random Forest Classifier):** An automated off-chain analytical engine trained on calibrated SME trade parameters (`n=6,000`, 98.67% accuracy) that continuously evaluates seven multidimensional behavioral and geographic risk features to categorize each payment into **Low**, **Medium**, or **High** risk.
+2. **Machine Learning Risk Intelligence (Random Forest Classifier):** An automated off-chain analytical engine trained on calibrated SME trade parameters (`n=6,000` synthetic rows; test accuracy 72.9%, macro F1 70.0%, HIGH-class recall 84.0% on a time-based hold-out of 900 synthetic payments) that continuously evaluates seven multidimensional behavioral and geographic risk features to categorize each payment into **Low**, **Medium**, or **High** risk.
 3. **Cryptographic Distributed Ledger & Smart Contract Governance (Blockchain & Solidity):** A deterministic execution environment where risk scores trigger automated settlement policies:
    - **Low Risk** transactions are instantaneously approved and minted into an immutable **SHA-256 Proof-of-Work blockchain ledger**.
    - **Medium Risk** transactions are autonomously diverted into a compliance escrow hold pending secondary administrative review.
@@ -66,7 +66,7 @@ SMEs face three crippling structural hurdles:
 | **SME Authentication** | Werkzeug PBKDF2 hashing, Flask Session management | Secure registration and login supporting multi-role access (SME Trader vs. Compliance Admin). Includes 1-click demo profiles. | **Active & Verified** |
 | **Simulated KYC Module** | SQLite relational storage, schema validation | Captures business entity name, country of incorporation, business structure, and government tax EIN. Enforces gating before payments. | **Active & Verified** |
 | **Payment Request Engine** | Dynamic HTML5 forms, heuristic pre-validation | Captures invoice parameters, currency, amount, and corridor. Features 1-click test scenario presets for Low, Med, and High risk profiles. | **Active & Verified** |
-| **Random Forest Risk Engine** | Scikit-learn (`n_estimators=100`, `max_depth=12`) | Evaluates 7 behavioral/geographic metrics to predict Low, Medium, or High risk with 98.67% accuracy and compute continuous risk probability. | **Active & Verified** |
+| **Random Forest Risk Engine** | Scikit-learn (`n_estimators=200`, `max_depth=10`) | Evaluates 7 behavioral/geographic metrics to predict Low, Medium, or High risk (test accuracy 72.9%, macro F1 70.0%, HIGH-class recall 84.0% on a time-based hold-out of 900 synthetic payments) and compute a continuous 0-100 risk score. | **Active & Verified** |
 | **Smart Contract Engine** | Python simulation (`SmartContractEngine`) + Solidity specification | Evaluates KYC state, routes Low Risk to execution, Medium Risk to escrow hold, and High Risk to security rejection. | **Active & Verified** |
 | **Cryptographic Blockchain** | SHA-256 block hashing, Proof-of-Work (`difficulty=2`) | Mines authentic blocks for approved settlements with previous-hash cryptographic chaining and JSON file persistence. | **Active & Verified** |
 | **Chain Integrity Auditor** | Cryptographic audit algorithm (`is_chain_valid()`) | Validates genesis block continuity, parent-child hash integrity, and Proof-of-Work difficulty on demand via REST API. | **Active & Verified** |
@@ -120,13 +120,13 @@ The project adheres to a clean, decoupled architecture utilizing proven open-sou
 | Technology | Category | Role in Project | Implementation Path | Trade-Offs & Alternatives |
 |---|---|---|---|---|
 | **Python 3.12** | Core Programming Language | Powers application logic, ML inference, and blockchain mechanics | Global project runtime | **Chosen for:** Rich data science ecosystem, rapid prototyping, and unified AI/backend integration. **Alternative:** Go or Rust (higher raw concurrency, but lacks native Scikit-learn integration). |
-| **Flask 3.1** | Backend Web Framework | Provides WSGI routing, session encryption, template rendering, and REST endpoints | [app.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/app.py) | **Chosen for:** Micro-framework simplicity, zero boilerplate, full visibility. **Alternative:** Django (too monolithic), FastAPI (excellent for APIs, but less seamless for Jinja templating). |
-| **SQLite 3** | Relational Database | Stores persistent records for user credentials, KYC filings, and full transaction histories | [database/db.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/database/db.py) | **Chosen for:** Serverless, zero-configuration local persistence without database daemon overhead. **Production Alternative:** PostgreSQL with row-level security. |
-| **Scikit-learn** | Machine Learning Library | Supplies the `RandomForestClassifier` algorithm, training pipeline, and evaluation metrics | [model/train_model.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/model/train_model.py) | **Chosen for:** Industry standard for tabular financial anomaly detection; fast inference times (<10ms). **Alternative:** XGBoost / LightGBM (slightly higher complexity, comparable tabular accuracy). |
-| **SHA-256 & Proof-of-Work** | Cryptographic Ledger Engine | Generates tamper-proof 256-bit block hashes and enforces PoW difficulty mining | [blockchain/blockchain.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/blockchain/blockchain.py) | **Chosen for:** Demonstrates core distributed ledger cryptographic guarantees locally without requiring external gas fees or mining nodes. **Alternative:** Hyperledger Fabric / Ethereum Sepolia testnet. |
-| **Solidity 0.8.20** | Smart Contract Specification | Formal declarative specification of risk gating, KYC verification, and escrow settlement rules | [blockchain/smart_contract.sol](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/blockchain/smart_contract.sol) | **Chosen for:** EVM-compatible formal contract modeling that can be compiled to EVM bytecode or simulated natively in Python. |
-| **Chart.js** | Data Visualization | Renders dynamic risk distribution doughnut charts and settlement outcome bar charts | [templates/dashboard.html](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/templates/dashboard.html) | **Chosen for:** Lightweight, responsive canvas-based charting with zero heavyweight dependencies. |
-| **Vanilla CSS3** | User Interface Design System | Provides a modern fintech dark UI, glassmorphism card surfaces, and accessible status badges | [static/css/style.css](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/static/css/style.css) | **Chosen for:** Ultra-fast rendering, zero build steps, complete design control without CSS framework bloat. |
+| **Flask 3.1** | Backend Web Framework | Provides WSGI routing, session encryption, template rendering, and REST endpoints | [app.py](app.py) | **Chosen for:** Micro-framework simplicity, zero boilerplate, full visibility. **Alternative:** Django (too monolithic), FastAPI (excellent for APIs, but less seamless for Jinja templating). |
+| **SQLite 3** | Relational Database | Stores persistent records for user credentials, KYC filings, and full transaction histories | [database/db.py](crosspay/db.py) | **Chosen for:** Serverless, zero-configuration local persistence without database daemon overhead. **Production Alternative:** PostgreSQL with row-level security. |
+| **Scikit-learn** | Machine Learning Library | Supplies the `RandomForestClassifier` algorithm, training pipeline, and evaluation metrics | [model/train_model.py](model/train_model.py) | **Chosen for:** Industry standard for tabular financial anomaly detection; fast inference times (<10ms). **Alternative:** XGBoost / LightGBM (slightly higher complexity, comparable tabular accuracy). |
+| **SHA-256 & Proof-of-Work** | Cryptographic Ledger Engine | Generates tamper-proof 256-bit block hashes and enforces PoW difficulty mining | [blockchain/blockchain.py](crosspay/ledger/chain.py) | **Chosen for:** Demonstrates core distributed ledger cryptographic guarantees locally without requiring external gas fees or mining nodes. **Alternative:** Hyperledger Fabric / Ethereum Sepolia testnet. |
+| **Solidity 0.8.20** | Smart Contract Specification | Formal declarative specification of risk gating, KYC verification, and escrow settlement rules | [blockchain/smart_contract.sol](blockchain/smart_contract.sol) | **Chosen for:** EVM-compatible formal contract modeling that can be compiled to EVM bytecode or simulated natively in Python. |
+| **Chart.js** | Data Visualization | Renders dynamic risk distribution doughnut charts and settlement outcome bar charts | [templates/dashboard.html](templates/dashboard.html) | **Chosen for:** Lightweight, responsive canvas-based charting with zero heavyweight dependencies. |
+| **Vanilla CSS3** | User Interface Design System | Provides a modern fintech dark UI, glassmorphism card surfaces, and accessible status badges | [static/css/style.css](static/css/style.css) | **Chosen for:** Ultra-fast rendering, zero build steps, complete design control without CSS framework bloat. |
 
 ---
 
@@ -249,7 +249,7 @@ CrossPay-main/
 
 ## 9. Component-Level Explanation
 
-### 9.1 Master Controller: [app.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/app.py)
+### 9.1 Master Controller: [app.py](app.py)
 - **Role:** Serves as the central orchestration controller for the entire system.
 - **Key Functions:**
   - `load_ml_model()`: Deserializes `random_forest_model.pkl` and parses `metrics.json` into memory upon startup.
@@ -258,20 +258,20 @@ CrossPay-main/
   - `process_payment()`: Executes the end-to-end pipeline: verifies KYC status $\rightarrow$ constructs feature DataFrame $\rightarrow$ runs ML prediction $\rightarrow$ invokes Smart Contract $\rightarrow$ persists transaction $\rightarrow$ redirects to receipt.
   - `resolve_hold(tx_id)`: Administrative controller enabling compliance officers to release held payments, minting them to the blockchain.
 
-### 9.2 Cryptographic Engine: [blockchain/blockchain.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/blockchain/blockchain.py)
+### 9.2 Cryptographic Engine: [blockchain/blockchain.py](crosspay/ledger/chain.py)
 - **Role:** Implements the distributed ledger and smart contract simulation engine.
 - **Key Classes:**
   - `Block`: Represents an individual block. Implements `calculate_hash()` using canonical JSON serialization and `hashlib.sha256()`, and `mine_block(difficulty)` which iterates `nonce` until the hash satisfies the target difficulty.
   - `Blockchain`: Manages the chain list, handles genesis block generation, appends mined blocks, persists state to `blockchain_ledger.json`, and implements `is_chain_valid()` to cryptographically audit parent hashes and PoW validity across the entire chain.
   - `SmartContractEngine`: Enforces the rules defined in `smart_contract.sol`. Evaluates KYC gating and dispatches transactions based on risk level. Implements `release_hold()` to allow compliance overrides.
 
-### 9.3 Machine Learning Pipeline: [model/train_model.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/model/train_model.py)
+### 9.3 Machine Learning Pipeline: [model/train_model.py](model/train_model.py)
 - **Role:** Generates synthetic training data, executes the training pipeline, and outputs model artifacts.
 - **Key Functions:**
   - `generate_sme_dataset(n_samples=6000, random_state=42)`: Creates 6,000 synthetic transaction records distributed across 58% Low Risk, 25% Medium Risk, and 17% High Risk, introducing 1.5% boundary noise to simulate real-world variance.
   - `train_and_evaluate()`: Splits dataset (75% train, 25% test, stratified by `risk_label`), trains a `RandomForestClassifier` with 100 estimators, computes performance metrics, and exports `random_forest_model.pkl` and `metrics.json`.
 
-### 9.4 Database Manager: [database/db.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/database/db.py)
+### 9.4 Database Manager: [database/db.py](crosspay/db.py)
 - **Role:** Configures SQLite connections, defines relational DDL schemas with foreign keys, and seeds realistic initial data for demonstration purposes.
 
 ---
@@ -429,16 +429,17 @@ X = [ amount, frequency, previous_transactions, suspicious_transactions, account
 7. **`amount_to_age_ratio` (Float):** Engineered feature calculating capital velocity relative to account maturity: $\frac{\text{amount}}{\text{account\_age} + 0.5}$.
 
 ### 13.3 Empirical Model Benchmarks
-Trained on 6,000 samples with a 75/25 stratified train/test split (`random_state=42`), the model achieved the following metrics recorded in [model/metrics.json](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/model/metrics.json):
+Retrained in Nov 2026 on 6,000 synthetic samples with overlapping classes and 7% label noise, time-split 70/15/15 (`random_state=42`), the model achieved the following metrics recorded in [model/metrics.json](model/metrics.json):
 
 ```
 +--------------------------------------------------------------+
 | Metric                 | Score       | Evaluation Context    |
 +--------------------------------------------------------------+
-| Test Set Accuracy      | 98.67%      | 1,500 unseen samples  |
-| Weighted Precision     | 98.67%      | False positive control|
-| Weighted Recall        | 98.67%      | Anomaly capture rate  |
-| Weighted F1-Score      | 98.66%      | Harmonic mean balance |
+| Test accuracy          |  72.9%      | 900 newest samples (time split) |
+| Macro F1               |  70.0%      | unweighted mean over 3 classes |
+| HIGH-class recall      |  84.0%      | high-risk payments caught |
+| HIGH approved @40/80   |   0.0%      | high-risk payments auto-approved |
+| 5-fold CV accuracy     | 69.7 ± 1.3% | training period |
 +--------------------------------------------------------------+
 ```
 
@@ -600,7 +601,7 @@ Phase 6: Verification, Testing & Audit (Weeks 11-12)
 
 ### 18.1 Strengths
 1. **Holistic Multi-Disciplinary Architecture:** Uniquely combines compliance, machine learning, and blockchain into an intuitive, functional pipeline rather than treating them as isolated silos.
-2. **High ML Predictive Accuracy:** Achieves 98.67% accuracy and 98.66% F1-score with 100% detection of critical high-risk anomalies.
+2. **High ML Predictive Accuracy:** Honest, reproducible evaluation: test accuracy 72.9%, macro F1 70.0%, HIGH-class recall 84.0% on a time-based hold-out of 900 synthetic payments. These numbers describe a synthetic generator, not real-world fraud detection.
 3. **Genuine Cryptographic Verification:** Unlike simple visual mockups, the blockchain implements real SHA-256 block hashing, Proof-of-Work mining, and mathematical chain validation (`is_chain_valid`).
 4. **Self-Contained & Zero-Dependency Setup:** Runs immediately on any modern laptop without requiring external Ethereum testnet gas, Docker daemons, or database servers.
 
@@ -620,10 +621,10 @@ Phase 6: Verification, Testing & Audit (Weeks 11-12)
 4. **KYC/AML Compliance:** The legal necessity for financial institutions to identify customers and guard against illicit transfers.
 
 ### 19.2 Recommended Learning Sequence
-1. **Step 1:** Review [model/train_model.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/model/train_model.py) to see how synthetic financial data is created, features are engineered, and models are evaluated.
-2. **Step 2:** Study [blockchain/blockchain.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/blockchain/blockchain.py) to understand how blocks are created, hashed, mined, and cryptographically linked.
-3. **Step 3:** Examine [app.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/app.py) lines 274–408 to follow the request lifecycle through the KYC, ML, Smart Contract, and Database layers.
-4. **Step 4:** Run the automated test suite [tests/test_flow.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/tests/test_flow.py) to watch the entire pipeline execute programmatically.
+1. **Step 1:** Review [model/train_model.py](model/train_model.py) to see how synthetic financial data is created, features are engineered, and models are evaluated.
+2. **Step 2:** Study [blockchain/blockchain.py](crosspay/ledger/chain.py) to understand how blocks are created, hashed, mined, and cryptographically linked.
+3. **Step 3:** Examine [app.py](app.py) lines 274–408 to follow the request lifecycle through the KYC, ML, Smart Contract, and Database layers.
+4. **Step 4:** Run the automated test suite [tests/test_flow.py](tests/test_flow.py) to watch the entire pipeline execute programmatically.
 
 ---
 
@@ -645,18 +646,18 @@ Phase 6: Verification, Testing & Audit (Weeks 11-12)
 
 ## 21. References to Important Source Files
 
-- **Core Application Gateway:** [app.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/app.py)
-- **Database Schema & Seeder:** [database/db.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/database/db.py)
-- **Blockchain & Smart Contract Engine:** [blockchain/blockchain.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/blockchain/blockchain.py)
-- **Solidity Smart Contract Specification:** [blockchain/smart_contract.sol](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/blockchain/smart_contract.sol)
-- **ML Training Pipeline:** [model/train_model.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/model/train_model.py)
-- **ML Benchmark Metrics:** [model/metrics.json](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/model/metrics.json)
-- **Master UI Layout:** [templates/base.html](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/templates/base.html)
-- **Payment Request & Test Scenarios:** [templates/payment.html](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/templates/payment.html)
-- **Settlement Result & Proof Receipt:** [templates/result.html](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/templates/result.html)
-- **Analytics & ML Dashboard:** [templates/dashboard.html](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/templates/dashboard.html)
-- **Blockchain Explorer:** [templates/blockchain.html](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/templates/blockchain.html)
-- **Automated Integration Test Suite:** [tests/test_flow.py](file:///c:/Users/NISHA/OneDrive/Desktop/sales_analytics/dataset/CrossPay-main/tests/test_flow.py)
+- **Core Application Gateway:** [app.py](app.py)
+- **Database Schema & Seeder:** [database/db.py](crosspay/db.py)
+- **Blockchain & Smart Contract Engine:** [blockchain/blockchain.py](crosspay/ledger/chain.py)
+- **Solidity Smart Contract Specification:** [blockchain/smart_contract.sol](blockchain/smart_contract.sol)
+- **ML Training Pipeline:** [model/train_model.py](model/train_model.py)
+- **ML Benchmark Metrics:** [model/metrics.json](model/metrics.json)
+- **Master UI Layout:** [templates/base.html](templates/base.html)
+- **Payment Request & Test Scenarios:** [templates/payment.html](templates/payment.html)
+- **Settlement Result & Proof Receipt:** [templates/result.html](templates/result.html)
+- **Analytics & ML Dashboard:** [templates/dashboard.html](templates/dashboard.html)
+- **Blockchain Explorer:** [templates/blockchain.html](templates/blockchain.html)
+- **Automated Integration Test Suite:** [tests/test_flow.py](tests/test_flow.py)
 
 ---
 

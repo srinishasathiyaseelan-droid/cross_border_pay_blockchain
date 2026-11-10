@@ -196,8 +196,10 @@ def dashboard():
             f"WHERE decision = 'APPROVED'{where}", params).fetchone()[0], 2),
     }
     recent = conn.execute(f"SELECT * FROM transactions WHERE 1=1{where} ORDER BY id DESC LIMIT 6", params).fetchall()
+    scorer = current_app.extensions["scorer"]
     return render_template("dashboard.html", stats=stats, recent_transactions=[dict(r) for r in recent],
-                           metrics=current_app.extensions["metrics"])
+                           metrics=current_app.extensions["metrics"], scoring_engine=scorer.engine,
+                           fallback_reason=scorer.fallback_reason)
 
 
 @bp.route("/blockchain")

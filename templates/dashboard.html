@@ -109,98 +109,35 @@
     </div>
 </div>
 
-<!-- Machine Learning Model Performance Section matching Section 4 & 10 -->
-<div class="card" style="margin-bottom: 28px; border-color: rgba(99, 102, 241, 0.3);">
+<!-- Model performance: measured on a time-based synthetic hold-out (model/metrics.json) -->
+<div class="card">
     <div class="card-header">
         <div>
-            <h3 class="card-title" style="color: #a5b4fc;">
-                <span>🧠</span> Random Forest Machine Learning Model Performance
-            </h3>
-            <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
-                Trained on synthetic SME cross-border transaction patterns with scikit-learn (train_test_split, random_state=42).
-            </p>
+            <h3 class="card-title">Random Forest model: measured performance</h3>
+            <p class="muted-sm">Synthetic data with overlapping classes and 7% label noise; oldest 70% trained, newest 15% tested.
+            These numbers describe the generator, not real-world fraud detection.</p>
         </div>
-        <span class="badge badge-low">Model Active & Loaded</span>
+        <span class="badge {% if scoring_engine == 'model' %}badge-low{% else %}badge-high{% endif %}">Engine: {{ scoring_engine }}</span>
     </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); text-align: center;">
-            <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase;">Model Accuracy</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #34d399;">
-                {{ metrics.accuracy if metrics and metrics.accuracy else '98.67' }}%
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-dim);">Test set evaluation</div>
-        </div>
-
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); text-align: center;">
-            <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase;">Weighted Precision</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #60a5fa;">
-                {{ metrics.precision if metrics and metrics.precision else '98.67' }}%
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-dim);">False positive guard</div>
-        </div>
-
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); text-align: center;">
-            <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase;">Weighted Recall</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;">
-                {{ metrics.recall if metrics and metrics.recall else '98.67' }}%
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-dim);">Anomaly capture rate</div>
-        </div>
-
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); text-align: center;">
-            <div style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase;">Weighted F1-Score</div>
-            <div style="font-size: 1.6rem; font-weight: 800; color: #c084fc;">
-                {{ metrics.f1_score if metrics and metrics.f1_score else '98.66' }}%
-            </div>
-            <div style="font-size: 0.72rem; color: var(--text-dim);">Harmonic mean balance</div>
-        </div>
+    {% if scoring_engine != 'model' %}<div class="alert alert-warning">Fallback rules in use: {{ fallback_reason }}</div>{% endif %}
+    {% if metrics and metrics.test %}
+    <div class="metric-grid">
+        <div class="metric"><div class="metric-label">Test accuracy</div><div class="metric-value">{{ '%.1f'|format(metrics.test.accuracy * 100) }}%</div></div>
+        <div class="metric"><div class="metric-label">Macro F1</div><div class="metric-value">{{ '%.1f'|format(metrics.test.macro_f1 * 100) }}%</div></div>
+        <div class="metric"><div class="metric-label">HIGH recall</div><div class="metric-value">{{ '%.1f'|format(metrics.test.per_class.HIGH.recall * 100) }}%</div></div>
+        <div class="metric"><div class="metric-label">HIGH PR-AUC</div><div class="metric-value">{{ '%.3f'|format(metrics.test.per_class.HIGH.pr_auc) }}</div></div>
+        <div class="metric"><div class="metric-label">Brier (3-class)</div><div class="metric-value">{{ '%.3f'|format(metrics.test.brier_score_multiclass) }}</div></div>
+        <div class="metric"><div class="metric-label">5-fold CV acc.</div><div class="metric-value">{{ '%.1f'|format(metrics.cv_5fold_train.accuracy_mean * 100) }} ± {{ '%.1f'|format(metrics.cv_5fold_train.accuracy_std * 100) }}%</div></div>
     </div>
-
-    <!-- Feature Importance Ranking -->
-    <div style="background: rgba(15, 23, 42, 0.4); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-        <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
-            Key Transaction Feature Weightings (Relative Importance in Decision Trees)
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 0.82rem;">
-            <div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Transaction Amount</span>
-                    <strong class="font-mono">36.1%</strong>
-                </div>
-                <div style="height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden;">
-                    <div style="width: 36.1%; height: 100%; background: #3b82f6;"></div>
-                </div>
-            </div>
-            <div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Transaction Frequency (Velocity)</span>
-                    <strong class="font-mono">23.3%</strong>
-                </div>
-                <div style="height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden;">
-                    <div style="width: 23.3%; height: 100%; background: #8b5cf6;"></div>
-                </div>
-            </div>
-            <div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Amount-to-Age Ratio</span>
-                    <strong class="font-mono">13.6%</strong>
-                </div>
-                <div style="height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden;">
-                    <div style="width: 13.6%; height: 100%; background: #06b6d4;"></div>
-                </div>
-            </div>
-            <div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                    <span>Corridor Country Risk</span>
-                    <strong class="font-mono">13.2%</strong>
-                </div>
-                <div style="height: 6px; background: var(--bg-input); border-radius: 3px; overflow: hidden;">
-                    <div style="width: 13.2%; height: 100%; background: #10b981;"></div>
-                </div>
-            </div>
-        </div>
+    <div class="feature-bars">
+        {% for name, value in metrics.feature_importances|dictsort(by='value', reverse=true) %}
+        <div class="feature-bar"><span>{{ name.replace('_', ' ') }}</span><strong class="font-mono">{{ '%.1f'|format(value * 100) }}%</strong>
+            <div class="bar"><div style="width: {{ value * 100 }}%"></div></div></div>
+        {% endfor %}
     </div>
+    {% else %}
+    <p class="muted-sm">metrics.json not found: run <code>python model/train_model.py</code>.</p>
+    {% endif %}
 </div>
 
 <!-- Recent Transactions Table Preview -->

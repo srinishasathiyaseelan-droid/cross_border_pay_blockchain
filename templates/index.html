@@ -199,7 +199,7 @@
         <div>
             <h4 style="color: #a78bfa; font-size: 0.95rem; margin-bottom: 6px;">2. Random Forest ML Model</h4>
             <p style="font-size: 0.84rem; color: var(--text-muted);">
-                Trained with Scikit-learn (fixed random_state=42) achieving <strong>98.67% accuracy</strong> predicting
+                Trained with Scikit-learn (fixed random_state=42) with a time-split test accuracy of <strong>{{ '%.1f'|format(metrics.test.accuracy * 100) if metrics and metrics.test else 'n/a' }}%</strong> on synthetic data, predicting
                 Low, Medium, or High risk.
             </p>
         </div>

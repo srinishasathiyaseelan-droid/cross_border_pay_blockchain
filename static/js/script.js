@@ -153,7 +153,7 @@
 
     const SCENARIOS = {
         low: { sender_country: 'United States', sender_currency: 'USD', receiver: 'EuroTech Industrial GmbH', receiver_country: 'Germany', receiver_currency: 'EUR', amount: '4500', notes: 'Invoice 8841 - machined steel components, 30-day terms' },
-        medium: { sender_country: 'United States', sender_currency: 'USD', receiver: 'Apex Pacific Trade Corp', receiver_country: 'Brazil', receiver_currency: 'EUR', amount: '28500', notes: 'Seasonal electronics shipment, larger than usual batch' },
+        medium: { sender_country: 'United States', sender_currency: 'USD', receiver: 'Apex Pacific Trade Pvt Ltd', receiver_country: 'India', receiver_currency: 'INR', amount: '28500', notes: 'Seasonal electronics shipment, larger than usual batch' },
         high: { sender_country: 'United States', sender_currency: 'USD', receiver: 'Shadow Frontier Express', receiver_country: 'Nigeria', receiver_currency: 'INR', amount: '145000', notes: 'Offshore consulting fee, no invoice attached' }
     };
 

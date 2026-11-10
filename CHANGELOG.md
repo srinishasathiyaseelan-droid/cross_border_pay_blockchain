@@ -143,3 +143,40 @@ stale-rate window; ISO timestamps; policy thresholds, KYC gate, AI escalations n
 no LLM parameter in the policy signature; Solidity hardening present.
 
 **How verified:** `pytest -q` → 98 passed.
+
+## P4 — Honest ML (M1, M2)
+
+**Findings fixed**
+- **M1** `model/train_model.py::generate_sme_dataset()` draws one SME population: log-normal amounts that overlap
+  across classes, Poisson counts, corridor risk from the real country table, labels from a noisy latent rule plus
+  7% label noise, and a `created_at` per row. Split by time 70/15/15. Seed stays 42.
+  `purpose_risk` is not a model feature (G1); the RF keeps its 7 features.
+- **M2** The artefact stores `sklearn_version` and `feature_names`; `model/model_card.json` stores its sha256,
+  version, features and `trained_at`. The app checks the checksum **before** unpickling, then version and feature
+  names; any failure logs the reason, uses the fallback engine, and records `scoring_engine='fallback'` per payment
+  (the dashboard shows the reason).
+- `Scorer.top_factors()` returns the 3 largest per-feature contributions to the 0-100 score using a tree-path
+  decomposition (treeinterpreter method, no new dependency); bias + contributions equals `predict_proba` exactly.
+- The medium demo vector was re-chosen (28,500 USD to India, 5 payments/30 d, 12 previous, 0 flags, 10 months)
+  because the old one scores HIGH under the honest model.
+- Every 98.67% claim (README, PROJECT_INTELLIGENCE_DOCUMENTATION.md, dashboard, landing page) replaced with measured
+  values; the 28 `file:///C:/Users/NISHA/...` links in PROJECT_INTELLIGENCE_DOCUMENTATION.md are relative now (**L5**).
+
+**Measured (seed 42, test = newest 900 rows):** accuracy 0.7289, macro F1 0.7002,
+Brier (3-class) 0.3832. Per class P/R/F1/PR-AUC: LOW 0.864/0.790/0.825/0.889,
+MEDIUM 0.525/0.548/0.536/0.507, HIGH 0.660/0.840/0.739/0.801.
+5-fold CV (training period) accuracy 0.6969 ± 0.0132, macro F1 0.6614 ± 0.0154.
+Policy at REVIEW_AT=40 / BLOCK_AT=80 on test: 84.0% of HIGH blocked, 0.0% of HIGH approved,
+78.2% of LOW approved, 29.8% of payments held for review.
+
+**Files:** `model/train_model.py` (rewritten), `model/random_forest_model.pkl`, `model/model_card.json`,
+`model/metrics.json`, `model/evaluation/` (train/validation/test CSVs, `threshold_results.csv`,
+`false_negatives.jsonl`, `final_evaluation_report.json`); `model/dataset.csv` removed;
+`crosspay/services/scoring.py`, `crosspay/__init__.py`, templates, docs.
+
+**Tests added:** `tests/test_ml_p4.py`: retraining twice gives identical metrics; committed metrics equal a fresh
+run; class amounts overlap; version or checksum mismatch → fallback, logged, stored per payment, shown on the
+dashboard; a swapped pickle is never unpickled; top factors present and the decomposition is exact; the three demo
+scenarios still give LOW→APPROVED, MEDIUM→HOLD, HIGH→BLOCKED; no 98.67/98.66 left in docs, templates or code.
+
+**How verified:** `pytest -q` → 109 passed.

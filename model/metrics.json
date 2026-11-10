@@ -1,37 +1,144 @@
 {
-    "model_name": "Random Forest Classifier",
-    "n_estimators": 100,
-    "random_state": 42,
-    "accuracy": 98.67,
-    "precision": 98.67,
-    "recall": 98.67,
-    "f1_score": 98.66,
+  "model_name": "Random Forest Classifier",
+  "n_estimators": 200,
+  "max_depth": 10,
+  "min_samples_leaf": 5,
+  "class_weight": "balanced",
+  "random_state": 42,
+  "data": {
+    "generator": "synthetic_rule_v2",
     "total_samples": 6000,
-    "test_samples": 1500,
-    "feature_importances": {
-        "amount": 0.3608,
-        "frequency": 0.2329,
-        "previous_transactions": 0.0673,
-        "suspicious_transactions": 0.0353,
-        "account_age": 0.0359,
-        "corridor_risk": 0.1315,
-        "amount_to_age_ratio": 0.1362
+    "label_noise": 0.07,
+    "split": "time-based 70/15/15 on created_at",
+    "train": 4200,
+    "validation": 900,
+    "test": 900,
+    "test_class_counts": {
+      "LOW": 523,
+      "MEDIUM": 252,
+      "HIGH": 125
+    }
+  },
+  "test": {
+    "accuracy": 0.7289,
+    "macro_f1": 0.7002,
+    "weighted_f1": 0.7323,
+    "per_class": {
+      "LOW": {
+        "precision": 0.864,
+        "recall": 0.7897,
+        "f1": 0.8252,
+        "support": 523,
+        "pr_auc": 0.8888
+      },
+      "MEDIUM": {
+        "precision": 0.5247,
+        "recall": 0.5476,
+        "f1": 0.5359,
+        "support": 252,
+        "pr_auc": 0.507
+      },
+      "HIGH": {
+        "precision": 0.6604,
+        "recall": 0.84,
+        "f1": 0.7394,
+        "support": 125,
+        "pr_auc": 0.8007
+      }
     },
-    "confusion_matrix": [
+    "confusion_matrix": {
+      "labels": [
+        "LOW",
+        "MEDIUM",
+        "HIGH"
+      ],
+      "rows_true_cols_pred": [
         [
-            856,
-            5,
-            0
+          413,
+          105,
+          5
         ],
         [
-            13,
-            372,
-            2
+          65,
+          138,
+          49
         ],
         [
-            0,
-            0,
-            252
+          0,
+          20,
+          105
         ]
+      ]
+    },
+    "brier_score_multiclass": 0.3832,
+    "reliability_table": [
+      {
+        "bin": "0.3-0.4",
+        "count": 13,
+        "mean_confidence": 0.3899,
+        "accuracy": 0.4615
+      },
+      {
+        "bin": "0.4-0.5",
+        "count": 152,
+        "mean_confidence": 0.4625,
+        "accuracy": 0.5461
+      },
+      {
+        "bin": "0.5-0.6",
+        "count": 220,
+        "mean_confidence": 0.5485,
+        "accuracy": 0.5818
+      },
+      {
+        "bin": "0.6-0.7",
+        "count": 141,
+        "mean_confidence": 0.65,
+        "accuracy": 0.7447
+      },
+      {
+        "bin": "0.7-0.8",
+        "count": 160,
+        "mean_confidence": 0.7524,
+        "accuracy": 0.8625
+      },
+      {
+        "bin": "0.8-0.9",
+        "count": 184,
+        "mean_confidence": 0.8533,
+        "accuracy": 0.913
+      },
+      {
+        "bin": "0.9-1.0",
+        "count": 30,
+        "mean_confidence": 0.9178,
+        "accuracy": 0.9333
+      }
     ]
+  },
+  "cv_5fold_train": {
+    "accuracy_mean": 0.6969,
+    "accuracy_std": 0.0132,
+    "macro_f1_mean": 0.6614,
+    "macro_f1_std": 0.0154,
+    "note": "stratified, shuffled folds within the training period (not time-ordered)"
+  },
+  "policy_on_test": {
+    "review_at": 40.0,
+    "block_at": 80.0,
+    "high_blocked": 0.84,
+    "high_approved": 0.0,
+    "low_approved": 0.782,
+    "manual_review_share": 0.2978
+  },
+  "feature_importances": {
+    "amount": 0.2398,
+    "frequency": 0.0751,
+    "previous_transactions": 0.0634,
+    "suspicious_transactions": 0.1721,
+    "account_age": 0.0698,
+    "corridor_risk": 0.192,
+    "amount_to_age_ratio": 0.1879
+  },
+  "trained_at": "2026-11-10T12:27:25Z"
 }

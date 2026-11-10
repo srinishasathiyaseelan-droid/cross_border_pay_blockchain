@@ -1,0 +1,901 @@
+created_at,sender_country,receiver_country,amount,frequency,previous_transactions,suspicious_transactions,account_age,corridor_risk,amount_to_age_ratio,risk_label,label_source
+2026-07-20T17:05:14Z,France,United Kingdom,42838.99,3,4,0,6,0.204,6590.61,1,synthetic_rule_v2
+2026-07-21T00:43:30Z,Singapore,United States,2877.5,0,109,0,48,0.172,59.33,1,synthetic_rule_v2
+2026-07-21T05:47:19Z,United Kingdom,Mexico,4090.58,6,20,0,13,0.368,303.01,0,synthetic_rule_v2
+2026-07-21T08:31:14Z,Australia,India,8025.32,5,3,0,6,0.312,1234.66,1,synthetic_rule_v2
+2026-07-21T17:14:24Z,United States,United States,1693.7,4,3,1,5,0.18,307.95,0,synthetic_rule_v2
+2026-07-21T20:07:18Z,India,Germany,9813.17,16,128,3,61,0.25,159.56,1,synthetic_rule_v2
+2026-07-21T21:51:23Z,India,United Kingdom,2702.99,2,18,0,21,0.28,125.72,0,synthetic_rule_v2
+2026-07-21T23:30:50Z,Germany,United Kingdom,14242.56,2,86,0,101,0.18,140.32,0,synthetic_rule_v2
+2026-07-21T23:50:06Z,Germany,United Kingdom,10774.63,3,130,0,74,0.18,144.63,0,synthetic_rule_v2
+2026-07-22T02:49:19Z,United States,Singapore,6402.54,2,56,1,81,0.168,78.56,0,synthetic_rule_v2
+2026-07-22T09:26:43Z,India,Brazil,5642.35,0,91,0,88,0.472,63.76,0,synthetic_rule_v2
+2026-07-22T09:43:21Z,United States,Germany,16047.68,5,152,0,87,0.162,183.4,0,synthetic_rule_v2
+2026-07-22T10:08:50Z,Germany,Japan,25659.77,2,224,0,94,0.162,271.53,0,synthetic_rule_v2
+2026-07-22T10:34:18Z,Singapore,United Kingdom,5085.4,3,39,0,21,0.184,236.53,0,synthetic_rule_v2
+2026-07-22T13:42:15Z,Germany,United States,15492.59,3,7,1,11,0.168,1347.18,0,synthetic_rule_v2
+2026-07-22T14:52:27Z,India,Japan,35843.29,4,105,0,104,0.262,343.0,1,synthetic_rule_v2
+2026-07-22T15:49:13Z,United States,Australia,3940.03,2,129,0,63,0.18,62.05,0,synthetic_rule_v2
+2026-07-22T16:55:56Z,United Kingdom,Brazil,25380.22,5,35,0,33,0.392,757.62,1,synthetic_rule_v2
+2026-07-22T23:24:23Z,France,United Kingdom,6843.55,1,178,0,86,0.204,79.12,0,synthetic_rule_v2
+2026-07-22T23:35:51Z,United States,Singapore,55826.07,3,21,0,17,0.168,3190.06,1,synthetic_rule_v2
+2026-07-22T23:44:52Z,United Kingdom,India,641.28,8,1,0,1,0.32,427.52,0,synthetic_rule_v2
+2026-07-23T02:06:45Z,India,Brazil,4298.43,8,9,0,5,0.472,781.53,0,synthetic_rule_v2
+2026-07-23T03:33:02Z,United States,United Arab Emirates,11208.62,2,43,0,18,0.3,605.87,0,synthetic_rule_v2
+2026-07-23T03:45:21Z,United States,Mexico,11214.35,0,144,0,113,0.36,98.8,0,synthetic_rule_v2
+2026-07-23T04:12:32Z,United States,South Africa,20086.1,6,10,0,4,0.42,4463.58,1,synthetic_rule_v2
+2026-07-23T06:16:19Z,Japan,India,7767.97,1,122,1,120,0.308,64.46,0,synthetic_rule_v2
+2026-07-23T11:11:08Z,United States,United States,32965.46,1,32,0,19,0.18,1690.54,1,synthetic_rule_v2
+2026-07-23T11:49:29Z,India,France,19644.67,2,99,0,98,0.286,199.44,0,synthetic_rule_v2
+2026-07-23T13:20:01Z,United Kingdom,United States,3332.82,2,26,0,60,0.188,55.09,0,synthetic_rule_v2
+2026-07-23T13:20:32Z,Singapore,India,29124.48,2,20,0,16,0.304,1765.12,1,synthetic_rule_v2
+2026-07-23T16:35:49Z,Japan,Germany,12844.51,17,23,0,26,0.158,484.7,1,synthetic_rule_v2
+2026-07-23T21:31:18Z,Japan,Canada,29268.88,2,170,3,72,0.182,403.71,1,synthetic_rule_v2
+2026-07-23T22:48:36Z,India,India,59996.69,11,31,4,21,0.4,2790.54,2,synthetic_rule_v2
+2026-07-24T01:08:43Z,India,South Africa,1537.0,4,6,0,4,0.508,341.56,1,synthetic_rule_v2
+2026-07-24T02:11:32Z,Canada,United States,1716.48,2,2,0,5,0.184,312.09,0,synthetic_rule_v2
+2026-07-24T02:42:12Z,United States,Germany,25194.93,7,2,4,4,0.162,5598.87,2,synthetic_rule_v2
+2026-07-24T03:30:45Z,United States,United Kingdom,778.86,4,11,0,4,0.192,173.08,0,synthetic_rule_v2
+2026-07-24T05:35:38Z,France,Brazil,7622.89,0,2,0,4,0.396,1693.98,0,synthetic_rule_v2
+2026-07-24T06:08:12Z,Japan,France,10801.35,4,171,0,116,0.194,92.72,0,synthetic_rule_v2
+2026-07-24T09:23:35Z,United Arab Emirates,Japan,6063.73,8,262,0,119,0.254,50.74,0,synthetic_rule_v2
+2026-07-24T13:14:50Z,United States,United Kingdom,29385.2,6,23,0,26,0.192,1108.88,0,synthetic_rule_v2
+2026-07-24T15:47:13Z,Australia,United Arab Emirates,10921.15,1,42,0,118,0.3,92.16,0,synthetic_rule_v2
+2026-07-25T00:49:18Z,Germany,Brazil,102300.47,13,6,0,6,0.372,15738.53,2,synthetic_rule_v2
+2026-07-25T01:13:09Z,United States,United Kingdom,2883.18,0,72,0,51,0.192,55.98,0,synthetic_rule_v2
+2026-07-25T01:45:29Z,Germany,Australia,19123.08,1,58,0,115,0.168,165.57,0,synthetic_rule_v2
+2026-07-25T05:23:56Z,United States,United Arab Emirates,18194.2,13,19,1,16,0.3,1102.68,1,synthetic_rule_v2
+2026-07-25T05:27:48Z,United States,United States,7554.75,5,30,0,36,0.18,206.98,0,synthetic_rule_v2
+2026-07-25T05:43:39Z,Canada,India,14513.05,3,29,0,41,0.316,349.71,0,synthetic_rule_v2
+2026-07-25T11:04:39Z,Singapore,India,8647.26,4,61,0,33,0.304,258.13,1,synthetic_rule_v2
+2026-07-25T12:45:02Z,Canada,Australia,2197.79,4,33,0,16,0.184,133.2,0,synthetic_rule_v2
+2026-07-25T14:34:28Z,Canada,France,10902.42,0,21,0,32,0.202,335.46,1,synthetic_rule_v2
+2026-07-25T17:37:30Z,United Arab Emirates,Russia,49437.97,1,33,0,41,0.644,1191.28,1,synthetic_rule_v2
+2026-07-25T19:10:46Z,United States,Nigeria,47210.93,4,51,0,56,0.582,835.59,2,synthetic_rule_v2
+2026-07-25T19:46:29Z,United Kingdom,Japan,3435.79,1,43,0,21,0.182,159.8,1,synthetic_rule_v2
+2026-07-26T02:28:49Z,Canada,Canada,9878.91,1,151,0,106,0.19,92.76,0,synthetic_rule_v2
+2026-07-26T05:59:18Z,Australia,United States,62923.83,1,30,4,25,0.18,2467.6,2,synthetic_rule_v2
+2026-07-26T10:58:51Z,United States,Singapore,2640.88,3,9,2,5,0.168,480.16,0,synthetic_rule_v2
+2026-07-26T11:14:25Z,Germany,Germany,10498.9,1,4,0,1,0.15,6999.27,1,synthetic_rule_v2
+2026-07-26T13:04:00Z,Singapore,Pakistan,6082.86,2,44,1,120,0.532,50.48,0,synthetic_rule_v2
+2026-07-26T13:39:16Z,Singapore,Mexico,24505.67,2,38,0,46,0.352,527.0,0,synthetic_rule_v2
+2026-07-26T18:47:27Z,India,Singapore,11754.72,2,115,0,106,0.256,110.37,0,synthetic_rule_v2
+2026-07-26T18:55:25Z,United Arab Emirates,Singapore,4141.27,4,9,0,8,0.248,487.21,0,synthetic_rule_v2
+2026-07-26T22:31:09Z,Singapore,Brazil,5848.04,1,40,0,51,0.376,113.55,0,synthetic_rule_v2
+2026-07-26T23:03:48Z,United States,Australia,26433.88,4,7,0,3,0.18,7552.54,0,synthetic_rule_v2
+2026-07-27T01:57:33Z,Singapore,Russia,7442.2,11,39,0,22,0.556,330.76,1,synthetic_rule_v2
+2026-07-27T03:20:37Z,India,United States,3715.9,0,20,0,12,0.268,297.27,0,synthetic_rule_v2
+2026-07-27T04:10:40Z,Singapore,Brazil,17792.01,5,133,0,63,0.376,280.19,1,synthetic_rule_v2
+2026-07-27T04:36:47Z,Germany,India,11924.88,6,2,0,1,0.3,7949.92,1,synthetic_rule_v2
+2026-07-27T05:14:24Z,United Kingdom,India,8548.82,16,24,0,13,0.32,633.25,1,synthetic_rule_v2
+2026-07-27T07:12:09Z,United States,Mexico,6086.06,0,14,0,7,0.36,811.47,0,synthetic_rule_v2
+2026-07-27T09:11:08Z,Singapore,Mexico,12047.42,3,67,0,66,0.352,181.16,0,synthetic_rule_v2
+2026-07-27T13:57:59Z,Australia,Germany,19679.48,5,39,0,24,0.162,803.24,0,synthetic_rule_v2
+2026-07-27T20:35:47Z,United States,Mexico,3816.54,0,53,0,21,0.36,177.51,0,synthetic_rule_v2
+2026-07-28T05:27:53Z,United States,Australia,4428.26,4,0,0,1,0.18,2952.17,0,synthetic_rule_v2
+2026-07-28T08:56:58Z,Germany,Germany,12395.36,2,34,0,21,0.15,576.53,0,synthetic_rule_v2
+2026-07-28T10:25:17Z,United Kingdom,Pakistan,8368.96,1,42,0,47,0.548,176.19,1,synthetic_rule_v2
+2026-07-28T13:02:30Z,United Arab Emirates,France,8922.34,1,120,0,50,0.278,176.68,0,synthetic_rule_v2
+2026-07-28T14:14:50Z,Germany,India,4287.35,2,21,0,15,0.3,276.6,0,synthetic_rule_v2
+2026-07-28T18:56:48Z,Singapore,Nigeria,27913.82,6,3,0,5,0.574,5075.24,2,synthetic_rule_v2
+2026-07-28T19:12:47Z,India,Brazil,3805.37,1,9,0,7,0.472,507.38,0,synthetic_rule_v2
+2026-07-28T22:20:57Z,Australia,Singapore,27512.98,12,122,0,87,0.168,314.43,0,synthetic_rule_v2
+2026-07-29T03:59:51Z,Australia,Germany,31325.82,4,78,0,113,0.162,276.0,1,synthetic_rule_v2
+2026-07-29T04:29:02Z,Germany,Nigeria,37202.91,5,16,2,8,0.57,4376.81,2,synthetic_rule_v2
+2026-07-29T06:23:40Z,Germany,Japan,71403.92,3,2,0,3,0.162,20401.12,2,synthetic_rule_v2
+2026-07-29T06:52:18Z,India,France,5936.79,3,70,2,80,0.286,73.75,1,synthetic_rule_v2
+2026-07-29T09:06:58Z,Germany,France,31863.81,3,60,0,97,0.186,326.81,1,synthetic_rule_v2
+2026-07-29T11:02:51Z,United States,Australia,4862.04,3,7,0,3,0.18,1389.15,0,synthetic_rule_v2
+2026-07-29T11:37:27Z,United States,Brazil,3623.35,2,63,0,112,0.384,32.21,0,synthetic_rule_v2
+2026-07-29T16:02:21Z,United Arab Emirates,Singapore,2776.16,2,47,0,44,0.248,62.39,0,synthetic_rule_v2
+2026-07-29T17:03:55Z,France,United Kingdom,3978.49,11,69,0,32,0.204,122.42,1,synthetic_rule_v2
+2026-07-29T18:24:29Z,Japan,United Kingdom,1779.59,4,43,0,26,0.188,67.15,0,synthetic_rule_v2
+2026-07-29T20:33:17Z,Canada,Brazil,67567.18,8,171,0,85,0.388,790.26,2,synthetic_rule_v2
+2026-07-29T20:39:25Z,United States,Nigeria,7282.17,1,26,0,21,0.582,338.71,0,synthetic_rule_v2
+2026-07-29T21:37:35Z,Australia,United Kingdom,30743.29,4,3,0,5,0.192,5589.69,0,synthetic_rule_v2
+2026-07-29T23:02:53Z,India,United Kingdom,32880.4,11,41,1,21,0.28,1529.32,2,synthetic_rule_v2
+2026-07-29T23:16:38Z,United States,Germany,4243.0,1,15,0,23,0.162,180.55,0,synthetic_rule_v2
+2026-07-29T23:49:39Z,United States,Japan,10068.35,3,216,0,80,0.174,125.07,0,synthetic_rule_v2
+2026-07-30T00:21:40Z,United Arab Emirates,Mexico,2245.5,11,76,0,71,0.44,31.41,0,synthetic_rule_v2
+2026-07-30T01:43:37Z,United Arab Emirates,Brazil,13463.85,5,170,0,79,0.464,169.36,1,synthetic_rule_v2
+2026-07-30T07:21:25Z,France,Canada,15945.4,5,150,0,94,0.198,168.73,0,synthetic_rule_v2
+2026-07-30T16:36:31Z,United States,France,48368.08,5,49,0,24,0.198,1974.21,0,synthetic_rule_v2
+2026-07-30T16:46:47Z,France,Russia,8056.73,3,53,0,92,0.576,87.1,1,synthetic_rule_v2
+2026-07-31T03:15:11Z,United States,India,20922.42,0,26,0,17,0.312,1195.57,1,synthetic_rule_v2
+2026-07-31T04:21:58Z,Australia,Japan,4791.46,3,77,0,107,0.174,44.57,0,synthetic_rule_v2
+2026-07-31T06:13:52Z,United States,France,44408.83,0,112,0,54,0.198,814.84,0,synthetic_rule_v2
+2026-07-31T07:14:10Z,United States,South Africa,17727.6,2,92,0,75,0.42,234.8,1,synthetic_rule_v2
+2026-07-31T07:50:29Z,India,Germany,2231.46,2,40,1,38,0.25,57.96,1,synthetic_rule_v2
+2026-07-31T10:26:08Z,Singapore,Canada,3009.71,5,15,1,6,0.178,463.03,0,synthetic_rule_v2
+2026-07-31T21:14:10Z,United Kingdom,Australia,9884.2,8,32,0,22,0.188,439.3,0,synthetic_rule_v2
+2026-07-31T22:33:01Z,Germany,United Kingdom,18603.79,1,214,1,109,0.18,169.9,0,synthetic_rule_v2
+2026-08-01T00:50:29Z,Japan,Mexico,5530.66,0,15,0,14,0.356,381.42,0,synthetic_rule_v2
+2026-08-01T04:50:30Z,United States,Australia,11025.96,1,9,0,14,0.18,760.41,0,synthetic_rule_v2
+2026-08-01T05:23:06Z,United States,Germany,1040.49,1,208,0,99,0.162,10.46,1,synthetic_rule_v2
+2026-08-01T05:50:29Z,Canada,Australia,3617.88,1,60,1,41,0.184,87.18,0,synthetic_rule_v2
+2026-08-01T05:52:16Z,India,United States,3825.57,18,66,0,45,0.268,84.08,0,synthetic_rule_v2
+2026-08-01T10:52:06Z,Germany,Germany,27218.32,2,56,0,72,0.15,375.43,0,synthetic_rule_v2
+2026-08-01T21:17:12Z,India,United States,3861.09,5,15,0,6,0.268,594.01,0,synthetic_rule_v2
+2026-08-01T22:37:16Z,United Kingdom,United States,1301.42,3,198,0,93,0.188,13.92,0,synthetic_rule_v2
+2026-08-02T02:36:12Z,India,Australia,19481.52,39,229,0,93,0.268,208.36,1,synthetic_rule_v2
+2026-08-02T02:59:57Z,Germany,United Arab Emirates,22908.53,2,19,0,12,0.288,1832.68,1,synthetic_rule_v2
+2026-08-02T04:51:32Z,Germany,Germany,1927.2,1,182,0,99,0.15,19.37,1,synthetic_rule_v2
+2026-08-02T06:41:40Z,United States,Brazil,7910.02,8,1,1,4,0.384,1757.78,2,synthetic_rule_v2
+2026-08-02T12:39:11Z,Singapore,Singapore,2017.11,1,65,0,53,0.16,37.7,1,synthetic_rule_v2
+2026-08-02T14:01:49Z,United Arab Emirates,Brazil,6694.47,7,46,2,51,0.464,129.99,2,synthetic_rule_v2
+2026-08-02T14:26:39Z,United Kingdom,Mexico,6193.18,6,154,1,83,0.368,74.17,1,synthetic_rule_v2
+2026-08-02T16:07:59Z,Australia,United States,36210.55,14,33,0,53,0.18,676.83,1,synthetic_rule_v2
+2026-08-02T21:28:22Z,United Arab Emirates,United Arab Emirates,28609.59,2,316,1,118,0.38,241.43,1,synthetic_rule_v2
+2026-08-03T00:33:38Z,Canada,United Arab Emirates,5068.83,3,17,0,16,0.304,307.2,0,synthetic_rule_v2
+2026-08-03T01:12:43Z,Singapore,South Africa,13712.34,1,5,0,10,0.412,1305.94,1,synthetic_rule_v2
+2026-08-03T03:50:01Z,United Arab Emirates,Germany,5621.84,5,25,0,11,0.242,488.86,0,synthetic_rule_v2
+2026-08-03T06:30:21Z,United States,Mexico,15210.15,2,45,0,55,0.36,274.06,1,synthetic_rule_v2
+2026-08-03T08:36:08Z,United States,Germany,9066.25,2,0,0,2,0.162,3626.5,0,synthetic_rule_v2
+2026-08-03T10:32:03Z,Japan,India,5785.01,9,81,0,52,0.308,110.19,0,synthetic_rule_v2
+2026-08-03T11:36:35Z,United Kingdom,United Kingdom,26695.7,2,54,0,23,0.2,1135.99,0,synthetic_rule_v2
+2026-08-03T13:04:01Z,Canada,Brazil,7821.36,2,15,0,15,0.388,504.6,0,synthetic_rule_v2
+2026-08-03T13:19:44Z,United States,Germany,54446.72,8,7,0,9,0.162,5731.23,1,synthetic_rule_v2
+2026-08-03T15:35:27Z,United Kingdom,United Kingdom,5213.96,1,68,0,74,0.2,69.99,0,synthetic_rule_v2
+2026-08-03T20:03:11Z,Australia,Australia,17227.21,1,24,0,23,0.18,733.07,0,synthetic_rule_v2
+2026-08-03T22:15:29Z,United Arab Emirates,United Kingdom,3471.24,4,6,0,5,0.272,631.13,0,synthetic_rule_v2
+2026-08-03T23:33:59Z,Germany,United States,17015.48,1,50,0,32,0.168,523.55,0,synthetic_rule_v2
+2026-08-03T23:36:34Z,United States,France,78348.23,0,10,3,7,0.198,10446.43,2,synthetic_rule_v2
+2026-08-04T07:43:56Z,Singapore,United Arab Emirates,18887.23,1,132,0,80,0.292,234.62,0,synthetic_rule_v2
+2026-08-04T08:37:43Z,United Kingdom,Brazil,50697.62,5,190,0,107,0.392,471.61,1,synthetic_rule_v2
+2026-08-04T09:23:47Z,Australia,Germany,3276.2,0,21,1,8,0.162,385.44,1,synthetic_rule_v2
+2026-08-04T09:58:05Z,United States,Germany,17306.65,3,14,0,12,0.162,1384.53,1,synthetic_rule_v2
+2026-08-04T12:40:13Z,United States,India,7662.02,16,107,2,119,0.312,64.12,1,synthetic_rule_v2
+2026-08-04T13:16:51Z,Japan,United Arab Emirates,4810.09,9,58,2,51,0.296,93.4,0,synthetic_rule_v2
+2026-08-04T17:36:31Z,United States,South Africa,8469.62,2,148,0,95,0.42,88.69,0,synthetic_rule_v2
+2026-08-04T19:08:11Z,United Kingdom,Singapore,52830.65,2,96,0,110,0.176,478.11,1,synthetic_rule_v2
+2026-08-04T22:46:43Z,Canada,Japan,8478.22,2,76,0,119,0.178,70.95,0,synthetic_rule_v2
+2026-08-05T01:32:34Z,Singapore,Germany,16684.41,6,29,1,29,0.154,565.57,1,synthetic_rule_v2
+2026-08-05T05:22:09Z,United Kingdom,South Africa,3849.38,4,17,0,18,0.428,208.07,0,synthetic_rule_v2
+2026-08-05T15:35:50Z,United States,France,21809.24,5,62,0,84,0.198,258.1,0,synthetic_rule_v2
+2026-08-06T02:25:49Z,Australia,France,15535.74,3,140,2,96,0.198,160.99,1,synthetic_rule_v2
+2026-08-06T13:34:34Z,France,India,8487.71,0,214,0,103,0.324,82.01,0,synthetic_rule_v2
+2026-08-06T20:25:44Z,United States,Brazil,11858.24,5,65,0,74,0.384,159.17,1,synthetic_rule_v2
+2026-08-06T23:55:55Z,United States,United Arab Emirates,84531.14,1,60,0,34,0.3,2450.18,1,synthetic_rule_v2
+2026-08-07T00:49:05Z,Germany,Mexico,61743.26,3,44,2,91,0.348,674.79,2,synthetic_rule_v2
+2026-08-07T01:40:29Z,United Kingdom,United States,3461.9,0,213,0,86,0.188,40.02,0,synthetic_rule_v2
+2026-08-07T02:31:31Z,United Arab Emirates,Russia,12619.85,2,115,0,66,0.644,189.77,1,synthetic_rule_v2
+2026-08-07T03:43:51Z,India,United Kingdom,6296.33,7,35,0,21,0.28,292.85,0,synthetic_rule_v2
+2026-08-07T07:46:57Z,Germany,Singapore,9389.91,8,5,0,3,0.156,2682.83,1,synthetic_rule_v2
+2026-08-07T18:10:49Z,France,Germany,5773.58,9,158,0,101,0.174,56.88,1,synthetic_rule_v2
+2026-08-07T19:49:59Z,United Kingdom,Singapore,11531.86,7,17,0,22,0.176,512.53,1,synthetic_rule_v2
+2026-08-08T01:00:28Z,United Arab Emirates,United Kingdom,41199.79,18,129,0,104,0.272,394.26,1,synthetic_rule_v2
+2026-08-08T01:19:36Z,United Kingdom,United States,2405.89,3,254,0,104,0.188,23.02,1,synthetic_rule_v2
+2026-08-08T04:04:25Z,India,India,6456.9,1,29,1,13,0.4,478.29,1,synthetic_rule_v2
+2026-08-08T04:58:43Z,Germany,Germany,7247.7,3,22,0,22,0.15,322.12,0,synthetic_rule_v2
+2026-08-08T05:11:19Z,United Kingdom,United States,4209.32,3,252,0,112,0.188,37.42,0,synthetic_rule_v2
+2026-08-08T06:09:17Z,France,Brazil,5646.63,2,23,0,34,0.396,163.67,1,synthetic_rule_v2
+2026-08-08T09:09:53Z,United States,United Kingdom,2813.48,2,115,0,74,0.192,37.76,0,synthetic_rule_v2
+2026-08-08T09:36:31Z,India,Mexico,22599.76,2,115,0,84,0.448,267.45,1,synthetic_rule_v2
+2026-08-08T10:21:06Z,Singapore,Nigeria,2118.91,8,1,0,1,0.574,1412.61,1,synthetic_rule_v2
+2026-08-08T10:22:54Z,Japan,France,81197.87,7,247,2,93,0.194,868.43,2,synthetic_rule_v2
+2026-08-08T12:04:45Z,United Kingdom,United States,7265.58,0,151,0,79,0.188,91.39,0,synthetic_rule_v2
+2026-08-08T12:22:25Z,India,Brazil,6010.97,0,184,2,75,0.472,79.62,1,synthetic_rule_v2
+2026-08-08T13:20:59Z,United Kingdom,Nigeria,3131.14,3,56,0,32,0.59,96.34,1,synthetic_rule_v2
+2026-08-08T13:36:05Z,United States,United States,16318.54,0,58,0,50,0.18,323.14,0,synthetic_rule_v2
+2026-08-08T13:43:30Z,India,Canada,6624.67,7,116,1,62,0.274,105.99,1,synthetic_rule_v2
+2026-08-08T15:52:36Z,United Arab Emirates,United States,70706.4,1,69,0,108,0.26,651.67,1,synthetic_rule_v2
+2026-08-08T16:43:16Z,Australia,United States,6095.54,7,222,0,106,0.18,57.24,0,synthetic_rule_v2
+2026-08-08T20:38:31Z,United States,Russia,25165.31,8,9,0,19,0.564,1290.53,2,synthetic_rule_v2
+2026-08-08T23:50:21Z,United States,Brazil,6992.35,1,61,0,28,0.384,245.35,1,synthetic_rule_v2
+2026-08-08T23:57:36Z,India,United States,4011.08,2,157,0,92,0.268,43.36,0,synthetic_rule_v2
+2026-08-09T01:05:32Z,Germany,United Kingdom,19373.53,2,0,0,1,0.18,12915.69,1,synthetic_rule_v2
+2026-08-09T01:32:25Z,India,Germany,38442.38,3,57,0,85,0.25,449.62,1,synthetic_rule_v2
+2026-08-09T08:18:58Z,Singapore,Canada,2936.56,4,6,0,2,0.178,1174.62,0,synthetic_rule_v2
+2026-08-09T09:33:27Z,Germany,Germany,2047.07,5,3,0,4,0.15,454.9,0,synthetic_rule_v2
+2026-08-09T10:21:38Z,Japan,Singapore,6751.32,2,89,1,40,0.164,166.7,0,synthetic_rule_v2
+2026-08-09T14:54:14Z,Singapore,Singapore,422.4,2,26,0,32,0.16,13.0,0,synthetic_rule_v2
+2026-08-09T15:25:39Z,India,South Africa,16532.25,7,21,3,17,0.508,944.7,2,synthetic_rule_v2
+2026-08-09T22:52:31Z,United Kingdom,France,2966.2,6,123,0,113,0.206,26.13,0,synthetic_rule_v2
+2026-08-10T02:54:39Z,United States,Singapore,5360.97,1,28,0,25,0.168,210.23,0,synthetic_rule_v2
+2026-08-10T03:19:30Z,United States,Canada,8855.67,2,8,1,14,0.186,610.74,1,synthetic_rule_v2
+2026-08-10T03:42:39Z,India,India,46876.61,2,130,0,53,0.4,876.2,1,synthetic_rule_v2
+2026-08-10T10:42:49Z,Australia,United States,19171.0,0,9,3,5,0.18,3485.64,1,synthetic_rule_v2
+2026-08-10T11:56:59Z,United States,Canada,71290.29,18,7,0,4,0.186,15842.29,2,synthetic_rule_v2
+2026-08-10T14:27:34Z,India,United States,40888.54,3,6,0,4,0.268,9086.34,2,synthetic_rule_v2
+2026-08-10T17:08:30Z,India,Canada,13317.89,1,22,0,23,0.274,566.72,1,synthetic_rule_v2
+2026-08-10T17:57:34Z,Germany,Brazil,76142.96,3,8,0,20,0.372,3714.29,2,synthetic_rule_v2
+2026-08-10T18:14:03Z,Germany,Pakistan,14585.54,3,88,0,53,0.528,272.63,1,synthetic_rule_v2
+2026-08-10T19:39:56Z,United States,South Africa,20135.28,2,0,4,2,0.42,8054.11,2,synthetic_rule_v2
+2026-08-11T00:20:18Z,United Arab Emirates,Japan,18060.05,2,2,1,3,0.254,5160.01,2,synthetic_rule_v2
+2026-08-11T02:59:24Z,Germany,United States,108699.38,9,43,0,19,0.168,5574.33,0,synthetic_rule_v2
+2026-08-11T03:37:44Z,United Arab Emirates,Mexico,21469.93,3,9,4,15,0.44,1385.16,2,synthetic_rule_v2
+2026-08-11T04:11:25Z,France,Germany,8737.93,2,8,0,5,0.174,1588.71,0,synthetic_rule_v2
+2026-08-11T05:13:50Z,Canada,India,1510.12,2,183,0,105,0.316,14.31,0,synthetic_rule_v2
+2026-08-11T05:56:48Z,United States,Singapore,13312.68,1,7,0,4,0.168,2958.37,0,synthetic_rule_v2
+2026-08-11T07:20:05Z,Canada,France,3340.93,0,115,0,106,0.202,31.37,0,synthetic_rule_v2
+2026-08-11T07:44:56Z,United States,Germany,1613.05,9,55,0,26,0.162,60.87,0,synthetic_rule_v2
+2026-08-11T07:56:49Z,United States,Mexico,7141.45,3,26,0,22,0.36,317.4,0,synthetic_rule_v2
+2026-08-11T10:43:44Z,India,Nigeria,41341.04,0,10,0,19,0.67,2120.05,2,synthetic_rule_v2
+2026-08-11T10:54:57Z,United States,Pakistan,24530.91,9,28,1,21,0.54,1140.97,2,synthetic_rule_v2
+2026-08-11T11:05:46Z,Singapore,India,19219.1,1,46,0,120,0.304,159.49,0,synthetic_rule_v2
+2026-08-11T11:36:45Z,United Kingdom,United Kingdom,28386.1,4,177,0,120,0.2,235.57,1,synthetic_rule_v2
+2026-08-11T16:34:34Z,United Kingdom,Germany,1547.92,4,98,0,52,0.17,29.48,0,synthetic_rule_v2
+2026-08-12T01:50:58Z,United Kingdom,Japan,4414.41,5,75,0,45,0.182,97.02,0,synthetic_rule_v2
+2026-08-12T02:15:25Z,Singapore,Brazil,11934.43,5,62,0,54,0.376,218.98,0,synthetic_rule_v2
+2026-08-12T04:34:35Z,Germany,United Kingdom,2920.01,1,4,0,8,0.18,343.53,0,synthetic_rule_v2
+2026-08-12T12:46:11Z,United Kingdom,Canada,13117.72,2,35,0,43,0.194,301.56,0,synthetic_rule_v2
+2026-08-12T15:55:51Z,Germany,Singapore,5795.48,3,180,0,74,0.156,77.79,0,synthetic_rule_v2
+2026-08-12T18:25:25Z,Singapore,Russia,42900.58,2,95,1,84,0.556,507.7,2,synthetic_rule_v2
+2026-08-12T21:13:16Z,Canada,India,1744.21,11,62,0,55,0.316,31.43,0,synthetic_rule_v2
+2026-08-12T22:05:14Z,United States,Singapore,1365.59,4,0,0,2,0.168,546.24,1,synthetic_rule_v2
+2026-08-12T23:43:32Z,United States,Germany,25519.71,1,189,0,86,0.162,295.03,0,synthetic_rule_v2
+2026-08-13T02:44:11Z,India,Russia,17598.51,3,140,3,99,0.652,176.87,2,synthetic_rule_v2
+2026-08-13T05:28:11Z,United Kingdom,India,29555.85,10,13,0,18,0.32,1597.61,0,synthetic_rule_v2
+2026-08-13T05:35:12Z,Germany,India,3503.52,2,87,0,70,0.3,49.7,0,synthetic_rule_v2
+2026-08-13T07:01:50Z,India,United Kingdom,69500.14,2,22,0,10,0.28,6619.06,2,synthetic_rule_v2
+2026-08-13T17:11:57Z,Japan,Germany,20186.61,1,4,0,6,0.158,3105.63,0,synthetic_rule_v2
+2026-08-13T17:27:34Z,United Arab Emirates,United States,7282.99,3,37,0,20,0.26,355.27,0,synthetic_rule_v2
+2026-08-13T17:48:40Z,India,Germany,8994.13,4,17,0,6,0.25,1383.71,0,synthetic_rule_v2
+2026-08-13T22:17:24Z,Singapore,United States,6580.94,2,66,0,44,0.172,147.89,1,synthetic_rule_v2
+2026-08-14T01:47:28Z,France,Pakistan,3961.56,13,52,0,23,0.552,168.58,0,synthetic_rule_v2
+2026-08-14T02:22:01Z,United States,United States,6752.2,3,230,0,115,0.18,58.46,1,synthetic_rule_v2
+2026-08-14T04:45:01Z,Germany,Japan,11141.65,4,138,0,103,0.162,107.65,0,synthetic_rule_v2
+2026-08-14T05:05:46Z,Germany,Canada,7656.38,9,246,0,114,0.174,66.87,0,synthetic_rule_v2
+2026-08-14T06:56:16Z,United States,India,2831.44,2,42,4,29,0.312,95.98,2,synthetic_rule_v2
+2026-08-14T09:40:42Z,Singapore,United States,22479.88,1,43,0,19,0.172,1152.81,1,synthetic_rule_v2
+2026-08-14T14:37:26Z,United Arab Emirates,Japan,696.58,4,62,0,40,0.254,17.2,0,synthetic_rule_v2
+2026-08-14T20:16:27Z,United States,France,1390.2,7,35,0,13,0.198,102.98,0,synthetic_rule_v2
+2026-08-14T20:32:39Z,Canada,Singapore,14796.75,4,146,0,65,0.172,225.9,0,synthetic_rule_v2
+2026-08-14T22:04:03Z,Canada,Russia,6804.38,2,76,1,84,0.568,80.53,0,synthetic_rule_v2
+2026-08-15T01:54:00Z,Canada,India,18942.78,2,68,0,38,0.316,492.02,0,synthetic_rule_v2
+2026-08-15T05:48:38Z,United States,Germany,7249.8,10,16,0,13,0.162,537.02,0,synthetic_rule_v2
+2026-08-15T06:55:52Z,United States,Japan,39072.9,6,162,0,73,0.174,531.6,0,synthetic_rule_v2
+2026-08-15T14:56:52Z,Singapore,Pakistan,3497.61,2,44,0,24,0.532,142.76,1,synthetic_rule_v2
+2026-08-15T15:37:31Z,United Kingdom,United Arab Emirates,14426.42,8,54,0,65,0.308,220.25,0,synthetic_rule_v2
+2026-08-15T18:34:03Z,United States,Germany,60706.98,0,77,1,78,0.162,773.34,1,synthetic_rule_v2
+2026-08-15T23:51:07Z,United Kingdom,Brazil,22600.95,1,4,3,4,0.392,5022.43,2,synthetic_rule_v2
+2026-08-16T01:43:11Z,Germany,France,22450.0,12,32,1,49,0.186,453.54,2,synthetic_rule_v2
+2026-08-16T02:46:17Z,Singapore,Germany,12796.38,0,26,0,27,0.154,465.32,0,synthetic_rule_v2
+2026-08-16T02:48:39Z,Germany,United Kingdom,33849.71,1,70,2,107,0.18,314.88,1,synthetic_rule_v2
+2026-08-16T05:17:27Z,United States,Canada,2882.88,3,165,0,77,0.186,37.2,0,synthetic_rule_v2
+2026-08-16T05:17:47Z,Japan,South Africa,11965.97,4,60,1,66,0.416,179.94,1,synthetic_rule_v2
+2026-08-16T06:42:05Z,United Kingdom,United States,7186.24,4,116,0,92,0.188,77.69,0,synthetic_rule_v2
+2026-08-16T13:00:34Z,Germany,Germany,6539.73,15,257,0,119,0.15,54.73,0,synthetic_rule_v2
+2026-08-16T19:09:50Z,India,Japan,1281.47,3,3,0,4,0.262,284.77,0,synthetic_rule_v2
+2026-08-16T21:32:22Z,Singapore,Singapore,19862.28,12,182,0,106,0.16,186.5,1,synthetic_rule_v2
+2026-08-16T23:18:16Z,United States,Nigeria,19538.24,4,188,0,83,0.582,233.99,1,synthetic_rule_v2
+2026-08-17T00:35:42Z,India,United Kingdom,27168.98,2,8,0,7,0.28,3622.53,1,synthetic_rule_v2
+2026-08-17T04:14:12Z,Canada,Germany,9517.68,6,149,2,107,0.166,88.54,0,synthetic_rule_v2
+2026-08-17T04:52:37Z,United States,Mexico,3293.7,7,2,0,1,0.36,2195.8,1,synthetic_rule_v2
+2026-08-17T05:21:25Z,France,Brazil,23184.74,6,120,0,99,0.396,233.01,1,synthetic_rule_v2
+2026-08-17T10:16:29Z,United States,Germany,4911.62,1,43,0,22,0.162,218.29,0,synthetic_rule_v2
+2026-08-17T17:02:43Z,India,United States,5433.76,19,3,0,4,0.268,1207.5,1,synthetic_rule_v2
+2026-08-17T17:10:09Z,United Arab Emirates,Singapore,12096.75,2,100,0,66,0.248,181.91,0,synthetic_rule_v2
+2026-08-17T17:30:21Z,India,Germany,3385.23,0,31,0,22,0.25,150.45,0,synthetic_rule_v2
+2026-08-17T23:37:02Z,United Arab Emirates,Australia,4521.06,5,9,0,17,0.26,258.35,0,synthetic_rule_v2
+2026-08-18T01:17:14Z,Australia,Pakistan,13501.58,1,13,0,16,0.54,818.28,0,synthetic_rule_v2
+2026-08-18T06:58:18Z,United Kingdom,France,31592.35,1,90,0,56,0.206,559.16,0,synthetic_rule_v2
+2026-08-18T08:56:39Z,United States,Mexico,4403.1,6,39,2,112,0.36,39.14,1,synthetic_rule_v2
+2026-08-18T10:51:39Z,Australia,United Kingdom,6503.3,2,199,0,104,0.192,62.23,0,synthetic_rule_v2
+2026-08-18T12:42:54Z,United States,Australia,40371.78,0,16,0,6,0.18,6211.04,0,synthetic_rule_v2
+2026-08-18T12:47:30Z,United Kingdom,United Kingdom,9877.89,4,241,0,107,0.2,91.89,0,synthetic_rule_v2
+2026-08-18T16:36:54Z,Germany,France,12393.94,3,89,0,78,0.186,157.88,0,synthetic_rule_v2
+2026-08-18T16:42:42Z,Singapore,India,16959.24,0,1,1,1,0.304,11306.16,2,synthetic_rule_v2
+2026-08-19T01:11:06Z,Singapore,United States,5054.72,2,183,1,96,0.172,52.38,0,synthetic_rule_v2
+2026-08-19T15:22:11Z,United Kingdom,Mexico,35870.56,6,38,0,19,0.368,1839.52,1,synthetic_rule_v2
+2026-08-19T18:45:05Z,Australia,France,15388.08,3,265,0,107,0.198,143.14,0,synthetic_rule_v2
+2026-08-19T21:10:39Z,United Arab Emirates,United Arab Emirates,9037.86,1,8,0,8,0.38,1063.28,1,synthetic_rule_v2
+2026-08-20T04:15:43Z,United Arab Emirates,Germany,10999.15,5,99,0,112,0.242,97.77,0,synthetic_rule_v2
+2026-08-20T04:18:32Z,United States,United States,3521.48,5,79,0,67,0.18,52.17,0,synthetic_rule_v2
+2026-08-20T04:21:45Z,India,United Kingdom,9132.05,3,63,0,26,0.28,344.61,0,synthetic_rule_v2
+2026-08-20T05:13:30Z,United States,United Kingdom,9760.4,6,165,0,96,0.192,101.14,0,synthetic_rule_v2
+2026-08-20T07:51:49Z,United States,Mexico,10125.55,2,179,1,92,0.36,109.47,1,synthetic_rule_v2
+2026-08-20T11:03:10Z,United States,United Kingdom,24652.05,1,84,0,49,0.192,498.02,0,synthetic_rule_v2
+2026-08-20T13:04:23Z,United States,Australia,9648.58,3,38,0,15,0.18,622.49,0,synthetic_rule_v2
+2026-08-20T13:25:02Z,Australia,Canada,16624.4,1,158,0,106,0.186,156.1,0,synthetic_rule_v2
+2026-08-20T14:31:04Z,United Kingdom,Nigeria,8127.17,2,249,0,98,0.59,82.51,2,synthetic_rule_v2
+2026-08-20T14:39:54Z,United Kingdom,Japan,19963.63,3,113,0,48,0.182,411.62,0,synthetic_rule_v2
+2026-08-20T19:44:11Z,Germany,United Kingdom,8315.42,18,201,0,90,0.18,91.88,1,synthetic_rule_v2
+2026-08-21T00:29:23Z,Japan,United Arab Emirates,15374.61,6,19,0,5,0.296,2795.38,0,synthetic_rule_v2
+2026-08-21T09:14:44Z,United Kingdom,Germany,1707.23,3,61,0,36,0.17,46.77,0,synthetic_rule_v2
+2026-08-21T12:48:29Z,United States,Germany,6017.33,13,2,0,1,0.162,4011.55,0,synthetic_rule_v2
+2026-08-21T15:38:10Z,United States,Brazil,8077.83,0,31,0,20,0.384,394.04,0,synthetic_rule_v2
+2026-08-21T16:17:19Z,Japan,United Kingdom,18487.8,11,33,1,21,0.188,859.9,1,synthetic_rule_v2
+2026-08-21T19:19:24Z,United States,United Kingdom,12642.89,3,36,1,19,0.192,648.35,1,synthetic_rule_v2
+2026-08-21T23:16:16Z,India,United Arab Emirates,5622.92,1,46,0,32,0.388,173.01,0,synthetic_rule_v2
+2026-08-22T04:43:45Z,United Arab Emirates,Japan,13850.54,18,4,0,5,0.254,2518.28,1,synthetic_rule_v2
+2026-08-22T06:49:06Z,Germany,United States,6738.55,10,5,0,4,0.168,1497.46,1,synthetic_rule_v2
+2026-08-22T07:24:53Z,United Kingdom,Nigeria,31930.14,1,42,0,20,0.59,1557.57,2,synthetic_rule_v2
+2026-08-22T08:21:24Z,United States,Nigeria,13824.19,19,59,0,29,0.582,468.62,1,synthetic_rule_v2
+2026-08-22T11:07:30Z,Singapore,Brazil,9369.37,9,99,1,85,0.376,109.58,1,synthetic_rule_v2
+2026-08-22T14:37:45Z,United Arab Emirates,India,6929.91,11,31,1,11,0.392,602.6,2,synthetic_rule_v2
+2026-08-22T15:14:58Z,United States,United States,2635.65,16,188,0,78,0.18,33.58,0,synthetic_rule_v2
+2026-08-22T17:14:33Z,United States,Singapore,9872.56,2,31,2,17,0.168,564.15,0,synthetic_rule_v2
+2026-08-22T22:24:07Z,United States,Germany,15734.81,1,27,0,19,0.162,806.91,0,synthetic_rule_v2
+2026-08-23T00:46:55Z,Germany,United States,15408.68,3,138,0,80,0.168,191.41,0,synthetic_rule_v2
+2026-08-23T03:47:12Z,Germany,Brazil,14216.4,1,72,0,38,0.372,369.26,0,synthetic_rule_v2
+2026-08-23T04:39:09Z,United States,Pakistan,7333.9,9,83,0,81,0.54,89.99,1,synthetic_rule_v2
+2026-08-23T05:14:22Z,India,Singapore,22778.79,3,20,0,20,0.256,1111.16,1,synthetic_rule_v2
+2026-08-23T09:15:06Z,India,Singapore,5911.25,5,30,0,14,0.256,407.67,0,synthetic_rule_v2
+2026-08-23T09:32:55Z,United Kingdom,India,3112.35,10,39,0,15,0.32,200.8,0,synthetic_rule_v2
+2026-08-23T22:39:40Z,United Arab Emirates,United Kingdom,4381.26,4,6,0,6,0.272,674.04,0,synthetic_rule_v2
+2026-08-24T00:45:04Z,United States,Brazil,10763.77,15,15,0,8,0.384,1266.33,1,synthetic_rule_v2
+2026-08-24T02:36:44Z,United States,India,15555.23,2,13,3,10,0.312,1481.45,2,synthetic_rule_v2
+2026-08-24T02:45:14Z,Japan,Pakistan,59874.35,4,58,4,72,0.536,825.85,2,synthetic_rule_v2
+2026-08-24T09:49:56Z,United Arab Emirates,Brazil,25041.37,10,20,0,13,0.464,1854.92,1,synthetic_rule_v2
+2026-08-24T11:30:38Z,Germany,Australia,3020.08,5,1,0,4,0.168,671.13,0,synthetic_rule_v2
+2026-08-24T22:23:51Z,United Arab Emirates,United States,5037.62,3,7,0,8,0.26,592.66,0,synthetic_rule_v2
+2026-08-25T06:15:48Z,India,Brazil,8907.21,4,79,1,36,0.472,244.03,1,synthetic_rule_v2
+2026-08-25T07:46:48Z,Australia,France,2560.72,10,31,0,22,0.198,113.81,0,synthetic_rule_v2
+2026-08-25T09:15:30Z,India,United States,5585.39,0,91,1,79,0.268,70.26,0,synthetic_rule_v2
+2026-08-25T15:43:44Z,India,Germany,14516.94,1,56,0,49,0.25,293.27,1,synthetic_rule_v2
+2026-08-25T22:31:13Z,United States,Canada,13936.29,1,32,0,24,0.186,568.83,0,synthetic_rule_v2
+2026-08-25T23:44:25Z,Canada,Brazil,13764.59,3,31,0,20,0.388,671.44,1,synthetic_rule_v2
+2026-08-26T07:07:19Z,Canada,United Arab Emirates,9236.13,8,48,0,37,0.304,246.3,0,synthetic_rule_v2
+2026-08-26T12:08:15Z,Singapore,South Africa,35864.77,2,61,0,36,0.412,982.6,1,synthetic_rule_v2
+2026-08-26T15:15:48Z,United Kingdom,United States,2368.02,4,9,0,5,0.188,430.55,0,synthetic_rule_v2
+2026-08-26T17:43:29Z,Germany,India,23277.53,1,145,0,93,0.3,248.96,1,synthetic_rule_v2
+2026-08-26T18:47:40Z,United States,Mexico,14200.5,1,67,0,22,0.36,631.13,0,synthetic_rule_v2
+2026-08-26T20:43:08Z,India,Mexico,11006.98,11,24,0,21,0.448,511.95,2,synthetic_rule_v2
+2026-08-26T21:44:42Z,France,Brazil,9145.37,0,47,0,14,0.396,630.72,0,synthetic_rule_v2
+2026-08-26T22:31:17Z,Japan,Russia,9777.9,3,294,0,117,0.56,83.22,1,synthetic_rule_v2
+2026-08-26T23:20:06Z,United Kingdom,South Africa,1272.79,6,107,0,94,0.428,13.47,1,synthetic_rule_v2
+2026-08-27T03:10:32Z,United States,Singapore,10840.35,7,52,0,111,0.168,97.22,0,synthetic_rule_v2
+2026-08-27T04:43:19Z,Japan,Brazil,18600.15,3,25,1,21,0.38,865.12,1,synthetic_rule_v2
+2026-08-27T10:09:08Z,United States,Germany,2148.27,2,63,0,24,0.162,87.68,0,synthetic_rule_v2
+2026-08-27T17:34:21Z,Japan,India,26702.37,5,3,0,11,0.308,2321.95,1,synthetic_rule_v2
+2026-08-27T18:43:07Z,United States,Germany,14270.88,1,69,0,74,0.162,191.56,0,synthetic_rule_v2
+2026-08-27T19:23:31Z,Canada,France,48610.91,4,204,0,108,0.202,448.03,1,synthetic_rule_v2
+2026-08-27T20:29:59Z,United Kingdom,India,6945.25,2,250,0,107,0.32,64.61,0,synthetic_rule_v2
+2026-08-28T02:39:45Z,France,Pakistan,9135.41,19,23,2,41,0.552,220.13,2,synthetic_rule_v2
+2026-08-28T05:02:44Z,Germany,United Kingdom,6846.22,3,47,0,42,0.18,161.09,0,synthetic_rule_v2
+2026-08-28T15:56:49Z,United States,Canada,2452.09,11,74,0,92,0.186,26.51,0,synthetic_rule_v2
+2026-08-28T16:03:00Z,United Kingdom,Mexico,11032.82,1,36,0,17,0.368,630.45,0,synthetic_rule_v2
+2026-08-28T22:51:29Z,United Arab Emirates,South Africa,27665.55,13,130,2,81,0.5,339.45,2,synthetic_rule_v2
+2026-08-29T01:39:17Z,Canada,Germany,69135.58,1,7,0,6,0.166,10636.24,1,synthetic_rule_v2
+2026-08-29T03:25:27Z,India,United States,13282.19,2,85,1,34,0.268,384.99,0,synthetic_rule_v2
+2026-08-29T06:42:15Z,United Kingdom,United States,3562.2,8,19,0,15,0.188,229.82,0,synthetic_rule_v2
+2026-08-29T10:00:47Z,France,South Africa,7022.9,3,5,0,4,0.432,1560.64,1,synthetic_rule_v2
+2026-08-29T17:56:02Z,France,Japan,6034.86,4,101,0,110,0.186,54.61,0,synthetic_rule_v2
+2026-08-29T19:27:34Z,United States,United Arab Emirates,51469.34,1,42,0,72,0.3,709.92,0,synthetic_rule_v2
+2026-08-29T22:24:28Z,Germany,United States,4612.1,5,10,0,9,0.168,485.48,0,synthetic_rule_v2
+2026-08-29T22:41:06Z,Japan,United Kingdom,23659.1,2,20,1,29,0.188,802.0,1,synthetic_rule_v2
+2026-08-30T00:11:17Z,United Kingdom,Germany,12291.81,7,223,0,98,0.17,124.79,0,synthetic_rule_v2
+2026-08-30T01:13:15Z,Canada,Mexico,47740.16,4,169,2,115,0.364,413.33,2,synthetic_rule_v2
+2026-08-30T03:40:48Z,Germany,United States,6278.53,1,2,1,1,0.168,4185.69,0,synthetic_rule_v2
+2026-08-30T06:43:17Z,India,India,2780.96,1,141,0,68,0.4,40.6,0,synthetic_rule_v2
+2026-08-30T08:10:50Z,France,Japan,64187.77,12,76,0,54,0.186,1177.76,1,synthetic_rule_v2
+2026-08-30T12:10:41Z,United Kingdom,Brazil,14667.11,4,143,0,94,0.392,155.21,0,synthetic_rule_v2
+2026-08-30T18:35:52Z,France,South Africa,46846.89,2,9,0,12,0.432,3747.75,1,synthetic_rule_v2
+2026-08-30T22:21:56Z,Germany,South Africa,50413.82,3,97,1,40,0.408,1244.79,2,synthetic_rule_v2
+2026-08-30T22:48:26Z,United Kingdom,Canada,5250.25,0,3,0,3,0.194,1500.07,0,synthetic_rule_v2
+2026-08-30T22:57:36Z,United Kingdom,Singapore,16406.38,19,49,0,20,0.176,800.31,1,synthetic_rule_v2
+2026-08-31T04:39:18Z,United States,Germany,19053.85,5,170,0,98,0.162,193.44,1,synthetic_rule_v2
+2026-08-31T05:54:21Z,United Arab Emirates,India,9360.89,2,140,1,94,0.392,99.06,1,synthetic_rule_v2
+2026-08-31T06:07:37Z,India,Germany,21621.61,1,7,0,11,0.25,1880.14,0,synthetic_rule_v2
+2026-08-31T09:55:07Z,United States,Russia,31116.95,12,43,1,23,0.564,1324.13,2,synthetic_rule_v2
+2026-08-31T13:56:29Z,United States,Mexico,7376.23,2,26,1,45,0.36,162.11,1,synthetic_rule_v2
+2026-08-31T17:48:36Z,United States,Germany,51862.07,0,103,0,46,0.162,1115.31,0,synthetic_rule_v2
+2026-08-31T17:51:34Z,United States,United States,11177.51,1,22,0,26,0.18,421.79,0,synthetic_rule_v2
+2026-08-31T17:52:29Z,India,Mexico,8258.87,1,102,0,94,0.448,87.4,0,synthetic_rule_v2
+2026-08-31T20:06:45Z,United States,Germany,11077.95,3,129,4,101,0.162,109.14,2,synthetic_rule_v2
+2026-08-31T22:33:27Z,France,Brazil,2683.37,15,100,0,70,0.396,38.06,0,synthetic_rule_v2
+2026-09-01T02:21:39Z,United Kingdom,United Kingdom,42347.98,0,176,0,97,0.2,434.34,1,synthetic_rule_v2
+2026-09-01T03:43:50Z,United States,Australia,8208.22,3,13,0,5,0.18,1492.4,0,synthetic_rule_v2
+2026-09-01T07:21:07Z,Singapore,India,2947.58,0,9,0,8,0.304,346.77,0,synthetic_rule_v2
+2026-09-01T07:45:57Z,United Arab Emirates,Mexico,22446.06,1,37,1,15,0.44,1448.13,2,synthetic_rule_v2
+2026-09-01T11:26:08Z,United States,Brazil,3092.16,4,17,0,10,0.384,294.49,0,synthetic_rule_v2
+2026-09-01T12:55:29Z,Canada,United States,5928.06,13,6,1,7,0.184,790.41,0,synthetic_rule_v2
+2026-09-02T03:07:30Z,Germany,Japan,10024.2,1,69,0,32,0.162,308.44,0,synthetic_rule_v2
+2026-09-02T04:59:09Z,Germany,Australia,1045.59,2,22,0,19,0.168,53.62,0,synthetic_rule_v2
+2026-09-02T08:28:33Z,United States,United States,18426.64,1,84,0,105,0.18,174.66,0,synthetic_rule_v2
+2026-09-02T12:22:44Z,United Kingdom,Australia,12143.2,3,44,0,97,0.188,124.55,0,synthetic_rule_v2
+2026-09-02T14:31:24Z,United Kingdom,Brazil,2999.75,3,12,0,6,0.392,461.5,1,synthetic_rule_v2
+2026-09-02T14:31:35Z,Japan,United States,88529.53,9,1,0,1,0.176,59019.69,2,synthetic_rule_v2
+2026-09-02T15:57:17Z,Singapore,Germany,4575.19,14,82,0,81,0.154,56.14,1,synthetic_rule_v2
+2026-09-02T16:59:52Z,India,Brazil,1836.97,4,8,1,13,0.472,136.07,1,synthetic_rule_v2
+2026-09-02T23:40:51Z,United Kingdom,United Kingdom,6597.59,7,50,0,103,0.2,63.74,0,synthetic_rule_v2
+2026-09-03T00:40:47Z,India,Germany,4865.93,7,138,0,102,0.25,47.47,0,synthetic_rule_v2
+2026-09-03T01:47:17Z,Australia,Japan,12331.08,2,81,0,95,0.174,129.12,0,synthetic_rule_v2
+2026-09-03T02:19:08Z,United States,Germany,4583.94,1,134,0,54,0.162,84.11,0,synthetic_rule_v2
+2026-09-03T03:19:33Z,United Kingdom,United Kingdom,8493.55,9,43,0,15,0.2,547.97,1,synthetic_rule_v2
+2026-09-03T04:10:06Z,Germany,Japan,18852.54,1,119,0,65,0.162,287.83,0,synthetic_rule_v2
+2026-09-03T13:19:24Z,United Arab Emirates,Mexico,7831.44,0,125,0,61,0.44,127.34,0,synthetic_rule_v2
+2026-09-03T13:34:10Z,Japan,India,3884.33,3,17,1,5,0.308,706.24,1,synthetic_rule_v2
+2026-09-03T14:13:09Z,United Arab Emirates,Singapore,10665.31,4,242,0,108,0.248,98.3,0,synthetic_rule_v2
+2026-09-03T22:51:18Z,India,Canada,5866.47,2,166,0,110,0.274,53.09,0,synthetic_rule_v2
+2026-09-04T07:29:55Z,Germany,Germany,26849.17,2,190,1,80,0.15,333.53,1,synthetic_rule_v2
+2026-09-04T09:13:13Z,United States,Brazil,3279.58,1,54,0,37,0.384,87.46,0,synthetic_rule_v2
+2026-09-04T09:28:06Z,Australia,Mexico,6280.83,4,44,0,32,0.36,193.26,0,synthetic_rule_v2
+2026-09-04T09:43:26Z,Germany,Pakistan,13091.77,6,4,0,11,0.528,1138.41,2,synthetic_rule_v2
+2026-09-04T10:04:11Z,United Kingdom,United States,13433.67,3,6,0,4,0.188,2985.26,0,synthetic_rule_v2
+2026-09-04T10:30:53Z,Germany,Mexico,23154.2,3,128,0,55,0.348,417.19,0,synthetic_rule_v2
+2026-09-04T11:38:37Z,India,South Africa,4627.97,5,154,1,85,0.508,54.13,1,synthetic_rule_v2
+2026-09-04T12:18:27Z,Canada,India,2463.68,6,123,0,108,0.316,22.71,0,synthetic_rule_v2
+2026-09-04T17:13:17Z,Japan,Canada,49444.59,2,11,0,6,0.182,7606.86,1,synthetic_rule_v2
+2026-09-04T21:30:06Z,India,United States,3481.81,4,230,0,113,0.268,30.68,0,synthetic_rule_v2
+2026-09-04T21:43:58Z,United States,United Kingdom,5255.78,4,144,0,70,0.192,74.55,0,synthetic_rule_v2
+2026-09-04T22:14:49Z,Canada,South Africa,14588.94,15,2,0,2,0.424,5835.58,2,synthetic_rule_v2
+2026-09-04T23:25:23Z,United States,Australia,10591.67,3,15,0,14,0.18,730.46,0,synthetic_rule_v2
+2026-09-05T02:09:15Z,Singapore,India,11199.4,1,55,0,46,0.304,240.85,0,synthetic_rule_v2
+2026-09-05T02:53:29Z,Germany,Germany,3565.06,4,270,0,113,0.15,31.41,0,synthetic_rule_v2
+2026-09-05T04:15:28Z,Germany,Australia,4551.55,3,96,1,109,0.168,41.57,0,synthetic_rule_v2
+2026-09-05T08:13:05Z,Germany,Russia,11151.19,4,9,0,3,0.552,3186.05,1,synthetic_rule_v2
+2026-09-05T08:27:19Z,India,Singapore,18987.29,6,16,0,21,0.256,883.13,0,synthetic_rule_v2
+2026-09-05T10:54:49Z,Canada,Germany,3948.03,0,65,0,24,0.166,161.14,0,synthetic_rule_v2
+2026-09-05T12:38:52Z,India,United States,7179.1,20,7,0,4,0.268,1595.36,1,synthetic_rule_v2
+2026-09-05T18:45:27Z,India,United Arab Emirates,12704.9,0,245,1,110,0.388,114.98,1,synthetic_rule_v2
+2026-09-05T19:41:09Z,France,Canada,6164.26,2,108,0,56,0.198,109.1,0,synthetic_rule_v2
+2026-09-06T03:07:53Z,United States,United States,4604.08,2,6,2,3,0.18,1315.45,1,synthetic_rule_v2
+2026-09-06T04:27:15Z,Singapore,United States,13672.68,2,160,0,73,0.172,186.02,1,synthetic_rule_v2
+2026-09-06T11:43:41Z,India,Germany,3398.52,1,0,0,1,0.25,2265.68,0,synthetic_rule_v2
+2026-09-06T12:27:37Z,Australia,United Arab Emirates,21629.62,3,22,0,23,0.3,920.41,2,synthetic_rule_v2
+2026-09-06T16:01:51Z,United Kingdom,Germany,4138.95,0,44,0,55,0.17,74.58,0,synthetic_rule_v2
+2026-09-06T18:06:01Z,United States,Germany,55042.91,0,15,0,12,0.162,4403.43,1,synthetic_rule_v2
+2026-09-06T18:10:09Z,Singapore,Japan,14195.01,2,30,0,16,0.166,860.3,0,synthetic_rule_v2
+2026-09-06T18:34:24Z,Canada,Brazil,2225.37,7,4,0,6,0.388,342.36,0,synthetic_rule_v2
+2026-09-06T19:57:38Z,United States,France,8414.39,21,19,0,13,0.198,623.29,1,synthetic_rule_v2
+2026-09-06T22:48:17Z,Germany,India,7826.05,2,109,0,100,0.3,77.87,0,synthetic_rule_v2
+2026-09-06T23:09:58Z,Singapore,United Arab Emirates,7407.24,3,103,0,98,0.292,75.2,0,synthetic_rule_v2
+2026-09-06T23:58:17Z,Japan,India,44683.76,3,16,0,12,0.308,3574.7,1,synthetic_rule_v2
+2026-09-07T00:58:07Z,India,United Kingdom,82123.97,1,231,2,116,0.28,704.93,2,synthetic_rule_v2
+2026-09-07T01:20:42Z,United Arab Emirates,Mexico,6376.0,1,29,0,68,0.44,93.08,1,synthetic_rule_v2
+2026-09-07T03:46:17Z,Germany,Singapore,41192.97,6,188,0,93,0.156,440.57,1,synthetic_rule_v2
+2026-09-07T04:59:45Z,United States,United States,5132.91,1,66,0,37,0.18,136.88,0,synthetic_rule_v2
+2026-09-07T19:14:57Z,Germany,United States,2971.31,6,33,0,18,0.168,160.61,0,synthetic_rule_v2
+2026-09-07T19:51:37Z,Germany,Germany,23671.51,6,14,0,15,0.15,1527.19,0,synthetic_rule_v2
+2026-09-08T00:06:54Z,Germany,Mexico,5401.73,1,51,0,22,0.348,240.08,0,synthetic_rule_v2
+2026-09-08T04:59:55Z,United States,Germany,16658.07,14,100,0,46,0.162,358.24,0,synthetic_rule_v2
+2026-09-08T06:23:20Z,United Kingdom,Canada,13463.81,3,149,0,114,0.194,117.59,0,synthetic_rule_v2
+2026-09-08T09:10:02Z,United Arab Emirates,United Kingdom,5136.3,7,11,0,12,0.272,410.9,1,synthetic_rule_v2
+2026-09-08T16:27:13Z,United Arab Emirates,United States,15003.76,11,77,0,64,0.26,232.62,1,synthetic_rule_v2
+2026-09-08T19:08:18Z,Australia,Singapore,41848.67,4,28,0,17,0.168,2391.35,0,synthetic_rule_v2
+2026-09-08T19:51:38Z,United Kingdom,Germany,7402.91,2,19,1,20,0.17,361.12,0,synthetic_rule_v2
+2026-09-08T20:14:33Z,France,Mexico,13160.48,16,83,0,48,0.372,271.35,2,synthetic_rule_v2
+2026-09-08T20:55:55Z,India,Brazil,4820.97,5,121,0,99,0.472,48.45,0,synthetic_rule_v2
+2026-09-09T03:14:15Z,United States,France,18600.21,1,57,1,20,0.198,907.33,1,synthetic_rule_v2
+2026-09-09T03:44:58Z,Canada,United States,2965.01,13,161,0,120,0.184,24.61,0,synthetic_rule_v2
+2026-09-09T09:21:11Z,United Arab Emirates,South Africa,20232.43,1,7,1,6,0.5,3112.68,2,synthetic_rule_v2
+2026-09-09T11:21:41Z,United Kingdom,India,4243.62,1,10,1,8,0.32,499.25,0,synthetic_rule_v2
+2026-09-09T12:37:44Z,United States,Australia,10343.16,1,132,4,96,0.18,107.18,2,synthetic_rule_v2
+2026-09-09T13:46:15Z,India,Germany,1419.35,3,2,0,8,0.25,166.98,0,synthetic_rule_v2
+2026-09-09T17:07:10Z,Japan,United Kingdom,3219.66,2,84,0,43,0.188,74.02,0,synthetic_rule_v2
+2026-09-09T18:23:19Z,India,Brazil,1997.73,0,60,0,46,0.472,42.96,0,synthetic_rule_v2
+2026-09-09T18:32:49Z,United States,Germany,5225.96,1,6,1,3,0.162,1493.13,2,synthetic_rule_v2
+2026-09-09T19:05:54Z,Germany,United States,12295.41,20,24,0,13,0.168,910.77,1,synthetic_rule_v2
+2026-09-10T02:05:38Z,United States,Nigeria,3660.78,7,13,0,10,0.582,348.65,1,synthetic_rule_v2
+2026-09-10T03:33:21Z,Japan,Canada,4589.17,9,36,0,14,0.182,316.49,0,synthetic_rule_v2
+2026-09-10T03:58:16Z,United Kingdom,Nigeria,4623.14,7,74,0,75,0.59,61.23,1,synthetic_rule_v2
+2026-09-10T07:33:58Z,United Arab Emirates,Brazil,11708.88,1,104,0,104,0.464,112.05,0,synthetic_rule_v2
+2026-09-10T10:03:47Z,Germany,Mexico,2307.11,4,80,1,82,0.348,27.96,0,synthetic_rule_v2
+2026-09-10T10:12:48Z,India,United Kingdom,6231.82,2,160,0,88,0.28,70.42,0,synthetic_rule_v2
+2026-09-10T15:29:40Z,India,India,36143.28,7,59,0,77,0.4,466.36,0,synthetic_rule_v2
+2026-09-10T15:59:32Z,United States,France,6235.99,8,62,0,93,0.198,66.7,0,synthetic_rule_v2
+2026-09-10T16:49:01Z,India,United Kingdom,19996.83,2,61,0,24,0.28,816.2,1,synthetic_rule_v2
+2026-09-10T18:31:43Z,India,United States,2945.63,4,59,0,70,0.268,41.78,0,synthetic_rule_v2
+2026-09-10T19:03:53Z,United States,Japan,40656.16,1,16,0,14,0.174,2803.87,1,synthetic_rule_v2
+2026-09-10T20:59:54Z,Japan,Mexico,955.77,16,17,0,18,0.356,51.66,0,synthetic_rule_v2
+2026-09-10T23:31:32Z,France,Pakistan,784.77,1,4,0,4,0.552,174.39,0,synthetic_rule_v2
+2026-09-11T08:36:31Z,Germany,Mexico,13612.5,3,29,1,66,0.348,204.7,0,synthetic_rule_v2
+2026-09-11T11:06:06Z,United Kingdom,India,6904.81,5,3,0,2,0.32,2761.92,2,synthetic_rule_v2
+2026-09-11T16:33:10Z,United States,Pakistan,15391.59,8,20,4,19,0.54,789.31,2,synthetic_rule_v2
+2026-09-11T19:54:38Z,Singapore,United Arab Emirates,4410.91,2,242,0,109,0.292,40.28,0,synthetic_rule_v2
+2026-09-12T00:22:52Z,United States,United Kingdom,16885.44,10,25,0,23,0.192,718.53,0,synthetic_rule_v2
+2026-09-12T01:53:46Z,Germany,Pakistan,2049.78,7,149,0,69,0.528,29.49,0,synthetic_rule_v2
+2026-09-12T01:58:00Z,Japan,Nigeria,25698.0,2,22,0,8,0.578,3023.29,2,synthetic_rule_v2
+2026-09-12T04:32:51Z,Germany,South Africa,114509.96,1,11,0,6,0.408,17616.92,2,synthetic_rule_v2
+2026-09-12T04:50:46Z,India,Brazil,1270.48,1,41,0,22,0.472,56.47,0,synthetic_rule_v2
+2026-09-12T13:02:45Z,India,Mexico,17070.69,19,32,0,22,0.448,758.7,2,synthetic_rule_v2
+2026-09-12T13:45:28Z,Japan,Pakistan,57963.34,4,20,1,31,0.536,1840.11,2,synthetic_rule_v2
+2026-09-12T14:40:58Z,Germany,United States,12769.03,18,46,0,98,0.168,129.63,0,synthetic_rule_v2
+2026-09-12T16:22:47Z,United Kingdom,Pakistan,9197.3,5,2,0,2,0.548,3678.92,2,synthetic_rule_v2
+2026-09-12T18:24:58Z,United Kingdom,India,3614.42,2,12,0,6,0.32,556.06,0,synthetic_rule_v2
+2026-09-12T19:06:08Z,Canada,India,12596.56,19,40,0,16,0.316,763.43,0,synthetic_rule_v2
+2026-09-12T19:15:27Z,India,Germany,16421.25,2,67,0,104,0.25,157.14,0,synthetic_rule_v2
+2026-09-12T19:25:23Z,Singapore,Canada,3184.91,3,48,0,64,0.178,49.38,0,synthetic_rule_v2
+2026-09-12T21:13:29Z,Australia,Mexico,20991.18,1,141,0,60,0.36,346.96,1,synthetic_rule_v2
+2026-09-13T01:31:19Z,Canada,Singapore,10843.35,5,118,2,86,0.172,125.36,1,synthetic_rule_v2
+2026-09-13T02:37:11Z,United States,Singapore,921.72,4,72,0,84,0.168,10.91,0,synthetic_rule_v2
+2026-09-13T06:07:53Z,United States,France,14946.34,21,14,1,5,0.198,2717.52,2,synthetic_rule_v2
+2026-09-13T12:36:21Z,Canada,Germany,1225.4,6,46,0,23,0.166,52.14,0,synthetic_rule_v2
+2026-09-13T16:20:07Z,Japan,India,5386.09,1,80,0,65,0.308,82.23,0,synthetic_rule_v2
+2026-09-13T17:36:41Z,United Arab Emirates,Pakistan,30217.59,2,31,0,30,0.62,990.74,2,synthetic_rule_v2
+2026-09-13T20:32:53Z,United States,Australia,11957.12,3,69,0,35,0.18,336.82,0,synthetic_rule_v2
+2026-09-13T20:44:26Z,United Arab Emirates,Mexico,4169.7,5,109,1,102,0.44,40.68,0,synthetic_rule_v2
+2026-09-13T22:54:46Z,Singapore,Mexico,28859.42,1,16,2,6,0.352,4439.91,2,synthetic_rule_v2
+2026-09-13T23:19:50Z,Japan,France,5545.18,4,169,0,79,0.194,69.75,0,synthetic_rule_v2
+2026-09-13T23:51:47Z,Canada,India,41173.88,4,11,2,11,0.316,3580.34,2,synthetic_rule_v2
+2026-09-14T00:24:54Z,India,Germany,4404.57,0,45,1,23,0.25,187.43,0,synthetic_rule_v2
+2026-09-14T02:02:40Z,United States,Australia,5548.99,6,58,0,22,0.18,246.62,0,synthetic_rule_v2
+2026-09-14T03:54:32Z,Australia,India,12265.77,9,1,0,6,0.312,1887.04,1,synthetic_rule_v2
+2026-09-14T05:48:49Z,France,Germany,35916.56,5,42,0,84,0.174,425.05,0,synthetic_rule_v2
+2026-09-14T07:27:06Z,Germany,Mexico,9956.54,1,108,0,47,0.348,209.61,1,synthetic_rule_v2
+2026-09-14T08:40:36Z,Australia,United Arab Emirates,13793.14,4,14,0,15,0.3,889.88,1,synthetic_rule_v2
+2026-09-14T11:55:34Z,United States,Mexico,8772.64,1,37,0,25,0.36,344.03,0,synthetic_rule_v2
+2026-09-14T15:17:14Z,United States,United Kingdom,57633.63,10,130,2,88,0.192,651.23,1,synthetic_rule_v2
+2026-09-14T16:44:01Z,India,Australia,1570.52,2,90,0,80,0.268,19.51,0,synthetic_rule_v2
+2026-09-14T17:09:41Z,United Arab Emirates,Singapore,3257.74,5,54,5,52,0.248,62.05,1,synthetic_rule_v2
+2026-09-15T01:34:45Z,United Arab Emirates,United Kingdom,5742.73,2,211,2,93,0.272,61.42,1,synthetic_rule_v2
+2026-09-15T01:41:34Z,Germany,Nigeria,22352.87,1,75,0,105,0.57,211.88,2,synthetic_rule_v2
+2026-09-15T05:11:51Z,Canada,Singapore,13946.39,2,8,0,7,0.172,1859.52,0,synthetic_rule_v2
+2026-09-15T08:18:24Z,United Kingdom,Canada,26755.98,5,0,0,1,0.194,17837.32,2,synthetic_rule_v2
+2026-09-15T10:31:52Z,United States,Mexico,12959.81,3,8,0,18,0.36,700.53,0,synthetic_rule_v2
+2026-09-15T11:00:07Z,Australia,Russia,42701.3,4,187,3,99,0.564,429.16,2,synthetic_rule_v2
+2026-09-15T11:00:25Z,United Kingdom,Germany,14549.22,1,205,0,77,0.17,187.73,1,synthetic_rule_v2
+2026-09-15T12:55:55Z,United Kingdom,Japan,16660.39,3,108,0,53,0.182,311.41,0,synthetic_rule_v2
+2026-09-15T15:35:30Z,India,United Kingdom,1637.41,6,31,0,18,0.28,88.51,0,synthetic_rule_v2
+2026-09-15T15:38:34Z,India,Russia,34854.89,11,22,0,19,0.652,1787.43,2,synthetic_rule_v2
+2026-09-15T21:23:30Z,Japan,Brazil,10130.41,3,269,0,113,0.38,89.25,0,synthetic_rule_v2
+2026-09-16T01:47:06Z,India,United States,32930.44,7,155,0,67,0.268,487.86,0,synthetic_rule_v2
+2026-09-16T02:19:22Z,United States,Japan,31530.09,3,53,0,22,0.174,1401.34,1,synthetic_rule_v2
+2026-09-16T04:15:55Z,United Kingdom,United States,10964.97,11,14,0,16,0.188,664.54,1,synthetic_rule_v2
+2026-09-16T04:47:21Z,United States,Brazil,4906.2,9,73,0,107,0.384,45.64,0,synthetic_rule_v2
+2026-09-16T05:32:08Z,United Kingdom,United States,44542.41,1,67,5,78,0.188,567.42,2,synthetic_rule_v2
+2026-09-16T06:13:41Z,United Arab Emirates,United Kingdom,3609.03,4,1,0,2,0.272,1443.61,0,synthetic_rule_v2
+2026-09-16T07:03:44Z,India,United States,12511.61,5,15,0,38,0.268,324.98,0,synthetic_rule_v2
+2026-09-16T12:04:55Z,United States,Canada,1158.92,6,45,1,21,0.186,53.9,0,synthetic_rule_v2
+2026-09-17T08:50:29Z,United States,Brazil,12780.45,2,18,0,24,0.384,521.65,1,synthetic_rule_v2
+2026-09-17T10:01:35Z,Japan,Japan,21316.15,2,46,0,64,0.17,330.48,0,synthetic_rule_v2
+2026-09-17T13:14:37Z,Singapore,United Kingdom,17796.98,1,156,0,73,0.184,242.14,1,synthetic_rule_v2
+2026-09-17T20:02:02Z,Canada,United Kingdom,6100.68,21,232,1,96,0.196,63.22,0,synthetic_rule_v2
+2026-09-17T22:36:30Z,United Kingdom,United Kingdom,4645.43,2,23,1,29,0.2,157.47,1,synthetic_rule_v2
+2026-09-17T22:45:04Z,India,Germany,18496.14,9,110,0,115,0.25,160.14,0,synthetic_rule_v2
+2026-09-17T23:38:52Z,Singapore,United Kingdom,31164.74,14,40,0,22,0.184,1385.1,1,synthetic_rule_v2
+2026-09-18T00:52:48Z,United Kingdom,Nigeria,1294.23,9,27,0,13,0.59,95.87,0,synthetic_rule_v2
+2026-09-18T03:56:00Z,Australia,United Kingdom,7103.42,4,9,0,6,0.192,1092.83,0,synthetic_rule_v2
+2026-09-18T04:56:59Z,India,Pakistan,9363.28,3,5,0,6,0.628,1440.5,0,synthetic_rule_v2
+2026-09-18T04:59:14Z,Germany,India,6655.05,4,21,2,16,0.3,403.34,1,synthetic_rule_v2
+2026-09-18T06:39:01Z,United States,India,27702.82,5,51,0,22,0.312,1231.24,1,synthetic_rule_v2
+2026-09-18T06:42:49Z,United States,Singapore,19525.69,15,49,1,67,0.168,289.27,2,synthetic_rule_v2
+2026-09-18T07:59:43Z,United Kingdom,Singapore,9414.87,2,10,0,8,0.176,1107.63,0,synthetic_rule_v2
+2026-09-18T08:11:46Z,India,South Africa,10103.45,3,36,2,15,0.508,651.84,2,synthetic_rule_v2
+2026-09-18T08:47:18Z,India,United States,12660.64,2,103,0,57,0.268,220.19,0,synthetic_rule_v2
+2026-09-18T10:25:00Z,Canada,Brazil,6360.22,5,10,0,13,0.388,471.13,0,synthetic_rule_v2
+2026-09-18T16:41:18Z,Germany,Germany,3738.52,5,190,0,111,0.15,33.53,0,synthetic_rule_v2
+2026-09-18T18:59:18Z,Germany,Russia,5247.55,1,83,0,42,0.552,123.47,0,synthetic_rule_v2
+2026-09-18T20:29:08Z,United Kingdom,Nigeria,3935.0,7,10,0,15,0.59,253.87,1,synthetic_rule_v2
+2026-09-18T20:29:51Z,France,United Kingdom,8200.83,5,59,0,55,0.204,147.76,0,synthetic_rule_v2
+2026-09-18T22:13:28Z,United Kingdom,Germany,21374.98,7,91,0,96,0.17,221.5,0,synthetic_rule_v2
+2026-09-18T22:48:30Z,Australia,United Arab Emirates,1997.39,0,16,0,8,0.3,234.99,0,synthetic_rule_v2
+2026-09-18T22:59:22Z,United Kingdom,Canada,10410.84,7,11,0,8,0.194,1224.8,0,synthetic_rule_v2
+2026-09-19T03:45:38Z,United States,United Arab Emirates,142937.89,7,57,1,26,0.3,5393.88,2,synthetic_rule_v2
+2026-09-19T07:02:46Z,United States,Australia,14376.47,2,15,0,13,0.18,1064.92,0,synthetic_rule_v2
+2026-09-19T09:17:36Z,Germany,France,11036.83,1,126,0,56,0.186,195.34,0,synthetic_rule_v2
+2026-09-19T11:14:01Z,United Kingdom,Japan,45004.0,3,34,1,14,0.182,3103.72,2,synthetic_rule_v2
+2026-09-19T22:12:56Z,Canada,India,1023.17,3,46,0,24,0.316,41.76,0,synthetic_rule_v2
+2026-09-19T23:48:22Z,United States,Germany,47051.53,9,9,1,6,0.162,7238.7,2,synthetic_rule_v2
+2026-09-20T02:55:38Z,United Kingdom,Canada,3954.96,2,12,1,16,0.194,239.69,0,synthetic_rule_v2
+2026-09-20T14:27:55Z,Singapore,Japan,12607.26,6,67,0,61,0.166,205.0,0,synthetic_rule_v2
+2026-09-20T14:46:58Z,India,Brazil,3901.05,0,102,1,97,0.472,40.01,1,synthetic_rule_v2
+2026-09-20T17:35:42Z,Canada,India,2071.93,0,124,0,76,0.316,27.08,1,synthetic_rule_v2
+2026-09-20T20:01:45Z,France,United Kingdom,6618.93,1,12,0,10,0.204,630.37,0,synthetic_rule_v2
+2026-09-20T21:48:03Z,Singapore,Singapore,9974.45,6,18,0,14,0.16,687.89,0,synthetic_rule_v2
+2026-09-20T22:23:05Z,United Kingdom,India,11304.0,1,11,0,22,0.32,502.4,0,synthetic_rule_v2
+2026-09-21T03:42:49Z,Singapore,India,33595.78,4,4,0,3,0.304,9598.79,1,synthetic_rule_v2
+2026-09-21T07:36:34Z,United Kingdom,South Africa,1224.21,2,41,0,62,0.428,19.59,0,synthetic_rule_v2
+2026-09-21T07:52:31Z,United Arab Emirates,Canada,6890.5,2,13,0,17,0.266,393.74,0,synthetic_rule_v2
+2026-09-21T15:20:05Z,United Kingdom,United Kingdom,1736.25,2,119,1,78,0.2,22.12,0,synthetic_rule_v2
+2026-09-21T16:53:43Z,Canada,India,9046.31,5,29,0,21,0.316,420.76,0,synthetic_rule_v2
+2026-09-21T19:37:35Z,Germany,South Africa,79983.26,0,40,0,20,0.408,3901.62,2,synthetic_rule_v2
+2026-09-21T19:59:38Z,Japan,Singapore,33857.18,1,12,0,4,0.164,7523.82,0,synthetic_rule_v2
+2026-09-21T22:45:03Z,United States,United Arab Emirates,3013.93,5,106,0,45,0.3,66.24,0,synthetic_rule_v2
+2026-09-22T12:37:29Z,United States,India,10259.12,9,45,0,51,0.312,199.21,1,synthetic_rule_v2
+2026-09-22T14:14:02Z,United Kingdom,United Arab Emirates,5039.02,3,71,0,120,0.308,41.82,0,synthetic_rule_v2
+2026-09-22T14:18:30Z,United States,United Kingdom,45717.19,5,11,0,6,0.192,7033.41,1,synthetic_rule_v2
+2026-09-22T15:15:23Z,Japan,Brazil,17532.43,2,24,0,32,0.38,539.46,0,synthetic_rule_v2
+2026-09-23T04:18:21Z,Canada,India,2627.98,0,49,0,23,0.316,111.83,0,synthetic_rule_v2
+2026-09-23T10:58:31Z,United Kingdom,Mexico,12359.75,13,122,1,57,0.368,214.95,2,synthetic_rule_v2
+2026-09-23T13:21:37Z,Germany,Germany,11357.17,1,19,0,24,0.15,463.56,0,synthetic_rule_v2
+2026-09-23T13:22:05Z,United Kingdom,South Africa,12213.61,8,8,0,5,0.428,2220.66,1,synthetic_rule_v2
+2026-09-23T16:03:12Z,United Arab Emirates,Mexico,10338.74,1,5,0,1,0.44,6892.49,1,synthetic_rule_v2
+2026-09-23T16:30:39Z,France,Germany,26446.78,4,15,0,14,0.174,1823.92,1,synthetic_rule_v2
+2026-09-23T16:32:34Z,United States,Nigeria,18332.28,3,27,0,20,0.582,894.26,2,synthetic_rule_v2
+2026-09-23T20:07:38Z,Singapore,South Africa,18192.22,2,77,2,46,0.412,391.23,2,synthetic_rule_v2
+2026-09-23T21:55:01Z,Germany,Pakistan,6165.89,8,205,0,81,0.528,75.66,2,synthetic_rule_v2
+2026-09-23T22:41:58Z,Singapore,United Kingdom,14043.19,1,26,3,24,0.184,573.19,1,synthetic_rule_v2
+2026-09-24T03:06:59Z,Canada,Japan,5915.37,2,38,0,19,0.178,303.35,0,synthetic_rule_v2
+2026-09-24T08:37:02Z,United States,Brazil,4016.58,6,33,0,26,0.384,151.57,0,synthetic_rule_v2
+2026-09-24T12:55:06Z,United States,United States,2756.35,0,12,0,11,0.18,239.68,0,synthetic_rule_v2
+2026-09-24T14:34:29Z,Canada,Australia,13568.06,4,166,0,98,0.184,137.75,0,synthetic_rule_v2
+2026-09-24T17:21:38Z,Germany,Singapore,34479.53,16,88,1,39,0.156,872.9,1,synthetic_rule_v2
+2026-09-24T22:39:50Z,United States,Australia,22441.11,7,237,2,120,0.18,186.23,2,synthetic_rule_v2
+2026-09-24T22:42:21Z,Germany,Mexico,3248.43,6,13,0,5,0.348,590.62,0,synthetic_rule_v2
+2026-09-25T12:34:37Z,United Kingdom,United Kingdom,3568.31,4,9,0,14,0.2,246.09,0,synthetic_rule_v2
+2026-09-25T12:57:39Z,United States,United Kingdom,19089.06,3,67,0,43,0.192,438.83,0,synthetic_rule_v2
+2026-09-25T19:25:51Z,United Arab Emirates,Japan,7817.61,1,24,3,24,0.254,319.09,2,synthetic_rule_v2
+2026-09-25T22:12:30Z,United States,United States,8145.55,3,25,0,15,0.18,525.52,0,synthetic_rule_v2
+2026-09-25T22:53:26Z,Singapore,United States,6504.66,3,50,0,105,0.172,61.66,0,synthetic_rule_v2
+2026-09-26T08:42:13Z,India,Mexico,2203.43,5,11,0,13,0.448,163.22,0,synthetic_rule_v2
+2026-09-26T16:41:04Z,Japan,Mexico,15008.44,2,52,0,25,0.356,588.57,0,synthetic_rule_v2
+2026-09-26T16:42:00Z,United Arab Emirates,Mexico,5320.11,0,97,0,94,0.44,56.3,0,synthetic_rule_v2
+2026-09-26T19:51:09Z,United States,Germany,2020.45,4,226,0,109,0.162,18.45,0,synthetic_rule_v2
+2026-09-26T20:05:25Z,Germany,United Arab Emirates,10141.21,0,220,0,88,0.288,114.59,0,synthetic_rule_v2
+2026-09-26T20:20:38Z,United States,Russia,15010.11,4,153,0,101,0.564,147.88,2,synthetic_rule_v2
+2026-09-27T02:25:16Z,United Kingdom,Japan,46852.76,1,67,0,46,0.182,1007.59,1,synthetic_rule_v2
+2026-09-27T03:04:25Z,India,Canada,8422.84,5,140,0,62,0.274,134.77,1,synthetic_rule_v2
+2026-09-27T07:33:02Z,Canada,Singapore,1090.28,5,42,0,19,0.172,55.91,0,synthetic_rule_v2
+2026-09-27T08:02:09Z,Germany,France,56505.31,3,7,3,6,0.186,8693.12,2,synthetic_rule_v2
+2026-09-27T08:33:16Z,Singapore,Brazil,16269.41,5,164,0,81,0.376,199.62,1,synthetic_rule_v2
+2026-09-27T12:01:02Z,France,Mexico,4326.23,1,158,0,97,0.372,44.37,0,synthetic_rule_v2
+2026-09-27T14:25:42Z,United States,Australia,157711.69,0,148,4,81,0.18,1935.11,2,synthetic_rule_v2
+2026-09-27T14:57:09Z,United Kingdom,United States,5827.31,4,22,0,8,0.188,685.57,0,synthetic_rule_v2
+2026-09-27T15:22:46Z,United Arab Emirates,India,38772.57,2,3,0,2,0.392,15509.03,2,synthetic_rule_v2
+2026-09-27T22:21:22Z,Singapore,South Africa,10892.38,3,226,0,98,0.412,110.58,0,synthetic_rule_v2
+2026-09-27T23:49:58Z,Australia,Japan,40196.91,3,4,0,5,0.174,7308.53,0,synthetic_rule_v2
+2026-09-28T00:48:10Z,Japan,United States,4419.24,2,42,0,22,0.176,196.41,0,synthetic_rule_v2
+2026-09-28T01:03:31Z,United States,United Kingdom,11988.26,4,2,1,1,0.192,7992.17,1,synthetic_rule_v2
+2026-09-28T07:09:03Z,United Kingdom,Japan,10180.13,3,208,0,81,0.182,124.91,0,synthetic_rule_v2
+2026-09-28T09:33:10Z,United Arab Emirates,India,2640.41,7,18,0,42,0.392,62.13,0,synthetic_rule_v2
+2026-09-28T10:55:12Z,Canada,India,5210.03,6,25,2,18,0.316,281.62,1,synthetic_rule_v2
+2026-09-28T15:07:27Z,Singapore,United States,1433.51,2,69,0,88,0.172,16.2,0,synthetic_rule_v2
+2026-09-28T19:46:40Z,United States,Australia,19849.8,1,43,0,35,0.18,559.15,0,synthetic_rule_v2
+2026-09-28T21:19:20Z,United States,Brazil,22525.58,8,55,0,49,0.384,455.06,1,synthetic_rule_v2
+2026-09-29T01:40:55Z,United States,United Kingdom,27522.34,1,170,0,120,0.192,228.4,0,synthetic_rule_v2
+2026-09-29T02:28:02Z,United States,United Kingdom,5081.42,1,12,0,15,0.192,327.83,0,synthetic_rule_v2
+2026-09-29T03:02:51Z,Canada,United States,2106.65,0,47,0,20,0.184,102.76,0,synthetic_rule_v2
+2026-09-29T03:13:20Z,India,United States,3009.98,2,43,0,33,0.268,89.85,0,synthetic_rule_v2
+2026-09-29T12:52:59Z,India,Australia,13316.81,3,3,0,5,0.268,2421.24,0,synthetic_rule_v2
+2026-09-29T13:15:10Z,Singapore,South Africa,5446.53,1,64,0,31,0.412,172.91,0,synthetic_rule_v2
+2026-09-29T13:21:15Z,United Arab Emirates,Russia,2588.03,11,6,0,6,0.644,398.16,0,synthetic_rule_v2
+2026-09-29T14:05:52Z,India,Singapore,41396.86,4,128,1,63,0.256,651.92,1,synthetic_rule_v2
+2026-09-29T14:28:55Z,United States,India,4100.06,3,9,0,4,0.312,911.12,0,synthetic_rule_v2
+2026-09-29T16:52:29Z,Singapore,Germany,39108.65,9,1,0,1,0.154,26072.43,2,synthetic_rule_v2
+2026-09-29T17:45:46Z,France,South Africa,4775.38,4,10,0,5,0.432,868.25,1,synthetic_rule_v2
+2026-09-29T17:47:27Z,United Kingdom,Canada,5278.05,3,35,1,18,0.194,285.3,1,synthetic_rule_v2
+2026-09-29T21:14:00Z,United States,United Arab Emirates,8070.28,2,109,0,42,0.3,189.89,0,synthetic_rule_v2
+2026-09-30T04:07:17Z,Singapore,United States,8156.73,1,9,0,20,0.172,397.89,0,synthetic_rule_v2
+2026-09-30T06:10:41Z,Australia,United States,15435.27,2,8,0,7,0.18,2058.04,0,synthetic_rule_v2
+2026-09-30T08:15:50Z,United Kingdom,Nigeria,12231.2,7,185,0,74,0.59,164.18,1,synthetic_rule_v2
+2026-09-30T10:49:44Z,India,Germany,25116.91,3,2,0,2,0.25,10046.76,1,synthetic_rule_v2
+2026-09-30T15:37:54Z,India,South Africa,2483.67,4,212,0,114,0.508,21.69,0,synthetic_rule_v2
+2026-09-30T20:55:51Z,United States,India,5576.15,2,116,2,59,0.312,93.72,0,synthetic_rule_v2
+2026-10-01T04:09:43Z,India,Pakistan,22215.82,2,6,0,3,0.628,6347.38,2,synthetic_rule_v2
+2026-10-01T04:41:15Z,United Arab Emirates,United Arab Emirates,3296.88,2,147,0,118,0.38,27.82,0,synthetic_rule_v2
+2026-10-01T08:33:07Z,France,Australia,12762.26,8,158,4,77,0.192,164.67,2,synthetic_rule_v2
+2026-10-01T12:21:21Z,Singapore,United Kingdom,2506.6,1,28,0,39,0.184,63.46,0,synthetic_rule_v2
+2026-10-01T15:20:24Z,Singapore,Canada,21394.57,17,4,0,6,0.178,3291.47,0,synthetic_rule_v2
+2026-10-01T17:35:47Z,France,Germany,2003.71,0,4,0,2,0.174,801.48,0,synthetic_rule_v2
+2026-10-01T20:02:30Z,Germany,Canada,5936.31,1,178,0,89,0.174,66.33,0,synthetic_rule_v2
+2026-10-02T06:10:06Z,India,United Kingdom,5233.34,7,8,1,6,0.28,805.13,0,synthetic_rule_v2
+2026-10-02T16:07:18Z,Germany,Germany,12496.26,2,4,2,5,0.15,2272.05,0,synthetic_rule_v2
+2026-10-02T17:44:26Z,United Kingdom,United States,21386.01,0,6,3,17,0.188,1222.06,1,synthetic_rule_v2
+2026-10-03T00:08:24Z,India,Nigeria,34279.27,5,60,0,23,0.67,1458.69,2,synthetic_rule_v2
+2026-10-03T05:32:11Z,India,France,11772.97,2,3,0,2,0.286,4709.19,1,synthetic_rule_v2
+2026-10-03T06:55:01Z,Japan,United Kingdom,4178.68,4,67,0,28,0.188,146.62,0,synthetic_rule_v2
+2026-10-03T07:37:16Z,Australia,Mexico,9941.08,3,206,1,87,0.36,113.61,0,synthetic_rule_v2
+2026-10-03T09:59:56Z,United Arab Emirates,Russia,25437.62,17,3,1,14,0.644,1754.32,2,synthetic_rule_v2
+2026-10-03T12:46:05Z,Canada,United States,20831.14,8,69,0,45,0.184,457.83,0,synthetic_rule_v2
+2026-10-03T15:06:39Z,United Kingdom,South Africa,14548.13,8,46,3,19,0.428,746.06,2,synthetic_rule_v2
+2026-10-03T15:51:49Z,France,Mexico,23102.03,21,113,0,50,0.372,457.47,1,synthetic_rule_v2
+2026-10-03T16:13:41Z,United Arab Emirates,United Kingdom,8335.32,0,163,1,96,0.272,86.38,0,synthetic_rule_v2
+2026-10-03T16:19:14Z,Germany,Japan,3014.47,2,2,0,6,0.162,463.76,0,synthetic_rule_v2
+2026-10-03T17:25:19Z,Australia,United States,3423.86,3,49,0,26,0.18,129.2,0,synthetic_rule_v2
+2026-10-03T18:02:35Z,Germany,South Africa,7452.41,1,21,0,10,0.408,709.75,0,synthetic_rule_v2
+2026-10-03T20:00:58Z,United Kingdom,Brazil,7213.74,1,6,0,4,0.392,1603.05,0,synthetic_rule_v2
+2026-10-03T20:46:06Z,United Kingdom,United Arab Emirates,8610.37,1,93,0,96,0.308,89.23,0,synthetic_rule_v2
+2026-10-04T00:14:50Z,United Kingdom,India,43659.67,2,228,0,98,0.32,443.25,1,synthetic_rule_v2
+2026-10-04T01:36:33Z,India,Pakistan,10060.48,3,85,1,60,0.628,166.29,1,synthetic_rule_v2
+2026-10-04T03:06:18Z,India,France,20846.38,1,87,0,89,0.286,232.92,0,synthetic_rule_v2
+2026-10-04T03:44:07Z,Singapore,Canada,23212.18,11,18,4,20,0.178,1132.3,2,synthetic_rule_v2
+2026-10-04T05:47:48Z,United Kingdom,Brazil,17791.32,1,24,0,20,0.392,867.87,0,synthetic_rule_v2
+2026-10-04T10:20:35Z,Singapore,Japan,3380.72,2,52,0,46,0.166,72.7,0,synthetic_rule_v2
+2026-10-04T15:13:27Z,United Kingdom,United States,12970.1,2,87,0,102,0.188,126.54,0,synthetic_rule_v2
+2026-10-04T16:07:48Z,United Kingdom,India,63760.41,0,96,1,68,0.32,930.81,1,synthetic_rule_v2
+2026-10-04T16:45:38Z,United States,Germany,4809.43,5,97,0,105,0.162,45.59,0,synthetic_rule_v2
+2026-10-05T01:30:56Z,Germany,Mexico,5048.28,3,65,0,75,0.348,66.86,0,synthetic_rule_v2
+2026-10-05T02:55:42Z,Germany,United Arab Emirates,5646.42,13,0,0,5,0.288,1026.62,1,synthetic_rule_v2
+2026-10-05T07:33:49Z,Singapore,Singapore,33870.77,2,133,2,115,0.16,293.25,2,synthetic_rule_v2
+2026-10-05T11:49:47Z,India,United Arab Emirates,4077.22,2,158,0,120,0.388,33.84,0,synthetic_rule_v2
+2026-10-05T12:06:24Z,Germany,Germany,5653.34,11,9,0,13,0.15,418.77,0,synthetic_rule_v2
+2026-10-05T12:57:28Z,Japan,India,5068.33,8,13,0,12,0.308,405.47,0,synthetic_rule_v2
+2026-10-05T13:08:36Z,France,United Kingdom,3538.76,1,29,0,20,0.204,172.62,0,synthetic_rule_v2
+2026-10-05T15:00:51Z,India,United Arab Emirates,3756.81,5,70,1,35,0.388,105.83,1,synthetic_rule_v2
+2026-10-05T17:59:24Z,United States,Brazil,8304.96,2,3,1,6,0.384,1277.69,1,synthetic_rule_v2
+2026-10-06T01:54:28Z,India,Japan,22061.84,9,155,0,105,0.262,209.12,1,synthetic_rule_v2
+2026-10-06T10:12:08Z,Australia,France,2005.15,3,7,0,20,0.198,97.81,1,synthetic_rule_v2
+2026-10-06T12:53:51Z,Canada,Germany,10622.94,4,76,0,60,0.166,175.59,0,synthetic_rule_v2
+2026-10-06T16:06:47Z,United States,United Arab Emirates,71001.48,7,14,0,14,0.3,4896.65,2,synthetic_rule_v2
+2026-10-06T23:04:03Z,Canada,Russia,5190.26,6,43,0,23,0.568,220.86,1,synthetic_rule_v2
+2026-10-07T03:22:45Z,Germany,United States,13041.21,5,35,0,24,0.168,532.29,0,synthetic_rule_v2
+2026-10-07T04:02:37Z,United Arab Emirates,Japan,12996.75,4,33,0,24,0.254,530.48,0,synthetic_rule_v2
+2026-10-07T04:43:54Z,United States,Nigeria,3578.87,3,7,0,6,0.582,550.6,0,synthetic_rule_v2
+2026-10-07T04:49:51Z,India,United Arab Emirates,9686.92,3,16,0,7,0.388,1291.59,0,synthetic_rule_v2
+2026-10-07T07:10:00Z,India,India,3588.08,0,90,3,108,0.4,33.07,1,synthetic_rule_v2
+2026-10-07T08:09:57Z,United States,Brazil,8506.19,1,11,0,22,0.384,378.05,0,synthetic_rule_v2
+2026-10-07T17:09:30Z,United States,India,63219.49,22,28,1,52,0.312,1204.18,2,synthetic_rule_v2
+2026-10-07T21:32:54Z,United States,United Kingdom,84438.86,3,201,0,80,0.192,1048.93,2,synthetic_rule_v2
+2026-10-08T10:09:37Z,United States,India,2064.86,8,42,0,21,0.312,96.04,0,synthetic_rule_v2
+2026-10-08T10:37:48Z,United Kingdom,United Kingdom,2573.01,5,103,0,103,0.2,24.86,0,synthetic_rule_v2
+2026-10-08T11:40:18Z,France,United States,38020.5,5,18,1,23,0.192,1617.89,1,synthetic_rule_v2
+2026-10-08T14:32:49Z,France,Germany,8574.66,2,32,0,14,0.174,591.36,0,synthetic_rule_v2
+2026-10-08T19:09:35Z,United States,India,18208.35,2,19,0,11,0.312,1583.33,1,synthetic_rule_v2
+2026-10-08T20:03:22Z,India,Singapore,12404.19,4,8,0,24,0.256,506.29,1,synthetic_rule_v2
+2026-10-08T22:05:47Z,United Arab Emirates,United Kingdom,4498.98,3,21,0,15,0.272,290.26,1,synthetic_rule_v2
+2026-10-09T05:34:12Z,United States,France,62170.23,2,77,3,56,0.198,1100.36,2,synthetic_rule_v2
+2026-10-09T07:06:57Z,Japan,United Kingdom,1844.27,0,128,0,110,0.188,16.69,0,synthetic_rule_v2
+2026-10-09T08:27:05Z,United States,France,6688.82,2,29,0,20,0.198,326.28,0,synthetic_rule_v2
+2026-10-09T13:28:50Z,Singapore,United States,7509.87,2,4,0,3,0.172,2145.68,0,synthetic_rule_v2
+2026-10-10T01:24:15Z,Singapore,United States,3440.41,1,104,0,84,0.172,40.71,0,synthetic_rule_v2
+2026-10-10T03:02:13Z,United States,Brazil,5913.83,4,0,0,2,0.384,2365.53,1,synthetic_rule_v2
+2026-10-10T06:52:39Z,India,United Kingdom,11147.54,6,2,0,5,0.28,2026.83,0,synthetic_rule_v2
+2026-10-10T09:50:08Z,United Kingdom,Canada,11193.24,0,102,0,49,0.194,226.13,0,synthetic_rule_v2
+2026-10-10T12:40:53Z,United States,Brazil,19916.95,3,16,0,17,0.384,1138.11,0,synthetic_rule_v2
+2026-10-10T14:21:36Z,Singapore,United Arab Emirates,65070.19,2,12,1,12,0.292,5205.62,2,synthetic_rule_v2
+2026-10-10T19:22:40Z,United States,United Kingdom,10484.44,0,36,0,61,0.192,170.48,0,synthetic_rule_v2
+2026-10-10T19:43:57Z,Canada,Japan,7601.27,16,109,0,109,0.178,69.42,0,synthetic_rule_v2
+2026-10-10T20:04:33Z,Germany,Singapore,7729.3,3,122,1,84,0.156,91.47,0,synthetic_rule_v2
+2026-10-10T21:56:52Z,France,Mexico,3801.05,0,5,3,11,0.372,330.53,1,synthetic_rule_v2
+2026-10-11T01:13:42Z,Canada,United States,17168.0,7,78,0,44,0.184,385.8,1,synthetic_rule_v2
+2026-10-11T02:16:17Z,United States,United Kingdom,5315.48,9,11,0,7,0.192,708.73,0,synthetic_rule_v2
+2026-10-11T10:13:50Z,Canada,Singapore,68055.46,5,31,0,19,0.172,3490.02,1,synthetic_rule_v2
+2026-10-11T10:25:31Z,United Kingdom,United States,4329.15,2,26,0,19,0.188,222.01,0,synthetic_rule_v2
+2026-10-11T13:13:26Z,Germany,United States,17675.36,13,74,1,81,0.168,216.88,1,synthetic_rule_v2
+2026-10-11T17:14:19Z,Canada,Australia,28593.64,8,112,0,55,0.184,515.2,0,synthetic_rule_v2
+2026-10-11T19:15:41Z,United Arab Emirates,Brazil,10504.94,1,135,0,59,0.464,176.55,0,synthetic_rule_v2
+2026-10-11T20:49:40Z,Canada,Singapore,13796.98,1,51,0,79,0.172,173.55,0,synthetic_rule_v2
+2026-10-12T00:18:30Z,United States,Germany,18903.29,2,39,0,21,0.162,879.22,0,synthetic_rule_v2
+2026-10-12T03:57:31Z,United Kingdom,United Arab Emirates,4782.85,1,190,1,114,0.308,41.77,0,synthetic_rule_v2
+2026-10-12T04:19:16Z,United States,Mexico,64772.28,3,75,1,40,0.36,1599.32,2,synthetic_rule_v2
+2026-10-12T07:00:47Z,Germany,Canada,1589.13,4,9,0,21,0.174,73.91,0,synthetic_rule_v2
+2026-10-12T08:13:44Z,India,United Kingdom,7904.89,1,54,1,97,0.28,81.08,1,synthetic_rule_v2
+2026-10-12T12:39:18Z,Germany,Singapore,7848.77,4,31,0,33,0.156,234.29,1,synthetic_rule_v2
+2026-10-13T03:14:24Z,Australia,Japan,25321.62,2,0,0,1,0.174,16881.08,1,synthetic_rule_v2
+2026-10-13T04:43:33Z,Germany,United Kingdom,6960.44,6,65,0,60,0.18,115.05,0,synthetic_rule_v2
+2026-10-13T09:46:56Z,United States,Brazil,2333.53,5,6,0,2,0.384,933.41,0,synthetic_rule_v2
+2026-10-13T16:55:31Z,United States,Nigeria,9435.23,2,5,0,4,0.582,2096.72,1,synthetic_rule_v2
+2026-10-13T18:42:30Z,Japan,Australia,23245.81,2,85,0,66,0.176,349.56,0,synthetic_rule_v2
+2026-10-13T21:51:19Z,Singapore,India,4514.87,3,2,0,4,0.304,1003.3,0,synthetic_rule_v2
+2026-10-13T22:15:17Z,Germany,France,3804.75,0,7,0,4,0.186,845.5,0,synthetic_rule_v2
+2026-10-13T23:11:53Z,United Kingdom,Germany,8167.14,6,12,0,5,0.17,1484.93,0,synthetic_rule_v2
+2026-10-14T00:38:00Z,Singapore,India,2545.64,2,215,0,97,0.304,26.11,0,synthetic_rule_v2
+2026-10-14T06:36:07Z,Germany,Germany,13290.56,5,53,0,35,0.15,374.38,0,synthetic_rule_v2
+2026-10-14T13:40:55Z,India,Mexico,11325.62,3,71,5,57,0.448,196.97,2,synthetic_rule_v2
+2026-10-14T16:44:57Z,Japan,Germany,8805.65,3,13,3,18,0.158,475.98,2,synthetic_rule_v2
+2026-10-14T17:10:39Z,United Kingdom,Australia,27463.77,2,87,0,42,0.188,646.21,0,synthetic_rule_v2
+2026-10-14T18:59:59Z,India,Japan,19536.38,2,24,0,20,0.262,952.99,1,synthetic_rule_v2
+2026-10-14T21:32:31Z,Canada,United States,4685.74,10,30,1,28,0.184,164.41,1,synthetic_rule_v2
+2026-10-14T21:35:21Z,India,Canada,6737.3,7,20,0,18,0.274,364.18,0,synthetic_rule_v2
+2026-10-15T01:17:25Z,Germany,Russia,7139.01,1,52,0,87,0.552,81.59,1,synthetic_rule_v2
+2026-10-15T02:27:08Z,Japan,Nigeria,23821.41,4,59,0,60,0.578,393.74,2,synthetic_rule_v2
+2026-10-15T07:40:54Z,United Arab Emirates,Canada,9162.77,4,4,0,3,0.266,2617.93,1,synthetic_rule_v2
+2026-10-15T08:31:49Z,France,United States,10415.98,2,50,0,96,0.192,107.94,0,synthetic_rule_v2
+2026-10-15T09:52:42Z,Canada,Germany,8634.09,4,75,0,101,0.166,85.06,0,synthetic_rule_v2
+2026-10-15T18:21:13Z,United States,Japan,15785.96,5,62,0,72,0.174,217.74,0,synthetic_rule_v2
+2026-10-15T23:22:33Z,Germany,France,1798.81,3,63,1,65,0.186,27.46,0,synthetic_rule_v2
+2026-10-16T05:57:54Z,Canada,United Arab Emirates,30466.97,0,48,0,20,0.304,1486.19,1,synthetic_rule_v2
+2026-10-16T07:58:52Z,United Arab Emirates,Brazil,10824.5,3,106,0,60,0.464,178.92,1,synthetic_rule_v2
+2026-10-16T08:01:45Z,India,United Kingdom,2592.58,3,8,0,3,0.28,740.74,0,synthetic_rule_v2
+2026-10-16T10:34:24Z,Singapore,Mexico,3547.96,9,10,3,5,0.352,645.08,2,synthetic_rule_v2
+2026-10-16T13:13:53Z,United Kingdom,South Africa,9885.44,8,22,0,11,0.428,859.6,2,synthetic_rule_v2
+2026-10-16T17:27:45Z,United Kingdom,Germany,7058.84,11,24,1,12,0.17,564.71,0,synthetic_rule_v2
+2026-10-16T20:15:37Z,India,Nigeria,6757.42,2,110,1,85,0.67,79.03,2,synthetic_rule_v2
+2026-10-17T02:55:45Z,Japan,United Arab Emirates,10265.63,9,8,0,5,0.296,1866.48,0,synthetic_rule_v2
+2026-10-17T03:13:39Z,Canada,United Kingdom,19556.91,3,123,0,61,0.196,318.0,1,synthetic_rule_v2
+2026-10-17T08:28:37Z,United States,India,4357.51,4,50,0,24,0.312,177.86,0,synthetic_rule_v2
+2026-10-17T09:17:41Z,United Arab Emirates,United Arab Emirates,1127.52,5,119,0,80,0.38,14.01,0,synthetic_rule_v2
+2026-10-17T15:00:57Z,United States,United Kingdom,9401.02,3,186,0,110,0.192,85.08,0,synthetic_rule_v2
+2026-10-17T15:33:45Z,United Arab Emirates,Canada,9306.88,6,57,0,72,0.266,128.37,0,synthetic_rule_v2
+2026-10-17T15:47:44Z,France,Mexico,10407.54,2,16,0,14,0.372,717.76,0,synthetic_rule_v2
+2026-10-17T18:38:35Z,India,United States,4972.56,6,16,0,11,0.268,432.4,0,synthetic_rule_v2
+2026-10-17T19:16:54Z,United Kingdom,Russia,9739.11,2,99,0,71,0.572,136.21,0,synthetic_rule_v2
+2026-10-18T01:37:29Z,Germany,Pakistan,33725.18,0,149,0,106,0.528,316.67,1,synthetic_rule_v2
+2026-10-18T03:30:13Z,United States,Japan,5459.7,3,45,0,24,0.174,222.84,0,synthetic_rule_v2
+2026-10-18T04:31:28Z,India,Japan,8870.58,6,35,1,17,0.262,506.89,1,synthetic_rule_v2
+2026-10-18T07:28:08Z,Australia,Nigeria,10037.28,3,112,0,98,0.582,101.9,1,synthetic_rule_v2
+2026-10-18T09:11:11Z,United States,Mexico,41676.88,3,29,0,23,0.36,1773.48,1,synthetic_rule_v2
+2026-10-18T11:35:47Z,France,Japan,3964.8,2,9,0,20,0.186,193.4,0,synthetic_rule_v2
+2026-10-18T11:49:30Z,United Kingdom,Germany,11269.08,6,10,0,23,0.17,479.54,0,synthetic_rule_v2
+2026-10-18T13:35:52Z,United States,United Kingdom,2887.05,6,10,0,15,0.192,186.26,0,synthetic_rule_v2
+2026-10-18T20:18:46Z,India,Canada,29518.79,0,19,1,8,0.274,3472.8,1,synthetic_rule_v2
+2026-10-19T01:44:14Z,United States,United States,2903.75,6,4,0,4,0.18,645.28,0,synthetic_rule_v2
+2026-10-19T03:07:21Z,France,Australia,3533.78,1,19,0,27,0.192,128.5,0,synthetic_rule_v2
+2026-10-19T03:07:28Z,United States,Germany,4413.88,6,176,0,84,0.162,52.24,0,synthetic_rule_v2
+2026-10-19T05:18:09Z,United States,Japan,7758.16,4,4,2,5,0.174,1410.57,1,synthetic_rule_v2
+2026-10-19T15:15:01Z,United States,Germany,3312.94,0,74,2,36,0.162,90.77,0,synthetic_rule_v2
+2026-10-19T15:32:38Z,United Arab Emirates,United Kingdom,31218.16,2,14,0,8,0.272,3672.72,1,synthetic_rule_v2
+2026-10-19T22:08:33Z,United Kingdom,United Arab Emirates,8035.85,1,206,0,100,0.308,79.96,0,synthetic_rule_v2
+2026-10-20T04:36:36Z,Germany,India,5849.75,1,28,0,27,0.3,212.72,0,synthetic_rule_v2
+2026-10-20T10:27:29Z,United States,Brazil,10068.5,0,41,0,63,0.384,158.56,0,synthetic_rule_v2
+2026-10-20T12:31:20Z,Germany,India,16782.58,4,4,0,6,0.3,2581.94,2,synthetic_rule_v2
+2026-10-20T16:36:14Z,Germany,Mexico,4237.51,4,20,0,11,0.348,368.48,0,synthetic_rule_v2
+2026-10-20T16:45:20Z,United States,South Africa,51002.22,3,149,4,64,0.42,790.73,2,synthetic_rule_v2
+2026-10-20T16:52:02Z,India,India,8080.6,3,122,0,68,0.4,117.96,0,synthetic_rule_v2
+2026-10-20T17:13:31Z,France,Japan,3419.46,4,98,0,53,0.186,63.92,0,synthetic_rule_v2
+2026-10-20T17:54:04Z,India,Australia,1867.79,1,49,1,101,0.268,18.4,0,synthetic_rule_v2
+2026-10-21T00:16:07Z,Canada,Nigeria,4845.67,1,49,0,27,0.586,176.21,0,synthetic_rule_v2
+2026-10-21T05:21:52Z,Germany,Pakistan,1723.02,2,3,2,1,0.528,1148.68,2,synthetic_rule_v2
+2026-10-21T08:10:47Z,Singapore,Brazil,3556.32,1,36,3,36,0.376,97.43,2,synthetic_rule_v2
+2026-10-21T09:28:38Z,United Arab Emirates,United Kingdom,3426.08,0,137,0,96,0.272,35.5,0,synthetic_rule_v2
+2026-10-21T13:11:54Z,Japan,United Arab Emirates,37427.04,1,28,0,75,0.296,495.72,1,synthetic_rule_v2
+2026-10-21T16:01:43Z,Singapore,Germany,33102.79,4,54,0,90,0.154,365.78,0,synthetic_rule_v2
+2026-10-21T18:08:18Z,United States,Germany,9726.86,4,14,1,29,0.162,329.72,1,synthetic_rule_v2
+2026-10-22T01:00:43Z,Japan,Nigeria,4631.18,16,14,0,5,0.578,842.03,1,synthetic_rule_v2
+2026-10-22T01:01:41Z,Australia,United States,20281.48,2,15,1,8,0.18,2386.06,1,synthetic_rule_v2
+2026-10-22T01:35:12Z,United States,Australia,20014.15,9,9,1,13,0.18,1482.53,2,synthetic_rule_v2
+2026-10-22T01:37:55Z,United Arab Emirates,United Arab Emirates,12604.91,17,280,0,115,0.38,109.13,1,synthetic_rule_v2
+2026-10-22T01:40:36Z,India,India,11460.95,4,47,0,24,0.4,467.79,1,synthetic_rule_v2
+2026-10-22T02:44:44Z,United Arab Emirates,Nigeria,24548.5,1,5,0,4,0.662,5455.22,2,synthetic_rule_v2
+2026-10-22T02:57:55Z,United Kingdom,Australia,5303.21,1,16,0,6,0.188,815.88,1,synthetic_rule_v2
+2026-10-22T05:51:20Z,United States,United States,10300.36,1,9,0,3,0.18,2942.96,0,synthetic_rule_v2
+2026-10-22T06:41:43Z,United States,United States,14132.79,2,27,0,35,0.18,398.11,0,synthetic_rule_v2
+2026-10-22T10:34:16Z,India,Nigeria,3545.92,4,14,0,5,0.67,644.71,0,synthetic_rule_v2
+2026-10-22T12:35:45Z,United Kingdom,Mexico,38818.54,1,30,0,23,0.368,1651.85,1,synthetic_rule_v2
+2026-10-22T17:57:49Z,United Arab Emirates,Singapore,4097.61,4,16,0,19,0.248,210.13,0,synthetic_rule_v2
+2026-10-22T22:38:12Z,United States,United States,7196.95,1,13,0,20,0.18,351.07,0,synthetic_rule_v2
+2026-10-23T02:26:39Z,United Kingdom,Canada,10219.07,14,6,0,4,0.194,2270.9,0,synthetic_rule_v2
+2026-10-23T06:47:20Z,Germany,United States,7805.71,2,133,0,47,0.168,164.33,0,synthetic_rule_v2
+2026-10-23T09:17:51Z,Germany,Germany,2941.9,1,9,0,7,0.15,392.25,0,synthetic_rule_v2
+2026-10-23T16:53:50Z,Japan,India,13124.23,2,32,1,14,0.308,905.12,0,synthetic_rule_v2
+2026-10-23T17:07:19Z,India,Mexico,2729.41,0,14,0,10,0.448,259.94,0,synthetic_rule_v2
+2026-10-23T17:46:49Z,India,Australia,27669.19,2,47,4,23,0.268,1177.41,2,synthetic_rule_v2
+2026-10-23T22:42:02Z,India,Japan,53998.26,1,73,0,108,0.262,497.68,1,synthetic_rule_v2
+2026-10-24T02:12:18Z,United Arab Emirates,Mexico,26467.16,1,28,4,23,0.44,1126.26,2,synthetic_rule_v2
+2026-10-24T04:50:36Z,India,United States,5952.27,3,114,0,73,0.268,80.98,0,synthetic_rule_v2
+2026-10-24T10:00:52Z,France,Germany,40198.83,1,14,0,22,0.174,1786.61,0,synthetic_rule_v2
+2026-10-24T12:08:17Z,India,Pakistan,4551.15,3,57,2,23,0.628,193.67,2,synthetic_rule_v2
+2026-10-24T12:50:12Z,Germany,Brazil,5192.37,1,36,0,13,0.372,384.62,0,synthetic_rule_v2
+2026-10-24T13:54:27Z,Australia,Singapore,22721.63,1,35,0,24,0.168,927.41,0,synthetic_rule_v2
+2026-10-24T14:46:08Z,United Kingdom,India,11541.04,6,38,0,19,0.32,591.85,1,synthetic_rule_v2
+2026-10-24T20:39:43Z,United States,Mexico,16717.29,0,275,1,118,0.36,141.07,0,synthetic_rule_v2
+2026-10-24T21:33:40Z,France,United Arab Emirates,4032.43,7,16,0,23,0.312,171.59,0,synthetic_rule_v2
+2026-10-24T21:40:03Z,United States,Germany,2454.58,0,2,1,6,0.162,377.63,0,synthetic_rule_v2
+2026-10-24T23:42:57Z,Singapore,Japan,11778.54,2,36,2,15,0.166,759.91,0,synthetic_rule_v2
+2026-10-25T02:55:08Z,Germany,United Kingdom,5988.17,3,4,0,4,0.18,1330.7,1,synthetic_rule_v2
+2026-10-25T03:38:01Z,Japan,United States,10564.51,4,1,0,2,0.176,4225.8,1,synthetic_rule_v2
+2026-10-25T06:05:36Z,France,Pakistan,22189.34,9,81,0,59,0.552,372.93,2,synthetic_rule_v2
+2026-10-25T12:07:42Z,India,Brazil,4688.76,2,10,0,5,0.472,852.5,0,synthetic_rule_v2
+2026-10-25T12:39:40Z,United States,India,6833.87,1,37,0,38,0.312,177.5,0,synthetic_rule_v2
+2026-10-25T14:03:56Z,United Arab Emirates,Singapore,13126.12,3,72,0,94,0.248,138.9,0,synthetic_rule_v2
+2026-10-25T16:25:02Z,Canada,India,1140.2,2,60,0,69,0.316,16.41,0,synthetic_rule_v2
+2026-10-25T19:42:26Z,United States,India,19097.77,3,110,1,91,0.312,208.72,2,synthetic_rule_v2
+2026-10-25T21:45:54Z,United States,Russia,2260.93,0,167,6,79,0.564,28.44,2,synthetic_rule_v2
+2026-10-25T23:05:52Z,Canada,France,3217.39,4,15,0,9,0.202,338.67,0,synthetic_rule_v2
+2026-10-26T04:41:49Z,United States,India,75370.36,4,140,3,101,0.312,742.57,2,synthetic_rule_v2
+2026-10-26T09:07:55Z,France,France,14182.46,3,182,0,104,0.21,135.72,0,synthetic_rule_v2
+2026-10-26T09:21:39Z,United States,Japan,32546.54,2,115,2,102,0.174,317.53,2,synthetic_rule_v2
+2026-10-26T13:41:01Z,Singapore,United States,6059.39,2,38,2,27,0.172,220.34,0,synthetic_rule_v2
+2026-10-26T16:09:11Z,Germany,India,5132.74,2,9,0,4,0.3,1140.61,0,synthetic_rule_v2
+2026-10-26T16:28:52Z,Germany,Brazil,6255.49,2,96,0,95,0.372,65.5,0,synthetic_rule_v2
+2026-10-27T01:03:17Z,United Kingdom,France,13496.33,3,215,0,107,0.206,125.55,0,synthetic_rule_v2
+2026-10-27T04:07:24Z,Germany,Brazil,18137.4,2,1,0,1,0.372,12091.6,2,synthetic_rule_v2
+2026-10-27T04:16:32Z,Canada,United Kingdom,15926.63,6,25,0,18,0.196,860.9,0,synthetic_rule_v2
+2026-10-27T05:23:46Z,United States,Germany,10286.5,5,41,0,24,0.162,419.86,0,synthetic_rule_v2
+2026-10-27T11:03:30Z,United Arab Emirates,South Africa,9563.44,0,21,0,11,0.5,831.6,0,synthetic_rule_v2
+2026-10-27T12:41:18Z,Singapore,Pakistan,8162.0,2,181,0,109,0.532,74.54,1,synthetic_rule_v2
+2026-10-27T12:52:20Z,United Arab Emirates,United States,5886.11,0,26,0,14,0.26,405.94,0,synthetic_rule_v2
+2026-10-27T13:00:18Z,United States,Germany,2033.82,1,167,0,80,0.162,25.26,0,synthetic_rule_v2
+2026-10-27T13:01:18Z,United Kingdom,Brazil,9094.99,16,88,2,47,0.392,191.47,1,synthetic_rule_v2
+2026-10-27T13:37:04Z,United Arab Emirates,Germany,78472.74,1,19,6,20,0.242,3827.94,2,synthetic_rule_v2
+2026-10-27T15:59:27Z,Canada,South Africa,6709.49,7,13,0,13,0.424,497.0,0,synthetic_rule_v2
+2026-10-27T22:23:53Z,Canada,Germany,6429.81,3,168,0,92,0.166,69.51,0,synthetic_rule_v2
+2026-10-27T23:17:11Z,United States,South Africa,6899.18,0,91,0,51,0.42,133.96,0,synthetic_rule_v2
+2026-10-28T00:16:32Z,Singapore,Mexico,5486.84,3,126,0,113,0.352,48.34,0,synthetic_rule_v2
+2026-10-28T00:44:33Z,India,Germany,6764.35,1,17,0,12,0.25,541.15,0,synthetic_rule_v2
+2026-10-28T02:34:41Z,United States,India,3790.19,0,73,0,84,0.312,44.85,0,synthetic_rule_v2
+2026-10-28T08:07:28Z,United Kingdom,Australia,10194.86,7,42,0,101,0.188,100.44,0,synthetic_rule_v2
+2026-10-28T09:54:43Z,United States,Brazil,17399.22,3,157,0,106,0.384,163.37,0,synthetic_rule_v2
+2026-10-28T12:07:17Z,United States,Japan,5736.18,4,42,1,19,0.174,294.16,0,synthetic_rule_v2
+2026-10-28T15:58:20Z,Singapore,Canada,19402.89,1,185,1,103,0.178,187.47,1,synthetic_rule_v2
+2026-10-28T18:43:44Z,United Kingdom,India,12775.59,3,0,0,1,0.32,8517.06,2,synthetic_rule_v2
+2026-10-28T20:00:10Z,United States,Australia,2570.88,15,180,0,106,0.18,24.14,0,synthetic_rule_v2
+2026-10-28T22:27:06Z,Germany,United Arab Emirates,21941.01,6,22,0,28,0.288,769.86,0,synthetic_rule_v2
+2026-10-29T00:19:35Z,United States,Germany,12043.39,4,101,0,53,0.162,225.11,0,synthetic_rule_v2
+2026-10-29T00:27:34Z,Singapore,Japan,3309.67,1,234,0,109,0.166,30.23,0,synthetic_rule_v2
+2026-10-29T01:00:37Z,Australia,South Africa,6819.53,6,118,0,66,0.42,102.55,0,synthetic_rule_v2
+2026-10-29T04:53:08Z,Canada,Germany,39178.88,2,26,4,19,0.166,2009.17,1,synthetic_rule_v2
+2026-10-29T09:12:11Z,Canada,Japan,10149.36,2,3,0,1,0.178,6766.24,0,synthetic_rule_v2
+2026-10-29T10:17:31Z,United Arab Emirates,Germany,5385.18,2,38,0,85,0.242,62.98,0,synthetic_rule_v2
+2026-10-29T10:18:08Z,United States,Germany,11113.97,2,112,1,111,0.162,99.68,1,synthetic_rule_v2
+2026-10-29T10:36:13Z,Germany,India,4855.56,1,20,0,19,0.3,249.0,0,synthetic_rule_v2
+2026-10-29T10:43:57Z,Singapore,Brazil,6855.54,0,40,0,33,0.376,204.64,0,synthetic_rule_v2
+2026-10-29T19:35:56Z,Japan,Russia,8566.61,7,174,0,70,0.56,121.51,0,synthetic_rule_v2
+2026-10-29T20:02:21Z,India,Japan,44629.06,16,28,0,36,0.262,1222.71,1,synthetic_rule_v2
+2026-10-30T01:42:27Z,France,Australia,4196.59,4,34,1,71,0.192,58.69,0,synthetic_rule_v2
+2026-10-30T03:05:10Z,Japan,India,29220.24,6,112,0,53,0.308,546.17,2,synthetic_rule_v2
+2026-10-30T03:51:13Z,United Arab Emirates,Germany,602.33,5,10,0,6,0.242,92.67,0,synthetic_rule_v2
+2026-10-30T05:13:13Z,Canada,Brazil,7654.65,2,6,0,6,0.388,1177.64,1,synthetic_rule_v2
+2026-10-30T05:14:12Z,Japan,Russia,12235.53,10,1,0,1,0.56,8157.02,1,synthetic_rule_v2
+2026-10-30T05:46:31Z,United States,United Kingdom,33777.56,10,154,4,108,0.192,311.31,2,synthetic_rule_v2
+2026-10-30T06:13:45Z,United Arab Emirates,Russia,14741.46,4,12,0,6,0.644,2267.92,1,synthetic_rule_v2
+2026-10-30T08:36:34Z,France,Germany,576.18,3,176,0,77,0.174,7.43,0,synthetic_rule_v2
+2026-10-30T09:38:49Z,United States,India,30828.67,1,113,0,120,0.312,255.84,0,synthetic_rule_v2
+2026-10-30T14:13:15Z,Australia,Australia,3293.76,4,36,0,16,0.18,199.62,0,synthetic_rule_v2
+2026-10-30T14:31:26Z,United Kingdom,Canada,3761.75,16,204,0,113,0.194,33.14,0,synthetic_rule_v2
+2026-10-30T14:43:55Z,United States,United States,1866.0,8,94,0,49,0.18,37.7,0,synthetic_rule_v2
+2026-10-30T19:25:42Z,United States,Singapore,15485.92,5,6,1,11,0.168,1346.6,1,synthetic_rule_v2
+2026-10-30T20:14:16Z,United States,United Kingdom,14012.22,5,29,0,10,0.192,1334.5,0,synthetic_rule_v2
