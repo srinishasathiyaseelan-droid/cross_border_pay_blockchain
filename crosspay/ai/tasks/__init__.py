@@ -37,6 +37,38 @@ def queue_explanation(conn, tx_id: str) -> str:
     return current_app.extensions["ai_jobs"].submit(conn, "explain", tx_id, explain_job(tx_id))
 
 
+BACKFILL_LIMIT = 25
+
+
+def backfill(app, conn, limit: int = BACKFILL_LIMIT) -> dict:
+    """Queue explanations (and record-only purpose tags) for recent payments that have none, so pages show AI text
+    for payments made before the AI layer was on. Called once at startup; skipped when AI is off or over budget.
+    Never touches a decision: explain is advisory and purpose_retry_job only fills the purpose columns."""
+    from ..budget import ai_enabled, over_budget
+
+    out = {"explain": 0, "purpose": 0}
+    with app.app_context():
+        if not ai_enabled(conn) or over_budget(conn):
+            return out
+        runner, flags = app.extensions["ai_jobs"], app.config.get("AI_FLAGS", {})
+        rows = conn.execute(
+            "SELECT transaction_id, notes, sender_country, receiver_country, normalized_usd_amount, purpose_category "
+            "FROM transactions WHERE decision != 'PENDING_SETTLEMENT' ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        for r in rows:
+            tx_id = r["transaction_id"]
+            if flags.get("AI_EXPLAIN", True) and not conn.execute(
+                    "SELECT 1 FROM ai_jobs WHERE task = 'explain' AND tx_id = ?", (tx_id,)).fetchone():
+                runner.submit(conn, "explain", tx_id, explain_job(tx_id))
+                out["explain"] += 1
+            if (flags.get("AI_PURPOSE", True) and (r["notes"] or "").strip() and not r["purpose_category"]
+                    and not conn.execute("SELECT 1 FROM ai_jobs WHERE task = 'purpose' AND tx_id = ?", (tx_id,)).fetchone()):
+                corridor = f"{r['sender_country']} to {r['receiver_country']}"
+                runner.submit(conn, "purpose", tx_id, purpose_retry_job(tx_id, r["notes"], corridor,
+                                                                       float(r["normalized_usd_amount"] or 0)))
+                out["purpose"] += 1
+    return out
+
+
 # ---- P6.2 purpose tagger (escalate-only, G1) ----------------------------------------------------------------
 def classify_purpose(conn, notes: str, corridor: str, amount_usd: float, user_id: int) -> dict:
     """Sync, 4 s timeout. -> {"result": dict|None, "escalations": [...], "input_flags": [...], "status": str}"""

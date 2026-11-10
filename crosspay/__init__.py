@@ -92,6 +92,8 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
         ailog.purge(conn, int(app.config["LLM_LOG_RETENTION_DAYS"]), force=True)
     finally:
         conn.close()
+    if app.config.get("AI_BACKFILL") and app.config.get("LLM_ENABLED"):
+        _ai_backfill(app)
 
     from .blueprints import admin, ai_features, api, auth, kyc, payments
 
@@ -169,6 +171,21 @@ def _local_secret(app, name: str) -> str:
 
 
 _MODEL_CACHE = {}
+
+
+def _ai_backfill(app):
+    """Queue advisory explanations for recent payments that have none. Never blocks or fails startup."""
+    from .ai.tasks import backfill
+
+    conn = dbmod.connect(app.config["DB_PATH"])
+    try:
+        counts = backfill(app, conn)
+        if any(counts.values()):
+            log.info("AI backfill queued %s", counts)
+    except Exception:  # noqa: BLE001
+        log.exception("AI backfill skipped")
+    finally:
+        conn.close()
 
 
 def _load_model(app):

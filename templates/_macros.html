@@ -54,3 +54,22 @@
 {% macro field_hint(id, text) -%}
 <p class="field-hint" id="{{ id }}">{{ text }}</p>
 {%- endmacro %}
+
+{# Advisory "Why this decision" panel with an Explain-with-AI button (receipt and officer review). Text via textContent only. #}
+{% macro ai_explain(tx, ai_on, ai_flags) %}
+<section class="advisory {% if not (ai_on and ai_flags.get('AI_EXPLAIN', True)) %}is-unavailable{% else %}is-loading{% endif %}"
+         {% if ai_on and ai_flags.get('AI_EXPLAIN', True) %}data-ai-poll="{{ url_for('api.ai_poll', task='explain', tx_id=tx.transaction_id) }}"{% endif %}
+         aria-labelledby="h-why" aria-live="polite">
+    <div class="cluster between"><h2 class="section-title" id="h-why">{{ tile('sparkles', 'ai', 'sm') }}Why this decision</h2>
+        <span class="cluster">{{ ai_label() }}
+        {% if ai_on and ai_flags.get('AI_EXPLAIN', True) %}<button type="button" class="btn btn-ai btn-sm" data-ai-explain="{{ url_for('ai_features.explain', tx_id=tx.transaction_id) }}">{{ icon('refresh') }}Explain with AI</button>{% endif %}</span></div>
+    <div class="advisory-body" data-ai-body>
+        <div class="loading"><span class="skeleton w-90"></span><span class="skeleton w-70"></span><span class="xsmall muted">Writing a plain-language explanation…</span></div>
+    </div>
+    <div class="fallback advisory-body">
+        <p class="small text-2">{% if ai_on %}The AI explanation is not available for this payment.{% else %}AI explanations are switched off.{% endif %} These are the model's own top factors:</p>
+        <ul>{% for f in tx.top_factors_list %}<li>{{ f.label or f.feature }} = {{ f.value }} ({{ 'raised' if f.contribution > 0 else 'lowered' }} the score by {{ '%.1f'|format(f.contribution|abs) }} points)</li>
+        {% else %}<li>Seed record: no factor breakdown stored.</li>{% endfor %}</ul>
+    </div>
+</section>
+{% endmacro %}

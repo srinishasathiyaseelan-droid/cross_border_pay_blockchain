@@ -34,6 +34,21 @@ def assistant(tx_id):
                     "error": "The assistant could not answer safely. Your receipt above has the facts."})
 
 
+@bp.route("/explain/<tx_id>", methods=["POST"])
+@login_required
+@limiter.limit(ai_limit)
+def explain(tx_id):
+    """"Explain with AI": (re)queue the advisory explanation for one visible payment. Tenant-scoped (G4)."""
+    from ..ai.budget import ai_enabled
+
+    get_visible_tx(tx_id)  # 404 for another tenant's payment
+    conn = get_db()
+    if not (ai_enabled(conn) and current_app.config.get("AI_FLAGS", {}).get("AI_EXPLAIN", True)):
+        return jsonify({"status": "DISABLED", "error": "AI explanations are switched off."}), 503
+    conn.execute("DELETE FROM ai_jobs WHERE task = 'explain' AND tx_id = ? AND status != 'PENDING'", (tx_id,))
+    return jsonify({"status": tasks.queue_explanation(conn, tx_id)})
+
+
 NL_KEYS = ("decision", "risk_level", "receiver_country", "currency", "min_amount_usd", "max_amount_usd", "date_from",
            "date_to", "text")
 
