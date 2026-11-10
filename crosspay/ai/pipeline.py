@@ -133,11 +133,13 @@ def run_task(task: str, ctx: TaskContext, user_id: Optional[int], conn) -> Guard
 
     router = current_app.extensions["ai_router"]
     result, rmeta = router.run(system, user_msg, spec.schema, spec.max_tokens, timeout=spec.timeout)
-    meta.update({k: rmeta.get(k) for k in ("provider", "model", "latency_ms", "error_code", "fallback_used")})
+    meta.update({k: rmeta.get(k) for k in ("provider", "model", "latency_ms", "error_code", "fallback_used", "errors")})
     cost = budget.estimate_cost(rmeta.get("provider"), rmeta.get("input_tokens", 0), rmeta.get("output_tokens", 0))
     if result is None:
+        # Every provider's reason, in order (e.g. GROQ:RATE_LIMITED,NVIDIA:TIMEOUT,CLOUDFLARE:RATE_LIMITED).
+        reasons = ",".join(rmeta.get("errors") or []) or rmeta.get("error_code")
         _log(conn, spec, version, ctx, user_id, dlp.redact(user_msg), input_hash, "UNAVAILABLE",
-             rmeta.get("error_code"), None, rmeta, cost)
+             (reasons or "")[:200] or None, None, rmeta, cost)
         return GuardedResult("UNAVAILABLE", None, meta)
 
     context_text = user_msg  # every number/ID the model may use is in what it was given
