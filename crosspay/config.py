@@ -73,6 +73,7 @@ class BaseConfig:
     }
     AI_RUN_SYNC = _flag("AI_RUN_SYNC", "0")  # tests run background jobs inline
     DEMO_DATASET = _flag("DEMO_DATASET", "1")  # DEMO_MODE only: one-time top-up of labelled demo payments
+    DEMO_DATASET_DELAY = _float("DEMO_DATASET_DELAY", 20.0)  # seconds after startup before the top-up runs
     AI_BACKFILL = _flag("AI_BACKFILL", "1")  # at startup, queue AI explanations for recent payments that have none
     # Escalate-only policy rule: an SME with at least this many payments in the last hour goes to HOLD (0 = off).
     VELOCITY_BURST_1H = _int("VELOCITY_BURST_1H", 5)

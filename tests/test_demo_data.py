@@ -41,6 +41,35 @@ def test_seed_is_idempotent(app, db):
     assert _counts(db) == before
 
 
+def test_seed_starts_after_the_startup_writes(tmp_path, fx_mock, monkeypatch):
+    """The seed holds the DB write lock for tens of seconds. Started before create_app's own writes (log purge,
+    ai_jobs reset), those writes waited out busy_timeout on Render and the worker failed to boot."""
+    from crosspay import create_app
+    from crosspay.ai import log as ailog
+
+    order = []
+    real_purge, real_seed = ailog.purge, demo_data.seed
+    monkeypatch.setattr(ailog, "purge", lambda *a, **k: order.append("purge") or real_purge(*a, **k))
+    monkeypatch.setattr(demo_data, "seed", lambda *a, **k: order.append("seed") or real_seed(*a, **k))
+    create_app("test", {"DB_PATH": str(tmp_path / "x.db"), "LEDGER_PATH": str(tmp_path / "l.json"),
+                        "UPLOAD_DIR": str(tmp_path / "u"), "DEMO_MODE": True, "DEMO_DATASET": True})
+    assert order == ["purge", "seed"]
+
+
+def test_background_seed_waits_and_runs_off_the_main_thread(app, monkeypatch):
+    import threading
+
+    import crosspay
+
+    seen = []
+    monkeypatch.setattr(demo_data, "seed", lambda *a, **k: seen.append(threading.current_thread().name))
+    app.config.update(TESTING=False, DEMO_DATASET_DELAY=0.05)
+    timer = crosspay._start_demo_dataset(app)
+    assert timer.daemon and not seen  # nothing runs inline
+    timer.join(5)
+    assert seen == ["crosspay-demo-seed"]
+
+
 def test_seed_runs_at_startup_only_in_demo_mode(tmp_path, fx_mock):
     from crosspay import create_app
     from crosspay.db import connect
