@@ -137,12 +137,14 @@
 .ops-row:focus-visible td:first-child { box-shadow: inset 3px 0 0 var(--focus); }
 .ops-row.is-new td { animation: live-in var(--dur-page) var(--ease-standard); }
 .ops-row.is-sim td { color: var(--text-2); }
-.ops-why-cell { min-width: 180px; }
+.ops-why-cell { min-width: 160px; }
 .ops-why-cell .ops-why { display: block; }
 .ops-ai-inline { display: block; font-size: var(--text-xs); color: var(--ai); margin-top: 2px; }
 .ops-orig { display: block; }
-.ops-corridor { white-space: nowrap; }
+.ops-corridor { min-width: 120px; }
+.ops-corridor .ops-tag { display: table; margin: 2px 0 0; }
 .ops-tag { margin-left: var(--space-1); }
+.ops-table td:first-child { white-space: nowrap; }
 .ops-trace { width: min(620px, calc(100vw - 32px)); }
 .ops-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); counter-reset: step; }
 .ops-step { position: relative; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-8); border: 1px solid var(--border);

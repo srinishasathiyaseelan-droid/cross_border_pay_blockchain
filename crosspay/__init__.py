@@ -86,6 +86,7 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
 
     app.extensions["ai_router"] = Router(build_providers(app.config["LLM_PROVIDERS"]), timeout=app.config["LLM_TIMEOUT"])
     app.extensions["ai_jobs"] = JobRunner(app)
+    app.extensions["ai_backfill_jobs"] = JobRunner(app, max_workers=1)  # slow lane for the startup backfill
     limiter.init_app(app)
     conn = dbmod.connect(app.config["DB_PATH"])
     try:

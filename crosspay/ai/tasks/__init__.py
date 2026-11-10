@@ -41,7 +41,19 @@ def queue_explanation(conn, tx_id: str) -> str:
     return current_app.extensions["ai_jobs"].submit(conn, "explain", tx_id, explain_job(tx_id))
 
 
-BACKFILL_LIMIT = 25
+BACKFILL_LIMIT = 10
+BACKFILL_SPACING_S = 12.0  # free-tier providers allow only a few large prompts a minute; never starve live traffic
+
+
+def _spaced(fn, delay: float):
+    """Background backfill jobs wait before calling out, so a restart never bursts the provider's rate limit."""
+    import time
+
+    def inner(conn):
+        if delay > 0:
+            time.sleep(delay)
+        return fn(conn)
+    return inner
 
 
 def backfill(app, conn, limit: int = BACKFILL_LIMIT) -> dict:
@@ -54,7 +66,10 @@ def backfill(app, conn, limit: int = BACKFILL_LIMIT) -> dict:
     with app.app_context():
         if not ai_enabled(conn) or over_budget(conn):
             return out
-        runner, flags = app.extensions["ai_jobs"], app.config.get("AI_FLAGS", {})
+        # A separate single-worker runner, so spaced backfill jobs never delay explanations for new payments.
+        runner = app.extensions.get("ai_backfill_jobs") or app.extensions["ai_jobs"]
+        flags = app.config.get("AI_FLAGS", {})
+        delay = 0.0 if app.config.get("AI_RUN_SYNC") else BACKFILL_SPACING_S
         rows = conn.execute(
             "SELECT transaction_id, notes, sender_country, receiver_country, normalized_usd_amount, purpose_category "
             "FROM transactions WHERE decision != 'PENDING_SETTLEMENT' ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
@@ -62,13 +77,13 @@ def backfill(app, conn, limit: int = BACKFILL_LIMIT) -> dict:
             tx_id = r["transaction_id"]
             if flags.get("AI_EXPLAIN", True) and not conn.execute(
                     "SELECT 1 FROM ai_jobs WHERE task = 'explain' AND tx_id = ?", (tx_id,)).fetchone():
-                runner.submit(conn, "explain", tx_id, explain_job(tx_id))
+                runner.submit(conn, "explain", tx_id, _spaced(explain_job(tx_id), delay))
                 out["explain"] += 1
             if (flags.get("AI_PURPOSE", True) and (r["notes"] or "").strip() and not r["purpose_category"]
                     and not conn.execute("SELECT 1 FROM ai_jobs WHERE task = 'purpose' AND tx_id = ?", (tx_id,)).fetchone()):
                 corridor = f"{r['sender_country']} to {r['receiver_country']}"
-                runner.submit(conn, "purpose", tx_id, purpose_retry_job(tx_id, r["notes"], corridor,
-                                                                       float(r["normalized_usd_amount"] or 0)))
+                runner.submit(conn, "purpose", tx_id, _spaced(purpose_retry_job(
+                    tx_id, r["notes"], corridor, float(r["normalized_usd_amount"] or 0)), delay))
                 out["purpose"] += 1
     return out
 

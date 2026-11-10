@@ -283,7 +283,7 @@
     source.onerror = () => setState(source.readyState === EventSource.CLOSED ? 'offline' : 'connecting',
         source.readyState === EventSource.CLOSED ? 'Offline' : 'Reconnecting…');
     ['decision', 'review'].forEach((t) => source.addEventListener(t, (m) => {
-        try { const ev = JSON.parse(m.data); onEvent(ev); if (!ev.simulated) throttledStats(); } catch (e) { /* ignore malformed */ }
+        try { onEvent(JSON.parse(m.data)); throttledStats(); } catch (e) { /* ignore malformed */ }
     }));
     source.addEventListener('ai', (m) => { try { onAI(JSON.parse(m.data)); } catch (e) { /* ignore */ } });
     window.addEventListener('pagehide', () => source.close());
