@@ -49,11 +49,13 @@
         <div class="stat-sub">Prevented by Smart Contract</div>
     </div>
 
+    {% if stats.verified_kyc_count is not none %}
     <div class="stat-card stat-kyc">
         <div class="stat-label">KYC Verified SMEs</div>
         <div class="stat-value" style="color: #38bdf8;">{{ stats.verified_kyc_count }}</div>
         <div class="stat-sub">Authorized corporate entities</div>
     </div>
+    {% endif %}
 </div>
 
 <!-- Charts Section -->

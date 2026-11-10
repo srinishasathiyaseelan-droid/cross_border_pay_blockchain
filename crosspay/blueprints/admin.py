@@ -1,12 +1,14 @@
-"""Compliance administration (P0: hold resolution moved unchanged; C1 is fixed in P1)."""
+"""Compliance administration. Every route here requires an admin account (C1)."""
 from flask import Blueprint, current_app, flash, redirect, request, url_for
 
 from ..db import get_db
+from ..security.decorators import admin_required
 
 bp = Blueprint("admin", __name__)
 
 
 @bp.route("/resolve_hold/<tx_id>", methods=["POST"])
+@admin_required
 def resolve_hold(tx_id):
     action = request.form.get("action", "approve")
     conn = get_db()

@@ -113,6 +113,7 @@
         </div>
 
         <form id="kyc-form" method="POST" action="{{ url_for('kyc.kyc') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" id="simulate_action" name="simulate_action" value="auto_validate">
 
             <div class="form-grid">
@@ -176,9 +177,10 @@
                 <div class="form-group">
                     <label class="form-label" for="government_id">Government Business ID / Tax Registration No</label>
                     <input type="text" id="government_id" name="government_id" class="form-control" 
-                           value="{{ kyc.government_id if kyc and kyc.government_id != 'NOT_PROVIDED' else 'US-EIN-984721094' }}" 
-                           placeholder="e.g. US-EIN-984721094" required>
-                    <div class="form-hint">Used for corporate entity registry lookups.</div>
+                           value="" autocomplete="off"
+                           placeholder="{{ ('On file: ' ~ kyc.government_id_masked ~ ' (leave blank to keep)') if kyc and kyc.government_id_masked and kyc.government_id_masked != 'NOT_PROVIDED' else 'e.g. US-EIN-123456789' }}"
+                           {% if not (kyc and kyc.government_id_masked and kyc.government_id_masked != 'NOT_PROVIDED') %}required{% endif %}>
+                    <div class="form-hint">Stored encrypted; only the last 4 characters are ever shown.</div>
                 </div>
 
                 <div class="form-group">

@@ -141,8 +141,9 @@
                                 <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">
                                     View Receipt
                                 </a>
-                                {% if tx.decision == 'HOLD' %}
+                                {% if tx.decision == 'HOLD' and is_admin %}
                                     <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline-block; margin-left: 4px;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <input type="hidden" name="action" value="approve">
                                         <button type="submit" class="btn btn-warning btn-sm" title="Compliance Release">
                                             ✓ Release

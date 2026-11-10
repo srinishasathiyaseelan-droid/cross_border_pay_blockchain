@@ -5,9 +5,10 @@ P0: behaviour moved unchanged from app.py (findings C4, H1, H2, H3 are fixed in 
 import random
 
 import pandas as pd
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 from ..db import get_db, utcnow_iso
+from ..security.decorators import current_user_row, login_required
 from ..services.currency import (
     COUNTRY_TO_DEFAULT_CURRENCY,
     SUPPORTED_CURRENCIES,
@@ -26,6 +27,22 @@ COUNTRY_RISK_MAP = {
 }
 
 
+def tenant_scope():
+    """H3: SMEs only ever see their own rows; compliance admins see everything."""
+    row = current_user_row()
+    if row["role"] == "admin":
+        return "", []
+    return " AND user_id = ?", [row["id"]]
+
+
+def get_visible_tx(tx_id):
+    where, params = tenant_scope()
+    tx = get_db().execute(f"SELECT * FROM transactions WHERE transaction_id = ?{where}", [tx_id, *params]).fetchone()
+    if tx is None:
+        abort(404)  # another tenant's receipt is indistinguishable from a missing one
+    return tx
+
+
 def calculate_corridor_risk(sender_c, receiver_c):
     r1 = COUNTRY_RISK_MAP.get(sender_c, 0.45)
     r2 = COUNTRY_RISK_MAP.get(receiver_c, 0.45)
@@ -33,10 +50,8 @@ def calculate_corridor_risk(sender_c, receiver_c):
 
 
 @bp.route("/payment")
+@login_required
 def payment():
-    if "user_id" not in session:
-        flash("Please log in to submit a payment request.", "warning")
-        return redirect(url_for("auth.login"))
     kyc_record = get_db().execute(
         "SELECT * FROM kyc WHERE user_id = ? ORDER BY id DESC LIMIT 1", (session["user_id"],)
     ).fetchone()
@@ -50,9 +65,8 @@ def payment():
 
 
 @bp.route("/process_payment", methods=["POST"])
+@login_required
 def process_payment():
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
     user_id = session["user_id"]
     conn = get_db()
     kyc_record = conn.execute("SELECT * FROM kyc WHERE user_id = ? ORDER BY id DESC LIMIT 1", (user_id,)).fetchone()
@@ -160,11 +174,9 @@ def process_payment():
 
 
 @bp.route("/result/<tx_id>")
+@login_required
 def result(tx_id):
-    tx = get_db().execute("SELECT * FROM transactions WHERE transaction_id = ?", (tx_id,)).fetchone()
-    if not tx:
-        flash("Transaction not found.", "warning")
-        return redirect(url_for("payments.transactions"))
+    tx = get_visible_tx(tx_id)
     return render_template(
         "result.html", tx=dict(tx), contract_address=current_app.extensions["contract"].CONTRACT_ADDRESS,
         supported_currencies=SUPPORTED_CURRENCIES,
@@ -172,10 +184,12 @@ def result(tx_id):
 
 
 @bp.route("/transactions")
+@login_required
 def transactions():
     status_filter = request.args.get("status", "ALL")
     search_query = request.args.get("q", "").strip()
-    sql, params = "SELECT * FROM transactions WHERE 1=1", []
+    where, scope_params = tenant_scope()
+    sql, params = "SELECT * FROM transactions WHERE 1=1" + where, list(scope_params)
     if status_filter in ["APPROVED", "HOLD", "BLOCKED"]:
         sql += " AND decision = ?"
         params.append(status_filter)
@@ -188,35 +202,50 @@ def transactions():
 
 
 @bp.route("/dashboard")
+@login_required
 def dashboard():
     conn = get_db()
+    where, params = tenant_scope()
 
-    def count(where=""):
-        return conn.execute(f"SELECT COUNT(*) FROM transactions {where}").fetchone()[0]
+    def count(cond="1=1"):
+        return conn.execute(f"SELECT COUNT(*) FROM transactions WHERE {cond}{where}", params).fetchone()[0]
 
     stats = {
         "total_txs": count(),
-        "approved_txs": count("WHERE decision = 'APPROVED'"),
-        "held_txs": count("WHERE decision = 'HOLD'"),
-        "blocked_txs": count("WHERE decision = 'BLOCKED'"),
-        "low_risk_count": count("WHERE risk_level = 'LOW'"),
-        "med_risk_count": count("WHERE risk_level = 'MEDIUM'"),
-        "high_risk_count": count("WHERE risk_level = 'HIGH'"),
-        "verified_kyc_count": conn.execute("SELECT COUNT(*) FROM kyc WHERE status = 'VERIFIED'").fetchone()[0],
+        "approved_txs": count("decision = 'APPROVED'"),
+        "held_txs": count("decision = 'HOLD'"),
+        "blocked_txs": count("decision = 'BLOCKED'"),
+        "low_risk_count": count("risk_level = 'LOW'"),
+        "med_risk_count": count("risk_level = 'MEDIUM'"),
+        "high_risk_count": count("risk_level = 'HIGH'"),
+        "verified_kyc_count": (conn.execute("SELECT COUNT(*) FROM kyc WHERE status = 'VERIFIED'").fetchone()[0]
+                               if not where else None),
         "total_volume_approved": round(conn.execute(
             "SELECT COALESCE(SUM(COALESCE(normalized_usd_amount, amount)), 0) FROM transactions "
-            "WHERE decision = 'APPROVED'").fetchone()[0], 2),
+            f"WHERE decision = 'APPROVED'{where}", params).fetchone()[0], 2),
     }
-    recent = conn.execute("SELECT * FROM transactions ORDER BY id DESC LIMIT 6").fetchall()
+    recent = conn.execute(f"SELECT * FROM transactions WHERE 1=1{where} ORDER BY id DESC LIMIT 6", params).fetchall()
     return render_template("dashboard.html", stats=stats, recent_transactions=[dict(r) for r in recent],
                            metrics=current_app.extensions["metrics"])
 
 
 @bp.route("/blockchain")
+@login_required
 def blockchain_explorer():
     chain = current_app.extensions["blockchain"]
     is_valid, validation_msg = chain.is_chain_valid()
+    blocks = [b.to_dict() for b in chain.chain]
+    where, params = tenant_scope()
+    if where:  # SMEs see block hashes for every block but transaction details only for their own payments
+        own = {r[0] for r in get_db().execute(f"SELECT transaction_id FROM transactions WHERE 1=1{where}", params)}
+        for b in blocks:
+            b["transactions"] = [
+                t if (t.get("transaction_id") in own or b["index"] == 0)
+                else {"transaction_id": "(another SME)", "sender": "—", "receiver": "—", "amount": 0.0,
+                      "currency": "", "redacted": True}
+                for t in b["transactions"]
+            ]
     return render_template(
-        "blockchain.html", chain=[b.to_dict() for b in chain.chain], is_valid=is_valid,
+        "blockchain.html", chain=blocks, is_valid=is_valid,
         validation_msg=validation_msg, contract_address=current_app.extensions["contract"].CONTRACT_ADDRESS,
     )

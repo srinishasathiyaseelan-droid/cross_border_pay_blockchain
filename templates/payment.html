@@ -94,6 +94,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <!-- SME Entities Grid -->
                 <div class="form-grid">
                     <div class="form-group">

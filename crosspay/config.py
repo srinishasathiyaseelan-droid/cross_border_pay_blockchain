@@ -44,6 +44,7 @@ class BaseConfig:
     DEMO_SME_PASSWORD = os.getenv("DEMO_SME_PASSWORD", "")
     DEMO_ADMIN_PASSWORD = os.getenv("DEMO_ADMIN_PASSWORD", "")
 
+    PASSWORD_HASH_METHOD = "scrypt"
     WTF_CSRF_ENABLED = True
     WTF_CSRF_TIME_LIMIT = None
     SESSION_COOKIE_HTTPONLY = True
@@ -101,6 +102,7 @@ class TestConfig(BaseConfig):
     DEMO_SME_PASSWORD = "sme-demo-password-test"
     DEMO_ADMIN_PASSWORD = "admin-demo-password-test"
     RATELIMIT_ENABLED = False
+    PASSWORD_HASH_METHOD = "pbkdf2:sha256:1000"  # fast hashing for tests only
 
 
 CONFIGS = {"dev": DevConfig, "demo": DemoConfig, "prod": ProdConfig, "test": TestConfig}

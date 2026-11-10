@@ -1,5 +1,11 @@
 # Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments
 
+> **Security note (Nov 2026).** The removed `_legacy_archive/` folder contained the public Hardhat account #0
+> private key and Ganache keys in `scripts/deploy*.js` and `docker-compose.yml`, plus credentials in
+> `application.properties`. Treat every one of those keys and passwords as compromised and never fund or reuse them.
+> They are still in git history (commit d12451c); purging them needs a history rewrite, which has not been done.
+
+
 An academic prototype web application integrating **KYC Verification**, **Machine Learning Risk Prediction (Random Forest)**, and **Risk-Adaptive Smart Contract Blockchain Settlement** for Small and Medium Enterprises (SMEs).
 
 ---

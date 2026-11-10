@@ -1,8 +1,10 @@
 """Authentication: landing page, login, demo quick login, registration, logout."""
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..db import get_db, utcnow_iso
+from ..security.decorators import demo_only
+from ..security.pii import MIN_PASSWORD_LEN, is_valid_email
 
 bp = Blueprint("auth", __name__)
 
@@ -28,12 +30,16 @@ def login():
         if user and check_password_hash(user["password"], password):
             _start_session(user)
             flash(f"Welcome back, {user['name']}!", "success")
+            nxt = request.args.get("next", "")
+            if nxt.startswith("/") and not nxt.startswith("//"):  # local paths only (no open redirect)
+                return redirect(nxt)
             return redirect(url_for("payments.dashboard"))
         flash("Invalid email or password. Please try again.", "danger")
     return render_template("login.html")
 
 
 @bp.route("/quick_login/<role>")
+@demo_only  # C2: 404 unless DEMO_MODE=1
 def quick_login(role):
     conn = get_db()
     wanted = "sme" if role == "sme" else "admin"
@@ -56,6 +62,15 @@ def register():
         if not name or not email or not password:
             flash("All fields are required.", "warning")
             return redirect(url_for("auth.register"))
+        if not is_valid_email(email):  # L6
+            flash("Enter a valid email address.", "warning")
+            return redirect(url_for("auth.register"))
+        if len(password) < MIN_PASSWORD_LEN:
+            flash(f"Password must be at least {MIN_PASSWORD_LEN} characters.", "warning")
+            return redirect(url_for("auth.register"))
+        if len(name) > 120:
+            flash("Business name is too long (max 120 characters).", "warning")
+            return redirect(url_for("auth.register"))
 
         conn = get_db()
         if conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
@@ -65,7 +80,7 @@ def register():
         now = utcnow_iso()
         cur = conn.execute(
             "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, 'sme', ?)",
-            (name, email, generate_password_hash(password), now),
+            (name, email, generate_password_hash(password, method=current_app.config["PASSWORD_HASH_METHOD"]), now),
         )
         user_id = cur.lastrowid
         conn.execute(
@@ -82,7 +97,7 @@ def register():
     return render_template("register.html")
 
 
-@bp.route("/logout")
+@bp.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     flash("You have been signed out safely.", "info")

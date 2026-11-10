@@ -28,8 +28,8 @@ def test_convert_currency_api(client):
     assert data["success"] and data["converted_amount"] == 8325.0
 
 
-def test_ledger_valid(client):
-    data = client.get("/api/validate_chain").get_json()
+def test_ledger_valid(sme_client):
+    data = sme_client.get("/api/validate_chain").get_json()
     assert data["valid"] is True
 
 

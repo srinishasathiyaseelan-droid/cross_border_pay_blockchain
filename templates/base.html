@@ -50,9 +50,9 @@
                         <span class="dot dot-low"></span>
                         <strong>{{ current_user.name }}</strong> ({{ current_user.role|upper }})
                     </span>
-                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm">Sign Out</a>
+                    <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-outline btn-sm">Sign Out</button></form>
                 {% else %}
-                    <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary btn-sm">⚡ Quick SME Demo</a>
+                    {% if demo_mode %}<a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary btn-sm">⚡ Quick SME Demo</a>{% endif %}
                     <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Sign In</a>
                 {% endif %}
             </div>

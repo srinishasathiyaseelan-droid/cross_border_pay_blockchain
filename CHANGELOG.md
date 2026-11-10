@@ -38,3 +38,33 @@ C6 is also closed here as a side effect: `app.py` only enables debug when `FLASK
 **How verified:** `gitleaks dir --redact` over both reference folders (hits listed by file only; the `.env` files were
 never opened); `gitleaks git` over CrossPay history confirms H6 (Hardhat #0 key in `_legacy_archive/scripts/deploy*.js`).
 Approval to port: the user's chat request of 2026-11-10. Open item: Netvrio has no LICENSE file.
+
+## P1 — Security lock-down (C1, C2, C3, C6, H3, H4, H6, L4, L6)
+
+**Findings fixed**
+- **C1** `resolve_hold` is `@admin_required`; the role is read from the `users` table, so a forged `user_role` cookie
+  value is ignored. Release/Reject controls render only for admins.
+- **C2** `/quick_login/<role>` is `@demo_only` (404 unless `DEMO_MODE=1`). Seed passwords come from
+  `DEMO_SME_PASSWORD` / `DEMO_ADMIN_PASSWORD`, random when unset; the login page no longer pre-fills `sme123`.
+- **C3** No hard-coded key. `SECRET_KEY` (and `LEDGER_SIGNING_KEY`) are required when `CROSSPAY_ENV=prod`; dev/demo
+  generate a random key under `instance/` (gitignored).
+- **C6** (closed in P0) debug only when `FLASK_DEBUG=1`; `Procfile` runs gunicorn.
+- **H3** `/result`, `/transactions`, `/dashboard`, `/blockchain`, `/payment`, `/api/validate_chain` need login.
+  SMEs see only their own rows (another tenant's receipt is a 404); the explorer redacts other tenants' block payloads;
+  the dashboard shows SME-scoped numbers. Admins see everything.
+- **H4** `CSRFProtect` with `{{ csrf_token() }}` in the login, register, KYC, payment, resolve (×2) and logout forms.
+  The JSON API is exempt from token CSRF but unsafe methods must pass a same-origin (Origin/Referer) check.
+  Logout is POST-only.
+- **H6 / L4** `_legacy_archive/` (8.3 MB) removed; README warns that its keys are compromised. History not rewritten (ask).
+- **L6** government IDs are Fernet-encrypted at rest (legacy rows encrypted on startup) and shown masked (last 4);
+  passwords need ≥ 10 characters; email format validated.
+
+**Files:** `crosspay/security/decorators.py`, `crosspay/security/pii.py`, blueprints, templates, `templates/error.html`,
+`README.md`, `requirements.txt` (+ cryptography).
+
+**Tests added:** `tests/test_security_p1.py` — anonymous resolve → 302 with HOLD unchanged; SME resolve → 403; forged
+role cookie → 403; cross-tenant receipt → 404; POST without CSRF token → 400; cross-origin API POST → 403;
+`/quick_login` → 404 when `DEMO_MODE=0`; prod without SECRET_KEY refuses to start; registration rules; encrypted and
+masked government ID; logout needs POST.
+
+**How verified:** `pytest -q` → 45 passed, working tree unchanged after the run.

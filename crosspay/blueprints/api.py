@@ -1,5 +1,9 @@
 """JSON API used by the UI."""
-from flask import Blueprint, current_app, jsonify, request
+from urllib.parse import urlparse
+
+from flask import Blueprint, abort, current_app, jsonify, request
+
+from ..security.decorators import login_required
 
 from ..services.currency import (
     COUNTRY_TO_DEFAULT_CURRENCY,
@@ -12,7 +16,21 @@ from ..services.currency import (
 bp = Blueprint("api", __name__, url_prefix="/api")
 
 
+@bp.before_request
+def _same_origin():
+    """H4 for the JSON API (exempt from token CSRF): unsafe methods must come from this origin as JSON."""
+    if request.method in ("GET", "HEAD", "OPTIONS"):
+        return None
+    origin = request.headers.get("Origin") or request.headers.get("Referer")
+    if not origin or urlparse(origin).netloc != request.host:
+        abort(403)
+    if not (request.is_json or request.mimetype == "multipart/form-data"):
+        abort(415)
+    return None
+
+
 @bp.route("/validate_chain")
+@login_required
 def validate_chain():
     chain = current_app.extensions["blockchain"]
     is_valid, msg = chain.is_chain_valid()

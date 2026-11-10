@@ -4,6 +4,7 @@ One connection per request, stored on flask.g and closed in teardown_appcontext 
 init_db() creates tables, applies additive column migrations and seeds demo data once.
 """
 import os
+import secrets
 import sqlite3
 from datetime import datetime, timezone
 
@@ -117,8 +118,10 @@ def init_db(app) -> None:
 
 def seed_initial_data(conn: sqlite3.Connection, config) -> None:
     now = utcnow_iso()
-    sme_pwd = generate_password_hash(config.get("DEMO_SME_PASSWORD") or "sme123")
-    admin_pwd = generate_password_hash(config.get("DEMO_ADMIN_PASSWORD") or "admin123")
+    # C2: seed passwords come from the environment; when unset they are random and unknown to anyone
+    # (the demo accounts are then reachable only through /quick_login, which exists only in DEMO_MODE).
+    sme_pwd = generate_password_hash(config.get("DEMO_SME_PASSWORD") or secrets.token_urlsafe(18), method=config.get("PASSWORD_HASH_METHOD", "scrypt"))
+    admin_pwd = generate_password_hash(config.get("DEMO_ADMIN_PASSWORD") or secrets.token_urlsafe(18), method=config.get("PASSWORD_HASH_METHOD", "scrypt"))
     conn.execute("BEGIN")
     cur = conn.execute(
         "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)",

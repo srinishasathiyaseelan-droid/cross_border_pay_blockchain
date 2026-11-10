@@ -14,6 +14,7 @@
         </div>
 
         <form method="POST" action="{{ url_for('auth.register') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label class="form-label" for="name">Company / Business Legal Name</label>
                 <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Pacific Rim Traders Ltd" required>
@@ -53,7 +54,7 @@
 
             <div class="form-group">
                 <label class="form-label" for="password">Create Secure Password</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 10 characters" minlength="10" required>
             </div>
 
             <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 20px; font-size: 0.8rem; color: #93c5fd;">
