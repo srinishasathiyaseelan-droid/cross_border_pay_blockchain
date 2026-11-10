@@ -90,11 +90,16 @@ def test_simulator_is_a_dry_run_through_the_real_policy(app, db):
     after = {t: _count(db, t) for t in ("transactions", "audit_chain", "llm_calls")}
     assert before == after  # nothing stored, nothing mined, no AI call
     assert all(e["simulated"] and e["tx_id"].startswith("SIM-") and e["block"] is None for e in events)
-    assert {e["decision"] for e in events} <= {"APPROVED", "HOLD", "BLOCKED"}
+    assert {e["decision"] for e in events} <= {"APPROVED", "HOLD", "BLOCKED", "REJECTED", "DUPLICATE"}
     assert len({e["decision"] for e in events}) >= 2
     contract, scorer = app.extensions["contract"], app.extensions["scorer"]
-    for e in events[:10]:  # the decision is the real policy engine's verdict on the real model's score
-        assert e["decision"] == contract.decide("VERIFIED", e["risk_level"], e["risk_score"]).decision
+    for e in events:  # the decision is the real policy engine's verdict on the real model's score and inputs
+        if e["decision"] == "DUPLICATE":
+            continue
+        inputs = e["trace"]["inputs"]
+        assert e["decision"] == contract.decide(e["trace"]["kyc"], e["risk_level"], e["risk_score"],
+                                                overrides=inputs["overrides"],
+                                                ai_escalations=inputs["ai_escalations"]).decision
     assert all(e["engine"] == scorer.engine for e in events)
 
 

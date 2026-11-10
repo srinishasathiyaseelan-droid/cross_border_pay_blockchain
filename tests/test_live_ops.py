@@ -60,3 +60,25 @@ def test_ai_explanation_publishes_one_liner(app, sme_client, db, fake_llm):
         events.append(q.get_nowait())
     ai = [e for e in events if e["type"] == "ai"]
     assert ai and ai[0]["tx_id"] == events[0]["tx_id"] and ai[0]["summary"]
+
+
+def test_simulator_scenarios_use_the_real_engine_and_guards(app, db):
+    import random
+
+    from crosspay.realtime import SCENARIOS, TrafficSimulator
+
+    before = db.execute("SELECT COUNT(*) FROM transactions").fetchone()[0]
+    sim = TrafficSimulator(app, rng=random.Random(3))
+    with app.app_context():
+        ev = {s: sim.build(s) for s in SCENARIOS}
+    assert db.execute("SELECT COUNT(*) FROM transactions").fetchone()[0] == before  # dry run
+    assert ev["kyc_unverified"]["decision"] == "REJECTED" and "KYC_NOT_VERIFIED" in ev["kyc_unverified"]["reasons"]
+    assert ev["velocity_burst"]["decision"] in ("HOLD", "BLOCKED")
+    assert "VELOCITY_BURST" in ev["velocity_burst"]["trace"]["inputs"]["overrides"]
+    assert ev["invoice_unverified"]["decision"] in ("HOLD", "BLOCKED")
+    assert ev["invoice_unverified"]["amount_usd"] > app.config["INVOICE_REQUIRED_ABOVE_USD"]
+    assert ev["injection_note"]["trace"]["inputs"]["input_guard_signals"]  # the real input guard fired
+    assert ev["injection_note"]["decision"] in ("HOLD", "BLOCKED")
+    assert ev["duplicate"]["decision"] == "DUPLICATE"
+    assert ev["high_risk_corridor"]["corridor"].split(" → ")[1] in ("Nigeria", "Russia", "Pakistan")
+    assert all(e["simulated"] and e["trace"]["ledger"].startswith("DRY RUN") for e in ev.values())
