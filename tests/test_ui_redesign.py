@@ -52,6 +52,22 @@ def test_public_pages_use_new_shell(client, path):
     _check_shell(_html(client.get(path)), path)
 
 
+HELD = {"receiver": "EuroTech Industrial GmbH", "sender_country": "United States", "receiver_country": "India",
+        "sender_currency": "USD", "receiver_currency": "INR", "amount": "28500", "notes": "Invoice 77 for steel",
+        "scenario": "medium"}
+
+
+def test_receipt_and_review_pages_use_new_shell(sme_client, admin_client, db):
+    sme_client.post("/process_payment", data=HELD)
+    tx = dict(db.execute("SELECT * FROM transactions ORDER BY id DESC LIMIT 1").fetchone())
+    assert tx["decision"] == "HOLD"
+    receipt = _html(sme_client.get(f"/result/{tx['transaction_id']}"))
+    _check_shell(receipt)
+    assert 'class="receipt' in receipt and 'class="pipeline' in receipt
+    review = _html(admin_client.get(f"/admin/review/{tx['transaction_id']}"))
+    _check_shell(review)
+
+
 def test_current_nav_link_is_marked(admin_client):
     html = _html(admin_client.get("/dashboard"))
     current = re.findall(r'<a href="([^"]+)" class="nav-link" aria-current="page"', html)

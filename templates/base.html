@@ -59,7 +59,7 @@
                     <span class="when-light">{{ icon('moon') }}</span><span class="when-dark">{{ icon('sun') }}</span>
                 </button>
                 {% if current_user %}
-                    <span class="user-chip">{{ icon('user') }}<strong>{{ current_user.name }}</strong>
+                    <span class="user-chip">{{ icon('user') }}<strong title="{{ current_user.name }}">{{ current_user.name }}</strong>
                         <span class="role {% if is_admin %}is-admin{% endif %}">{{ 'Officer' if is_admin else 'SME' }}</span></span>
                     <form method="POST" action="{{ url_for('auth.logout') }}" class="m-0">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
