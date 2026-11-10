@@ -3,46 +3,48 @@
 {% block title %}Ledger explorer{% endblock %}
 
 {% block content %}
-<div class="page-head">
+<div class="page-head" data-reveal>
     <div>
-        <h1 class="page-title">{{ tile('link', 'amber') }}Ledger explorer</h1>
-        <p class="page-sub">Only approved payments are mined into blocks. Every decision, including holds and blocks, is signed into the HMAC audit chain that this view is rebuilt from.</p>
+        <h1 class="page-title">{{ tile('link', 'warning') }}Ledger explorer</h1>
+        <p class="page-sub">Approved payments are mined into blocks. Every decision, including holds and blocks, is signed into the HMAC audit chain that this view is rebuilt from.</p>
     </div>
-    <button type="button" id="btn-verify-blockchain" class="btn btn-primary">{{ icon('shield') }}Verify integrity now</button>
+    <button type="button" id="btn-verify-blockchain" class="btn btn-primary btn-hero">{{ icon('shield') }}Verify integrity</button>
 </div>
-<div id="blockchain-verify-result" style="margin-bottom:16px"></div>
+<div id="blockchain-verify-result" aria-live="polite" class="mb-4"></div>
 
-<div class="stats-grid">
-    <div class="stat-card">{{ tile('hash', 'blue') }}<div><div class="stat-label">Hashing</div><div class="stat-value" style="font-size:1.1rem">SHA-256 + HMAC</div><div class="stat-sub">{{ audit_records }} signed audit records</div></div></div>
-    <div class="stat-card">{{ tile('cube', 'teal') }}<div><div class="stat-label">Blocks</div><div class="stat-value">{{ chain|length }}</div><div class="stat-sub">PoW difficulty {{ difficulty }}</div></div></div>
-    <div class="stat-card">{{ tile('file-check', 'violet') }}<div><div class="stat-label">Contract</div><div class="stat-value font-mono" style="font-size:0.78rem;word-break:break-all">{{ contract_address }}</div><div class="stat-sub">{{ contract_label }}</div></div></div>
-    <div class="stat-card">{{ tile('shield' if is_valid else 'alert', 'teal' if is_valid else 'red') }}<div><div class="stat-label">State</div>
-        <div class="stat-value" style="font-size:1.05rem;color:{{ 'var(--low)' if is_valid else 'var(--high)' }}">{{ 'Verified' if is_valid else 'Integrity error' }}</div>
-        <div class="stat-sub">{{ validation_msg }}</div></div></div>
-</div>
+<section class="kpis" aria-label="Ledger state" data-reveal>
+    <div class="kpi">{{ tile('shield' if is_valid else 'alert', 'success' if is_valid else 'danger') }}<div><div class="kpi-label">State</div>
+        <div class="kpi-value text-lg {{ 'text-success' if is_valid else 'text-danger' }}">{{ 'Verified' if is_valid else 'Integrity error' }}</div>
+        <div class="kpi-sub">{{ validation_msg }}</div></div></div>
+    <div class="kpi">{{ tile('cube') }}<div><div class="kpi-label">Blocks</div><div class="kpi-value">{{ chain|length }}</div><div class="kpi-sub">proof-of-work difficulty {{ difficulty }}</div></div></div>
+    <div class="kpi">{{ tile('hash', 'info') }}<div><div class="kpi-label">Signed audit records</div><div class="kpi-value">{{ audit_records }}</div><div class="kpi-sub">SHA-256 blocks + HMAC-SHA256 chain</div></div></div>
+    <div class="kpi">{{ tile('file-check', 'ai') }}<div><div class="kpi-label">Contract</div><div class="kpi-value num break xsmall">{{ contract_address }}</div><div class="kpi-sub">{{ contract_label }}</div></div></div>
+</section>
 
-<div class="chain-blocks">
+<ol class="chain" aria-label="Blocks, newest first">
     {% for block in chain|reverse %}
-    <article class="block-card {% if block.index == 0 %}is-genesis{% endif %}">
-        <div class="block-head">
-            <div class="block-index">{{ tile('cube', 'violet' if block.index == 0 else 'teal', 'sm') }}Block #{{ block.index }}
-                <span class="badge {{ 'badge-ai' if block.index == 0 else 'badge-approved' }}">{{ 'GENESIS' if block.index == 0 else 'SETTLEMENT' }}</span></div>
-            <div class="muted-sm">nonce <strong class="font-mono">{{ block.nonce }}</strong> · <span class="font-mono">{{ block.timestamp }}</span></div>
-        </div>
-        <div class="block-hashes">
-            <div><div class="stat-label">Block hash</div><div class="hash-pill">{{ block.hash }}</div></div>
-            <div><div class="stat-label">Previous hash</div><div class="hash-pill">{{ block.previous_hash }}</div></div>
-        </div>
-        {% for t in block.transactions %}
-        <div class="block-tx">
-            <div><span class="tx-id">{{ t.transaction_id }}</span>
-                {% if t.redacted %}<span class="badge badge-neutral">{{ icon('lock') }}another SME's payment</span>
-                {% else %}<span class="muted-sm"> · {{ t.sender }} → {{ t.receiver }}</span>{% endif %}</div>
-            {% if not t.redacted %}<strong style="color:var(--low)">{{ money(t.amount or 0, t.source_currency or t.currency) }}</strong>{% endif %}
-        </div>
-        {% endfor %}
-    </article>
-    {% if not loop.last %}<div class="chain-connector" aria-hidden="true">{{ icon('link') }}</div>{% endif %}
+    <li>
+        <article class="block" aria-labelledby="b{{ block.index }}" data-reveal>
+            <div class="block-head">
+                <h2 class="block-index" id="b{{ block.index }}">{{ tile('cube', 'ai' if block.index == 0 else 'brand', 'sm') }}Block #{{ block.index }}
+                    <span class="badge {{ 'badge-ai' if block.index == 0 else 'badge-success' }}">{{ 'Genesis' if block.index == 0 else 'Settlement' }}</span></h2>
+                <span class="xsmall text-2">nonce <span class="num">{{ block.nonce }}</span> · <span class="num">{{ block.timestamp }}</span></span>
+            </div>
+            <dl class="block-hashes">
+                <div><dt>Block hash</dt><dd><span class="hash">{{ block.hash }}</span></dd></div>
+                <div><dt>Previous hash</dt><dd><span class="hash">{{ block.previous_hash }}</span></dd></div>
+            </dl>
+            {% for t in block.transactions %}
+            <div class="block-tx">
+                <div><span class="tx-id">{{ t.transaction_id }}</span>
+                    {% if t.redacted %}<span class="badge badge-neutral">{{ icon('lock') }}another SME's payment</span>
+                    {% else %}<span class="small text-2"> · {{ t.sender }} → {{ t.receiver }}</span>{% endif %}</div>
+                {% if not t.redacted %}<strong>{{ money(t.amount or 0, t.source_currency or t.currency) }}</strong>{% endif %}
+            </div>
+            {% endfor %}
+        </article>
+        {% if not loop.last %}<svg class="chain-link" viewBox="0 0 24 36" aria-hidden="true"><path d="M12 2v32M6 28l6 6 6-6"/></svg>{% endif %}
+    </li>
     {% endfor %}
-</div>
+</ol>
 {% endblock %}

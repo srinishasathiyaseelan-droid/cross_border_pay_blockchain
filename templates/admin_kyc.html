@@ -2,38 +2,39 @@
 {% from "_macros.html" import icon, tile, kyc_badge %}
 {% block title %}KYC review queue{% endblock %}
 {% block content %}
-<div class="page-head">
+<div class="page-head" data-reveal>
     <div>
-        <h1 class="page-title">{{ tile('id-card', 'violet') }}KYC review queue</h1>
-        <p class="page-sub">Only a compliance officer can verify an SME. Every decision needs a reason and is recorded with your name.</p>
+        <h1 class="page-title">{{ tile('id-card', 'ai') }}KYC review queue</h1>
+        <p class="page-sub">Only a compliance officer can verify an SME. Every decision needs a reason and is recorded with your name. Pending submissions are listed first.</p>
     </div>
 </div>
-<div class="card">
-    <div class="table-responsive">
-    <table class="custom-table">
-        <thead><tr><th>SME</th><th>Country</th><th>Government ID</th><th>Address</th><th>Status</th><th>Decision</th></tr></thead>
+<section class="card" aria-label="KYC submissions" data-reveal>
+    <div class="table-wrap">
+    <table class="table">
+        <thead><tr><th scope="col">SME</th><th scope="col">Country</th><th scope="col">Government ID</th><th scope="col">Address</th><th scope="col">Status</th><th scope="col">Decision</th></tr></thead>
         <tbody>
         {% for k in items %}
         <tr>
-            <td><strong>{{ k.business_name }}</strong><div class="muted-sm">{{ k.email }}</div><div class="muted-sm font-mono">{{ k.submitted_at }}</div></td>
+            <td><strong>{{ k.business_name }}</strong><div class="xsmall muted">{{ k.email }}</div><div class="xsmall muted num">{{ k.submitted_at }}</div></td>
             <td>{{ k.country }}</td>
-            <td class="font-mono">{{ k.government_id_plain }}</td>
-            <td>{{ k.address }}</td>
-            <td>{{ kyc_badge(k.status) }}{% if k.review_reason %}<div class="muted-sm" style="margin-top:6px">{{ k.review_reason }}</div>{% endif %}</td>
+            <td class="num xsmall">{{ k.government_id_plain }}</td>
+            <td class="small">{{ k.address }}</td>
+            <td>{{ kyc_badge(k.status) }}{% if k.review_reason %}<div class="xsmall text-2 mt-2">{{ k.review_reason }}</div>{% endif %}</td>
             <td>
                 <form method="POST" action="{{ url_for('admin.kyc_decide', kyc_id=k.id) }}" class="inline-decision">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="text" name="reason" class="form-control" placeholder="Reason (min 10 characters)" minlength="10" required aria-label="Reason">
-                    <button name="action" value="approve" class="btn btn-success btn-sm" title="Verify">{{ icon('check') }}<span class="sr-only">Verify</span></button>
-                    <button name="action" value="reject" class="btn btn-danger btn-sm" title="Reject">{{ icon('x') }}<span class="sr-only">Reject</span></button>
+                    <label class="sr-only" for="reason-{{ k.id }}">Reason for {{ k.business_name }}</label>
+                    <input type="text" id="reason-{{ k.id }}" name="reason" class="input" placeholder="Reason (10+ characters)" minlength="10" required>
+                    <button name="action" value="approve" class="btn btn-success btn-icon tooltip" data-tip="Verify" aria-label="Verify {{ k.business_name }}">{{ icon('check') }}</button>
+                    <button name="action" value="reject" class="btn btn-destructive btn-icon tooltip" data-tip="Reject" aria-label="Reject {{ k.business_name }}">{{ icon('x') }}</button>
                 </form>
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="empty-row">No KYC submissions.</td></tr>
+        <tr><td colspan="6" class="table-empty">No KYC submissions yet.</td></tr>
         {% endfor %}
         </tbody>
     </table>
     </div>
-</div>
+</section>
 {% endblock %}

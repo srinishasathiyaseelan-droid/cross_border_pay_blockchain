@@ -10,7 +10,6 @@ the author labels. Writes model/evaluation/ai_golden_eval.json. Outputs are NOT 
 """
 import json
 import os
-import statistics
 import sys
 import tempfile
 import time

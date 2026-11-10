@@ -87,11 +87,11 @@
         </table></div>
         <nav class="pagination" aria-label="Pages"><a href="#" aria-label="Previous page">{{ icon('arrow-left') }}</a><span aria-current="page">1</span><a href="#">2</a><a href="#" aria-label="Next page">{{ icon('arrow-right') }}</a></nav>
     </div>
-    <div class="receipt" style="margin-top:24px">
+    <div class="receipt mt-6">
         <div class="receipt-head">{{ tile('pause', 'warning', 'lg') }}<div><div class="receipt-kicker">Example receipt (sample data from the demo fixtures)</div>
             <div class="receipt-amount">28,500.00 USD</div><div class="receipt-title">On hold for compliance review</div></div><span class="stamp stamp-hold">HOLD</span></div>
     </div>
-    <div class="advisory" style="margin-top:16px">{{ ai_label() }}<div class="advisory-body"><p class="advisory-summary">Advisory text sits in a labelled box below the facts it explains.</p></div></div>
+    <div class="advisory mt-4">{{ ai_label() }}<div class="advisory-body"><p class="advisory-summary">Advisory text sits in a labelled box below the facts it explains.</p></div></div>
 </section>
 {% endmacro %}
 
@@ -103,8 +103,8 @@
     </div>
 </div>
 <div class="grid-2">
-    <div class="kit-theme" data-kit-theme="light"><p class="small muted" style="margin-bottom:16px">Light</p>{{ kit('l') }}</div>
-    <div class="kit-theme" data-kit-theme="dark"><p class="small muted" style="margin-bottom:16px">Dark</p>{{ kit('d') }}</div>
+    <div class="kit-theme" data-kit-theme="light"><p class="small muted mb-4">Light</p>{{ kit('l') }}</div>
+    <div class="kit-theme" data-kit-theme="dark"><p class="small muted mb-4">Dark</p>{{ kit('d') }}</div>
 </div>
 <dialog class="dialog" id="kit-dialog" aria-labelledby="kit-dialog-title">
     <h2 id="kit-dialog-title" class="section-title">Dialog</h2>

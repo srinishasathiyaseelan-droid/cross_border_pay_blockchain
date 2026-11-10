@@ -3,77 +3,67 @@
 {% block title %}Overview{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <div>
-        <span class="hero-kicker">{{ icon('shield') }}Hardened prototype · Nov 2026</span>
-        <h1>Cross-border payments that <em>explain their risk</em> before they settle.</h1>
+<section class="hero" aria-labelledby="hero-title">
+    <div data-reveal>
+        <h1 id="hero-title">Cross-border payments that explain their risk before they settle.</h1>
         <p class="lead">An SME submits a payment. CrossPay converts it at a live rate, scores it with a Random Forest built
             from the SME's own history, and a deterministic policy approves it onto a signed ledger, holds it for a
-            compliance officer, or blocks it. An optional AI layer explains the decision, but never makes it.</p>
+            compliance officer, or blocks it. An optional AI layer explains the decision but never makes it.</p>
         <div class="btn-row">
             {% if current_user %}
-                <a href="{{ url_for('payments.payment') if not is_admin else url_for('payments.transactions') }}" class="btn btn-primary btn-lg">{{ icon('send') }}{{ 'Send a payment' if not is_admin else 'Review payments' }}</a>
+                {% if is_admin %}
+                <a href="{{ url_for('payments.transactions', status='HOLD') }}" class="btn btn-primary btn-lg btn-hero">{{ icon('scale') }}Review held payments</a>
+                {% else %}
+                <a href="{{ url_for('payments.payment') }}" class="btn btn-primary btn-lg btn-hero">{{ icon('send') }}Send a payment</a>
+                {% endif %}
                 <a href="{{ url_for('payments.dashboard') }}" class="btn btn-secondary btn-lg">{{ icon('chart') }}Dashboard</a>
             {% elif demo_mode %}
-                <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-primary btn-lg">{{ icon('zap') }}Try as demo SME</a>
-                <a href="{{ url_for('auth.quick_login', role='admin') }}" class="btn btn-ai btn-lg">{{ icon('shield') }}Compliance officer</a>
+                <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-primary btn-lg btn-hero">{{ icon('zap') }}Try it as the demo SME</a>
+                <a href="{{ url_for('auth.quick_login', role='admin') }}" class="btn btn-secondary btn-lg">{{ icon('shield') }}Compliance officer view</a>
             {% else %}
-                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Sign in</a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg btn-hero">{{ icon('lock') }}Sign in</a>
                 <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-lg">Register an SME</a>
             {% endif %}
         </div>
+        {% if demo_mode and not current_user %}<p class="hero-note">Demo mode: one-click accounts with labelled demo data.</p>{% endif %}
     </div>
-    <div class="hero-stage" aria-hidden="true">
-        <canvas id="hero-particles"></canvas>
-        <div class="cube-chain">
-            <div class="cube c-low"><div class="face front">#1</div><div class="face back"></div><div class="face right"></div><div class="face left"></div><div class="face top"></div><div class="face bottom"></div></div>
-            <div class="cube c-med"><div class="face front">HOLD</div><div class="face back"></div><div class="face right"></div><div class="face left"></div><div class="face top"></div><div class="face bottom"></div></div>
-            <div class="cube c-ai"><div class="face front">#2</div><div class="face back"></div><div class="face right"></div><div class="face left"></div><div class="face top"></div><div class="face bottom"></div></div>
-        </div>
-        <div class="hero-legend">
-            <span class="badge badge-approved">{{ icon('check') }}Approved → mined</span>
-            <span class="badge badge-hold">{{ icon('pause') }}Hold → officer</span>
-            <span class="badge badge-ai">{{ icon('sparkles') }}AI explains</span>
-        </div>
-    </div>
+
+    <ol class="flow" aria-label="How one payment moves through CrossPay" data-reveal>
+        {% for title, text, ic, tone in [
+            ('Payment submitted', 'Amount converted at a live rate; USD value computed from the same response.', 'send', 'brand'),
+            ('Risk scored', 'Seven features from the SME\'s own history; the same input always gives the same score.', 'cpu', 'info'),
+            ('Policy decides', 'Approve, hold for an officer or block, by configured thresholds. AI can only send a payment to a human.', 'scale', 'warning'),
+            ('Signed into the ledger', 'Row, block and HMAC audit record commit together, so any later edit is detected.', 'link', 'success')] %}
+        <li class="flow-step">
+            {{ tile(ic, tone) }}
+            <div><h3>{{ title }}</h3><p>{{ text }}</p></div>
+            <span class="num xsmall muted">{{ loop.index }}/4</span>
+        </li>
+        {% endfor %}
+    </ol>
 </section>
 
-<section class="card glow" style="margin-bottom:22px">
+<section class="card" aria-labelledby="outcomes-title" data-reveal>
     <div class="card-header">
         <div>
-            <h2 class="card-title">{{ tile('layers', 'blue', 'sm') }}How a payment is decided</h2>
-            <p class="card-sub">The same input always gives the same decision. AI signals can only send a payment to a human.</p>
+            <h2 class="card-title" id="outcomes-title">Three outcomes, one rule set</h2>
+            <p class="card-sub">Thresholds come from configuration; the model's class can only make the outcome stricter.</p>
         </div>
     </div>
-    <div class="flow-grid">
-        <div class="flow-card card card-flat">
-            {{ tile('check', 'teal') }}
-            <h3>Low risk: approve</h3>
-            <p class="muted-sm">Score below the review threshold. The settlement record is hashed, mined into a PoW block and signed into the HMAC audit chain in one database transaction.</p>
-            <code>model → policy → block + audit record → commit</code>
-        </div>
-        <div class="flow-card card card-flat">
-            {{ tile('pause', 'amber') }}
-            <h3>Medium risk: hold</h3>
-            <p class="muted-sm">A compliance officer reviews the evidence (with an optional AI copilot), writes a reason in their own words, and releases or rejects.</p>
-            <code>policy → HOLD → officer decision → audit record</code>
-        </div>
-        <div class="flow-card card card-flat">
-            {{ tile('ban', 'red') }}
-            <h3>High risk: block</h3>
-            <p class="muted-sm">Score above the block threshold, or the model's class is HIGH. Nothing is mined; the decision is still signed into the audit chain.</p>
-            <code>policy → BLOCKED → audit record only</code>
-        </div>
+    <div class="outcomes">
+        <div class="outcome">{{ tile('check', 'success') }}<h3>Approve</h3><p>Score below the review threshold. The settlement is mined into a block and signed into the audit chain in one database transaction.</p></div>
+        <div class="outcome">{{ tile('pause', 'warning') }}<h3>Hold</h3><p>A compliance officer reviews the evidence, optionally with an AI copilot, writes a reason in their own words, and releases or rejects.</p></div>
+        <div class="outcome">{{ tile('ban', 'danger') }}<h3>Block</h3><p>High score or a HIGH model class. Nothing is mined; the decision itself is still signed into the audit chain.</p></div>
     </div>
 </section>
 
-<section class="card">
-    <div class="card-header"><h2 class="card-title">{{ tile('cpu', 'violet', 'sm') }}What is inside</h2></div>
-    <div class="feature-list">
-        <div class="feature-item">{{ tile('id-card', 'blue') }}<div><h4>KYC with a human in the loop</h4><p class="muted-sm">Submissions wait for a compliance officer. Government IDs are encrypted at rest and shown masked.</p></div></div>
-        <div class="feature-item">{{ tile('cpu', 'teal') }}<div><h4>Honest Random Forest</h4><p class="muted-sm">Seven features computed by the server from the SME's history. Time-split test accuracy {{ '%.1f'|format(metrics.test.accuracy * 100) if metrics and metrics.test else 'n/a' }}% on synthetic data, with the top factors shown for every payment.</p></div></div>
-        <div class="feature-item">{{ tile('link', 'amber') }}<div><h4>Signed, verifiable ledger</h4><p class="muted-sm">HMAC-SHA256 audit chain with a fork guard; the PoW explorer is rebuilt from it, and any edited row is detected.</p></div></div>
-        <div class="feature-item">{{ tile('sparkles', 'violet') }}<div><h4>Guarded AI, advisory only</h4><p class="muted-sm">Explanations, a HOLD copilot, an invoice reader and an SME assistant, all behind DLP, schema, citation and number checks. The app works with AI off.</p></div></div>
+<section class="card mt-6" aria-labelledby="facts-title" data-reveal>
+    <h2 class="card-title mb-5" id="facts-title">What you can check</h2>
+    <div class="facts">
+        <div class="fact">{{ tile('id-card', 'info') }}<div><h3>KYC with a human in the loop</h3><p>Submissions wait for an officer. Government IDs are encrypted at rest and shown masked.</p></div></div>
+        <div class="fact">{{ tile('cpu') }}<div><h3>Measured, not claimed</h3><p>Time-split test accuracy {% if metrics and metrics.test %}<span class="num">{{ '%.1f'|format(metrics.test.accuracy * 100) }}%</span>{% else %}n/a{% endif %} on synthetic data, with the top factors shown for every payment.</p></div></div>
+        <div class="fact">{{ tile('link', 'warning') }}<div><h3>Verifiable ledger</h3><p>An HMAC-SHA256 audit chain with a fork guard. Edit any row and verification names it.</p></div></div>
+        <div class="fact">{{ tile('sparkles', 'ai') }}<div><h3>Guarded, advisory AI</h3><p>Explanations, a hold copilot, an invoice reader and an assistant, behind DLP, schema and number checks. Everything works with AI off.</p></div></div>
     </div>
 </section>
 {% endblock %}

@@ -3,47 +3,45 @@
 {% block title %}Register an SME{% endblock %}
 
 {% block content %}
-<div class="auth-wrap" style="max-width:560px">
-    <div class="card glow">
-        <div class="auth-head">
-            {{ tile('building', 'blue', 'lg') }}
-            <h1 class="page-title" style="font-size:1.5rem">Register your SME</h1>
-            <p class="muted-sm">After registering, submit KYC. A compliance officer must verify it before you can send payments.</p>
-        </div>
-        <form method="POST" action="{{ url_for('auth.register') }}" data-once>
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label class="form-label" for="name">Registered business name</label>
-                <input type="text" id="name" name="name" class="form-control" maxlength="120" placeholder="e.g. Pacific Rim Traders Ltd" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="email">Business email</label>
-                <input type="email" id="email" name="email" class="form-control" autocomplete="email" placeholder="compliance@pacificrim.com" required>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label" for="country">Country of incorporation</label>
-                    <select id="country" name="country" class="form-control">
-                        {% for c in ['United States', 'United Kingdom', 'Germany', 'Singapore', 'Japan', 'India', 'Canada', 'Australia', 'France', 'United Arab Emirates', 'Brazil'] %}
-                        <option value="{{ c }}">{{ c }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="business_type">Business structure</label>
-                    <select id="business_type" name="business_type" class="form-control">
-                        <option>Import/Export Trader</option><option>Private Limited Company</option><option>Sole Proprietorship</option>
-                        <option>Partnership</option><option>Wholesale Distributor</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-control" minlength="10" autocomplete="new-password" placeholder="At least 10 characters" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-block btn-lg">{{ icon('arrow-right') }}Create account and continue to KYC</button>
-        </form>
-        <p class="muted-sm" style="text-align:center;margin-top:18px">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+<div class="auth w-auto-narrow" data-reveal>
+    <div class="auth-head">
+        {{ tile('building', 'info', 'lg') }}
+        <h1 class="page-title">Register your SME</h1>
+        <p class="text-2">After registering, submit KYC. A compliance officer verifies it before you can send payments.</p>
     </div>
+    <form class="card" method="POST" action="{{ url_for('auth.register') }}" data-once>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+            <label class="field-label" for="name">Registered business name</label>
+            <input type="text" id="name" name="name" class="input" maxlength="120" autocomplete="organization" required>
+        </div>
+        <div class="field">
+            <label class="field-label" for="email">Business email</label>
+            <input type="email" id="email" name="email" class="input" autocomplete="email" required>
+        </div>
+        <div class="form-grid">
+            <div class="field">
+                <label class="field-label" for="country">Country of incorporation</label>
+                <select id="country" name="country" class="select">
+                    {% for c in ['United States', 'United Kingdom', 'Germany', 'Singapore', 'Japan', 'India', 'Canada', 'Australia', 'France', 'United Arab Emirates', 'Brazil'] %}
+                    <option value="{{ c }}">{{ c }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label class="field-label" for="business_type">Business structure</label>
+                <select id="business_type" name="business_type" class="select">
+                    <option>Import/Export Trader</option><option>Private Limited Company</option><option>Sole Proprietorship</option>
+                    <option>Partnership</option><option>Wholesale Distributor</option>
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label class="field-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="input" minlength="10" autocomplete="new-password" required aria-describedby="pw-hint">
+            <p class="field-hint" id="pw-hint">At least 10 characters.</p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block btn-hero">{{ icon('arrow-right') }}Create account and continue to KYC</button>
+        <p class="small text-2 text-center mt-4">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </form>
 </div>
 {% endblock %}

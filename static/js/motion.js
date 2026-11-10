@@ -50,14 +50,16 @@
                 const el = e.target;
                 const finalText = el.textContent;
                 const value = parseFloat(el.dataset.ticker);
-                if (!isFinite(value) || value === 0) return;
+                if (!isFinite(value) || value === 0 || document.hidden) return;
                 const decimals = (el.dataset.decimals | 0);
                 const state = { v: 0 };
-                A.animate(state, {
+                const anim = A.animate(state, {
                     v: value, duration: 900, ease: EASE.standard,
                     onUpdate: () => { el.textContent = state.v.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }); },
                     onComplete: () => { el.textContent = finalText; },   // always end on the server-rendered text
                 });
+                // If frames stall (background tab), stop the count and show the real number; a late frame can't overwrite it.
+                setTimeout(() => { if (anim && anim.pause) anim.pause(); el.textContent = finalText; }, 1400);
             });
         }, { threshold: 0.4 });
         els.forEach((el) => io.observe(el));

@@ -61,7 +61,7 @@
                 {% if current_user %}
                     <span class="user-chip">{{ icon('user') }}<strong>{{ current_user.name }}</strong>
                         <span class="role {% if is_admin %}is-admin{% endif %}">{{ 'Officer' if is_admin else 'SME' }}</span></span>
-                    <form method="POST" action="{{ url_for('auth.logout') }}" style="margin:0">
+                    <form method="POST" action="{{ url_for('auth.logout') }}" class="m-0">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="icon-btn tooltip" data-tip="Sign out" aria-label="Sign out">{{ icon('logout') }}</button>
                     </form>
@@ -76,7 +76,7 @@
     <aside class="sheet" id="nav-sheet" aria-label="Menu" aria-hidden="true">
         <div class="sheet-head"><span class="brand-name">Menu</span>
             <button type="button" class="icon-btn" data-close-sheet aria-label="Close menu">{{ icon('x') }}</button></div>
-        <ul class="nav-links" style="display:grid;gap:4px">{{ navlinks() }}</ul>
+        <ul class="nav-links">{{ navlinks() }}</ul>
     </aside>
 
     <main class="container" id="main" tabindex="-1">

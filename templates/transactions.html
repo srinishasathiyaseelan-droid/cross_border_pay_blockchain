@@ -3,69 +3,81 @@
 {% block title %}Transactions{% endblock %}
 
 {% block content %}
-<div class="page-head">
+<div class="page-head" data-reveal>
     <div>
-        <h1 class="page-title">{{ tile('list', 'blue') }}{{ 'All SME payments' if is_admin else 'Your payments' }}</h1>
+        <h1 class="page-title">{{ tile('list', 'info') }}{{ 'All SME payments' if is_admin else 'Your payments' }}</h1>
         <p class="page-sub">Every decision, its risk score, and whether it was recorded on the ledger.</p>
     </div>
-    {% if not is_admin %}<a href="{{ url_for('payments.payment') }}" class="btn btn-primary">{{ icon('plus') }}New payment</a>{% endif %}
+    {% if not is_admin %}<a href="{{ url_for('payments.payment') }}" class="btn btn-primary btn-hero">{{ icon('plus') }}New payment</a>{% endif %}
 </div>
 
-<div class="card">
+<section class="card" aria-label="Payments" data-reveal>
     {% if ai_on and ai_flags.get('AI_NLQ', True) %}
-    <form id="nlq-form" class="nlq-form" role="search">
-        {{ tile('sparkles', 'violet', 'sm') }}
-        <input id="nlq-input" class="form-control" maxlength="300" placeholder="Ask in plain words, e.g. held payments to India over $20k this month" aria-label="Natural-language filter">
-        <button type="submit" class="btn btn-ai btn-sm">{{ icon('filter') }}Filter</button>
+    <form id="nlq-form" class="nlq" role="search" aria-label="Plain-language filter">
+        <label class="sr-only" for="nlq-input">Describe the payments to find</label>
+        <input id="nlq-input" class="input" maxlength="300" placeholder="e.g. held payments to India over $20k this month">
+        <button type="submit" class="btn btn-ai">{{ icon('sparkles') }}Filter</button>
     </form>
-    <div id="nlq-error" class="alert alert-warning" hidden style="margin-bottom:12px"></div>
-    <p class="muted-sm" style="margin:-6px 0 14px">AI turns your words into the filter chips below (never into SQL). Check the chips; the results are always limited to what you are allowed to see.</p>
+    <p class="xsmall muted mb-4">AI turns your words into filter chips (never into SQL). Results are always limited to what you are allowed to see.</p>
+    <div id="nlq-error" class="alert alert-warning mb-4" hidden></div>
     {% endif %}
+
     <div class="toolbar">
-        <div class="segmented" role="group" aria-label="Filter by decision">
+        <nav class="segmented" aria-label="Filter by decision">
             {% for key, label, ic in [('ALL', 'All', 'layers'), ('APPROVED', 'Approved', 'check'), ('HOLD', 'On hold', 'pause'), ('BLOCKED', 'Blocked', 'ban'), ('REJECTED', 'Rejected', 'x')] %}
-            <a href="{{ url_for('payments.transactions', status=key, q=query or None) }}" class="btn btn-sm {{ 'btn-primary' if status_filter == key else 'btn-secondary' }}">{{ icon(ic) }}{{ label }}</a>
+            <a href="{{ url_for('payments.transactions', status=key, q=query or None) }}" {% if status_filter == key %}aria-current="true"{% endif %}>{{ icon(ic) }}{{ label }}</a>
             {% endfor %}
-        </div>
-        <form method="GET" action="{{ url_for('payments.transactions') }}" class="search-form" role="search">
+        </nav>
+        <form method="GET" action="{{ url_for('payments.transactions') }}" class="search" role="search">
             <input type="hidden" name="status" value="{{ status_filter }}">
-            <input type="search" name="q" value="{{ query }}" placeholder="TX ID, sender or receiver" class="form-control" aria-label="Search transactions">
-            <button type="submit" class="btn btn-secondary btn-sm">{{ icon('search') }}Search</button>
-            {% if query %}<a href="{{ url_for('payments.transactions', status=status_filter) }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
+            <label class="sr-only" for="q">Search transactions</label>
+            <input type="search" id="q" name="q" value="{{ query }}" placeholder="TX ID, sender or receiver" class="input">
+            <button type="submit" class="btn btn-secondary">{{ icon('search') }}Search</button>
+            {% if query %}<a href="{{ url_for('payments.transactions', status=status_filter) }}" class="btn btn-ghost">Clear</a>{% endif %}
         </form>
     </div>
-    {% if filter_chips %}<div class="filter-chips">{% for k, v in filter_chips %}<span class="badge badge-ai">{{ icon('filter') }}{{ k }}: {{ v }}</span>{% endfor %}</div>{% endif %}
+    {% if filter_chips %}<div class="chips mb-4" aria-label="Active filters">{% for k, v in filter_chips %}<span class="badge badge-ai">{{ icon('filter') }}{{ k }}: {{ v }}</span>{% endfor %}
+        <a class="btn btn-link small" href="{{ url_for('payments.transactions') }}">Clear filters</a></div>{% endif %}
 
-    <div class="table-responsive">
-        <table class="custom-table">
+    <div class="table-wrap">
+        <table class="table" data-sortable>
+            <caption class="sr-only">Payments, newest first. Column headers with buttons can be sorted.</caption>
             <thead>
-                <tr><th>Transaction</th><th>Parties</th><th>Amount</th><th>Risk</th><th>Decision</th><th>Ledger</th><th style="text-align:right">Action</th></tr>
+                <tr>
+                    <th scope="col"><button type="button" data-sort="0">Transaction <span class="sort" aria-hidden="true"></span></button></th>
+                    <th scope="col">Beneficiary</th>
+                    <th scope="col" class="num"><button type="button" data-sort="2">USD value <span class="sort" aria-hidden="true"></span></button></th>
+                    <th scope="col"><button type="button" data-sort="3">Risk <span class="sort" aria-hidden="true"></span></button></th>
+                    <th scope="col">Decision</th>
+                    <th scope="col">Ledger</th>
+                    <th scope="col"><span class="sr-only">Actions</span></th>
+                </tr>
             </thead>
             <tbody>
             {% for tx in transactions %}
                 <tr>
-                    <td><span class="tx-id">{{ tx.transaction_id }}</span><div class="muted-sm font-mono">{{ tx.timestamp }}</div></td>
-                    <td><strong>{{ tx.receiver }}</strong><div class="muted-sm">{{ tx.sender }} · {{ tx.sender_country }} → {{ tx.receiver_country }}</div></td>
-                    <td><strong>{{ money(tx.amount, tx.source_currency or tx.currency) }}</strong>
-                        {% if tx.target_currency and tx.target_currency != (tx.source_currency or tx.currency) %}
-                        <div class="muted-sm">→ {{ money(tx.converted_amount, tx.target_currency) }}</div>{% endif %}</td>
-                    <td>{{ risk_badge(tx.risk_level, tx.risk_score) }}</td>
+                    <td data-value="{{ tx.timestamp }}"><span class="tx-id">{{ tx.transaction_id }}</span><div class="xsmall muted num">{{ tx.timestamp }}</div></td>
+                    <td><strong>{{ tx.receiver }}</strong><div class="xsmall muted">{{ tx.sender }} · {{ tx.sender_country }} → {{ tx.receiver_country }}</div></td>
+                    <td class="num" data-value="{{ tx.normalized_usd_amount or 0 }}">{{ money(tx.normalized_usd_amount, 'USD') }}
+                        <div class="xsmall muted">{{ money(tx.amount, tx.source_currency or tx.currency) }}</div></td>
+                    <td data-value="{{ tx.risk_score }}">{{ risk_badge(tx.risk_level, tx.risk_score) }}</td>
                     <td>{{ decision_badge(tx.decision) }}</td>
-                    <td>{% if tx.decision == 'APPROVED' %}<span class="badge badge-approved">{{ icon('cube') }}Block #{{ tx.block_number }}</span>
-                        {% elif tx.decision == 'HOLD' %}<span class="badge badge-hold">{{ icon('clock') }}Pending review</span>
-                        {% else %}<span class="badge badge-neutral">{{ icon('ban') }}Not recorded</span>{% endif %}</td>
-                    <td style="text-align:right;white-space:nowrap">
-                        <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">{{ icon('eye') }}Receipt</a>
+                    <td>{% if tx.decision == 'APPROVED' %}<span class="badge badge-outline">{{ icon('cube') }}Block <span class="num">&nbsp;#{{ tx.block_number }}</span></span>
+                        {% elif tx.decision == 'HOLD' %}<span class="xsmall text-2">Pending review</span>
+                        {% else %}<span class="xsmall muted">Not recorded</span>{% endif %}</td>
+                    <td class="cell-actions">
                         {% if tx.decision == 'HOLD' and is_admin %}
-                        <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-warning btn-sm">{{ icon('scale') }}Review</a>
+                        <a href="{{ url_for('admin.review', tx_id=tx.transaction_id) }}" class="btn btn-warning btn-sm">{{ icon('scale') }}Review</a>
+                        {% else %}
+                        <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">{{ icon('eye') }}Receipt</a>
                         {% endif %}
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="7" class="empty-row">No payments match this filter.</td></tr>
+                <tr><td colspan="7" class="table-empty">No payments match this filter.{% if status_filter != 'ALL' or query %} <a href="{{ url_for('payments.transactions') }}">Show all</a>{% endif %}</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
+</section>
 {% endblock %}

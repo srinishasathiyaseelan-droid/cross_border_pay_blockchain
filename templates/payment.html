@@ -9,7 +9,7 @@
 <div class="card kyc-gate" data-reveal>
     {{ tile('lock', 'danger', 'lg') }}
     <h1 class="page-title">Verify your business before sending payments</h1>
-    <p class="text-2" style="max-width:520px">Only SMEs verified by a compliance officer can submit cross-border payments.
+    <p class="text-2 w-auto-narrow">Only SMEs verified by a compliance officer can submit cross-border payments.
         Your KYC status is <strong>{{ kyc.status if kyc else 'not submitted' }}</strong>.</p>
     <a href="{{ url_for('kyc.kyc') }}" class="btn btn-primary btn-lg btn-hero">{{ icon('id-card') }}Go to KYC</a>
 </div>
@@ -85,21 +85,21 @@
                     </div>
                 </div>
                 <div class="fx-row">
-                    <div class="field" style="margin-bottom:0">
+                    <div class="field mb-0">
                         <label class="field-label" for="amount">Amount in <span id="source-currency-label">USD</span></label>
                         <div class="input-money"><span class="prefix" id="amount-currency-symbol">$</span>
                             <input type="number" step="0.01" min="0.01" id="amount" name="amount" class="input" inputmode="decimal" placeholder="4500.00" required></div>
                     </div>
                     <button type="button" id="btn-convert-currency" class="btn btn-secondary">{{ icon('refresh') }}Refresh rate</button>
                 </div>
-                <div class="fx" style="margin:16px 0 0">
-                    <div id="conversion-loading-indicator" class="loading" hidden><span class="skeleton" style="width:50%"></span><span class="small muted">Fetching the live rate…</span></div>
+                <div class="fx mt-4 mb-0">
+                    <div id="conversion-loading-indicator" class="loading" hidden><span class="skeleton w-50"></span><span class="small muted">Fetching the live rate…</span></div>
                     <div id="conversion-error-box" class="alert alert-danger" hidden>{{ icon('alert') }}<span id="conversion-error-text">Rate unavailable.</span></div>
-                    <dl id="conversion-details-content" class="fx-grid" style="margin:0">
-                        <div><dt>They receive</dt><dd class="big" id="display-converted-amount">—</dd><dd class="xsmall muted" id="display-target-currency-code" style="font-family:var(--font-sans)"></dd></div>
-                        <div><dt>Exchange rate</dt><dd id="display-exchange-rate" style="font-size:var(--text-sm)">—</dd></div>
+                    <dl id="conversion-details-content" class="fx-grid m-0">
+                        <div><dt>They receive</dt><dd class="big" id="display-converted-amount">—</dd><dd class="xsmall muted sans" id="display-target-currency-code"></dd></div>
+                        <div><dt>Exchange rate</dt><dd id="display-exchange-rate" class="small">—</dd></div>
                         <div><dt>USD value (used by the model)</dt><dd id="display-usd-amount">—</dd></div>
-                        <div><dt>Rate source</dt><dd id="display-rate-provider" style="font:var(--weight-semibold) var(--text-sm) var(--font-sans)">—</dd><dd class="xsmall muted" id="display-rate-timestamp"></dd></div>
+                        <div><dt>Rate source</dt><dd id="display-rate-provider" class="small sans semibold">—</dd><dd class="xsmall muted" id="display-rate-timestamp"></dd></div>
                     </dl>
                 </div>
             </fieldset>
@@ -116,11 +116,11 @@
                     <p class="field-hint" id="invoice-hint">The AI reader pre-fills the form for you to confirm. An exact text check compares the invoice with the form; a mismatch can only send the payment to a reviewer.</p>
                 </div>
                 <input type="hidden" name="invoice_token" id="invoice_token" value="">
-                <div id="invoice-result" style="margin-top:12px" aria-live="polite"></div>
+                <div id="invoice-result" aria-live="polite" class="mt-3"></div>
             </fieldset>
             {% endif %}
 
-            <div class="field" style="margin-bottom:0">
+            <div class="field mb-0">
                 <label class="field-label" for="notes">Purpose of payment</label>
                 <input type="text" id="notes" name="notes" class="input" maxlength="500" placeholder="e.g. Invoice 4471, HS 8471 laptops, 30-day terms" aria-describedby="notes-hint">
                 <p class="field-hint" id="notes-hint">{% if ai_on %}An AI purpose tagger reads this note. It can only send a payment to a human reviewer, never approve one.{% else %}Shown to the compliance officer if the payment is held.{% endif %}</p>
@@ -138,7 +138,7 @@
             </div>
             <div class="card" data-reveal>
                 <button type="submit" id="btn-submit-payment" class="btn btn-primary btn-lg btn-block btn-hero">{{ icon('send') }}Submit payment</button>
-                <p class="xsmall muted" style="margin-top:12px">{{ icon('lock') }} Decided by a deterministic policy and signed into the HMAC audit chain in one transaction.</p>
+                <p class="xsmall muted mt-3">{{ icon('lock') }} Decided by a deterministic policy and signed into the HMAC audit chain in one transaction.</p>
             </div>
         </aside>
     </div>

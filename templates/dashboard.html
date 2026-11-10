@@ -3,53 +3,44 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-head">
+<div class="page-head" data-reveal>
     <div>
-        <h1 class="page-title">{{ tile('chart', 'teal') }}{{ 'Compliance dashboard' if is_admin else 'Your settlement dashboard' }}</h1>
-        <p class="page-sub">{{ 'All SMEs' if is_admin else 'Only your own payments are counted here.' }} Decisions come from the policy engine; the model and AI only inform it.</p>
+        <h1 class="page-title">{{ tile('chart') }}{{ 'Compliance dashboard' if is_admin else 'Your dashboard' }}</h1>
+        <p class="page-sub">{{ 'All SMEs.' if is_admin else 'Only your own payments are counted here.' }} Decisions come from the policy engine; the model and AI only inform it.</p>
     </div>
     <div class="btn-row">
-        {% if not is_admin %}<a href="{{ url_for('payments.payment') }}" class="btn btn-primary">{{ icon('send') }}New payment</a>{% endif %}
+        {% if is_admin %}
+        <a href="{{ url_for('payments.transactions', status='HOLD') }}" class="btn btn-primary btn-hero">{{ icon('scale') }}Review held payments{% if stats.held_txs %} <span class="badge badge-warning num">{{ stats.held_txs }}</span>{% endif %}</a>
+        {% else %}
+        <a href="{{ url_for('payments.payment') }}" class="btn btn-primary btn-hero">{{ icon('send') }}Send a payment</a>
+        {% endif %}
         <a href="{{ url_for('payments.blockchain_explorer') }}" class="btn btn-secondary">{{ icon('link') }}Ledger</a>
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">{{ tile('layers', 'blue') }}<div><div class="stat-label">Payments</div><div class="stat-value">{{ stats.total_txs }}</div><div class="stat-sub">submitted</div></div></div>
-    <div class="stat-card">{{ tile('check', 'teal') }}<div><div class="stat-label">Approved</div><div class="stat-value" style="color:var(--low)">{{ stats.approved_txs }}</div><div class="stat-sub">{{ money(stats.total_volume_approved, 'USD') }} settled</div></div></div>
-    <div class="stat-card">{{ tile('pause', 'amber') }}<div><div class="stat-label">On hold</div><div class="stat-value" style="color:var(--med)">{{ stats.held_txs }}</div><div class="stat-sub">awaiting an officer</div></div></div>
-    <div class="stat-card">{{ tile('ban', 'red') }}<div><div class="stat-label">Blocked</div><div class="stat-value" style="color:var(--high)">{{ stats.blocked_txs }}</div><div class="stat-sub">{{ stats.rejected_txs }} rejected</div></div></div>
+<section class="kpis" aria-label="Payment counts" data-reveal>
+    <div class="kpi">{{ tile('layers', 'info') }}<div><div class="kpi-label">Payments</div><div class="kpi-value" data-ticker="{{ stats.total_txs }}">{{ stats.total_txs }}</div><div class="kpi-sub">submitted</div></div></div>
+    <div class="kpi">{{ tile('check', 'success') }}<div><div class="kpi-label">Approved</div><div class="kpi-value" data-ticker="{{ stats.approved_txs }}">{{ stats.approved_txs }}</div><div class="kpi-sub">{{ money(stats.total_volume_approved, 'USD') }} settled</div></div></div>
+    <div class="kpi">{{ tile('pause', 'warning') }}<div><div class="kpi-label">On hold</div><div class="kpi-value" data-ticker="{{ stats.held_txs }}">{{ stats.held_txs }}</div><div class="kpi-sub">awaiting an officer</div></div></div>
+    <div class="kpi">{{ tile('ban', 'danger') }}<div><div class="kpi-label">Blocked</div><div class="kpi-value" data-ticker="{{ stats.blocked_txs }}">{{ stats.blocked_txs }}</div><div class="kpi-sub">{{ stats.rejected_txs }} rejected by officers</div></div></div>
     {% if stats.verified_kyc_count is not none %}
-    <div class="stat-card">{{ tile('id-card', 'violet') }}<div><div class="stat-label">Verified SMEs</div><div class="stat-value">{{ stats.verified_kyc_count }}</div><div class="stat-sub">KYC approved</div></div></div>
+    <div class="kpi">{{ tile('id-card', 'ai') }}<div><div class="kpi-label">Verified SMEs</div><div class="kpi-value" data-ticker="{{ stats.verified_kyc_count }}">{{ stats.verified_kyc_count }}</div><div class="kpi-sub">KYC approved</div></div></div>
     {% endif %}
-</div>
+</section>
 
-<div class="grid-2">
-    <div class="card glow">
-        <div class="card-header"><h2 class="card-title">{{ tile('cpu', 'violet', 'sm') }}Risk levels</h2></div>
-        <div class="chart-box"><canvas id="riskDoughnutChart" aria-label="Risk level distribution"></canvas></div>
-        <div class="chip-row" style="justify-content:center;margin-top:10px">
-            <span class="badge badge-low">LOW {{ stats.low_risk_count }}</span><span class="badge badge-med">MEDIUM {{ stats.med_risk_count }}</span><span class="badge badge-high">HIGH {{ stats.high_risk_count }}</span>
-        </div>
-    </div>
-    <div class="card glow">
-        <div class="card-header"><h2 class="card-title">{{ tile('scale', 'amber', 'sm') }}Policy decisions</h2></div>
-        <div class="chart-box"><canvas id="decisionBarChart" aria-label="Decision counts"></canvas></div>
-    </div>
-</div>
-
-<div class="card live-card" id="live-feed" data-events="{{ url_for('api.live_events') }}" data-snapshot="{{ url_for('api.live_snapshot') }}"
-     data-sim="{{ url_for('api.live_simulator') if (is_admin and demo_mode) else '' }}" data-tx-url="{{ url_for('payments.result', tx_id='__TX__') }}">
+<section class="card live-card mt-6" id="live-feed" data-events="{{ url_for('api.live_events') }}" data-snapshot="{{ url_for('api.live_snapshot') }}"
+     data-sim="{{ url_for('api.live_simulator') if (is_admin and demo_mode) else '' }}" data-tx-url="{{ url_for('payments.result', tx_id='__TX__') }}"
+     aria-labelledby="live-title" data-reveal>
     <div class="card-header">
         <div>
-            <h2 class="card-title">{{ tile('activity', 'teal', 'sm') }}Live decision feed
+            <h2 class="card-title" id="live-title">{{ tile('activity', 'brand', 'sm') }}Live decision feed
                 <span class="live-status" data-state="connecting" role="status"><span class="live-dot"></span><span class="live-label">Connecting…</span></span></h2>
             <p class="card-sub">{{ 'Every settlement and officer review, as it happens.' if is_admin else 'Your own payments and their reviews, as they happen.' }}
             {% if is_admin and demo_mode %} Simulated traffic is a dry run: it is scored by the real model and policy engine but never stored or mined.{% endif %}</p>
         </div>
         {% if is_admin and demo_mode %}
         <div class="btn-row live-controls">
-            <label class="live-rate">Rate <select id="sim-rate" class="form-control form-control-sm" aria-label="Simulated events per second">
+            <label class="live-rate">Rate <select id="sim-rate" class="select" aria-label="Simulated events per second">
                 <option value="0.5">0.5/s</option><option value="1" selected>1/s</option><option value="3">3/s</option><option value="6">6/s</option></select></label>
             <button type="button" class="btn btn-secondary btn-sm" id="sim-toggle" aria-pressed="false">{{ icon('zap') }}<span>Start simulated traffic</span></button>
         </div>
@@ -60,68 +51,83 @@
         <span class="badge badge-hold">{{ icon('pause') }}Hold <strong data-count="HOLD">0</strong></span>
         <span class="badge badge-blocked">{{ icon('ban') }}Blocked <strong data-count="BLOCKED">0</strong></span>
         <span class="badge badge-rejected">{{ icon('x') }}Rejected <strong data-count="REJECTED">0</strong></span>
-        <span class="muted-sm live-rate-out" aria-live="off"></span>
+        <span class="xsmall muted live-rate-out" aria-live="off"></span>
     </div>
     <ol class="live-list" aria-live="polite" aria-relevant="additions">
-        <li class="live-empty muted-sm">Waiting for decisions. {{ 'Start simulated traffic or submit a payment.' if (is_admin and demo_mode) else 'Submit a payment to see it here.' }}</li>
+        <li class="live-empty small">Waiting for decisions. {{ 'Start simulated traffic or submit a payment.' if (is_admin and demo_mode) else 'Submit a payment to see it here.' }}</li>
     </ol>
+</section>
+
+<div class="grid-2 mt-6" data-reveal>
+    <section class="card" aria-labelledby="risk-title">
+        <h2 class="card-title mb-4" id="risk-title">{{ tile('cpu', 'ai', 'sm') }}Risk levels</h2>
+        <div class="chart-box"><canvas id="riskDoughnutChart" role="img" aria-label="Risk levels: LOW {{ stats.low_risk_count }}, MEDIUM {{ stats.med_risk_count }}, HIGH {{ stats.high_risk_count }}"></canvas></div>
+        <div class="chips justify-center mt-3">
+            <span class="badge badge-low">LOW <span class="num">&nbsp;{{ stats.low_risk_count }}</span></span><span class="badge badge-med">MEDIUM <span class="num">&nbsp;{{ stats.med_risk_count }}</span></span><span class="badge badge-high">HIGH <span class="num">&nbsp;{{ stats.high_risk_count }}</span></span>
+        </div>
+    </section>
+    <section class="card" aria-labelledby="dec-title">
+        <h2 class="card-title mb-4" id="dec-title">{{ tile('scale', 'warning', 'sm') }}Policy decisions</h2>
+        <div class="chart-box"><canvas id="decisionBarChart" role="img" aria-label="Decisions: approved {{ stats.approved_txs }}, on hold {{ stats.held_txs }}, blocked {{ stats.blocked_txs }}, rejected {{ stats.rejected_txs }}"></canvas></div>
+    </section>
 </div>
 
 <!-- Model performance: measured on a time-based synthetic hold-out (model/metrics.json) -->
-<div class="card" style="margin-bottom:20px">
+<section class="card mt-6" aria-labelledby="model-title" data-reveal>
     <div class="card-header">
         <div>
-            <h2 class="card-title">{{ tile('activity', 'teal', 'sm') }}Random Forest model: measured performance</h2>
+            <h2 class="card-title" id="model-title">{{ tile('activity', 'brand', 'sm') }}Random Forest: measured performance</h2>
             <p class="card-sub">Synthetic data with overlapping classes and 7% label noise; oldest 70% trained, newest 15% tested.
             These numbers describe the generator, not real-world fraud detection.</p>
         </div>
-        <span class="badge {% if scoring_engine == 'model' %}badge-low{% else %}badge-high{% endif %}">{{ icon('cpu') }}Engine: {{ scoring_engine }}</span>
+        <span class="badge {% if scoring_engine == 'model' %}badge-success{% else %}badge-danger{% endif %}">{{ icon('cpu') }}Engine: {{ scoring_engine }}</span>
     </div>
-    {% if scoring_engine != 'model' %}<div class="alert alert-warning" style="margin-bottom:14px">{{ icon('alert') }}<span>Fallback rules in use: {{ fallback_reason }}</span></div>{% endif %}
+    {% if scoring_engine != 'model' %}<div class="alert alert-warning mb-4">{{ icon('alert') }}<span>Fallback rules in use: {{ fallback_reason }}</span></div>{% endif %}
     {% if metrics and metrics.test %}
-    <div class="metric-grid">
+    <div class="metric-grid mb-5">
         <div class="metric"><div class="metric-label">Test accuracy</div><div class="metric-value">{{ '%.1f'|format(metrics.test.accuracy * 100) }}%</div></div>
         <div class="metric"><div class="metric-label">Macro F1</div><div class="metric-value">{{ '%.1f'|format(metrics.test.macro_f1 * 100) }}%</div></div>
         <div class="metric"><div class="metric-label">HIGH recall</div><div class="metric-value">{{ '%.1f'|format(metrics.test.per_class.HIGH.recall * 100) }}%</div></div>
         <div class="metric"><div class="metric-label">HIGH PR-AUC</div><div class="metric-value">{{ '%.3f'|format(metrics.test.per_class.HIGH.pr_auc) }}</div></div>
         <div class="metric"><div class="metric-label">Brier (3-class)</div><div class="metric-value">{{ '%.3f'|format(metrics.test.brier_score_multiclass) }}</div></div>
-        <div class="metric"><div class="metric-label">5-fold CV acc.</div><div class="metric-value">{{ '%.1f'|format(metrics.cv_5fold_train.accuracy_mean * 100) }} ± {{ '%.1f'|format(metrics.cv_5fold_train.accuracy_std * 100) }}%</div></div>
+        <div class="metric"><div class="metric-label">5-fold CV accuracy</div><div class="metric-value">{{ '%.1f'|format(metrics.cv_5fold_train.accuracy_mean * 100) }} ± {{ '%.1f'|format(metrics.cv_5fold_train.accuracy_std * 100) }}%</div></div>
     </div>
-    <div class="feature-bars">
+    <h3 class="small mb-3">Feature importance</h3>
+    <div class="bars">
         {% for name, value in metrics.feature_importances|dictsort(by='value', reverse=true) %}
-        <div class="feature-bar"><span>{{ name.replace('_', ' ') }}</span><strong class="font-mono">{{ '%.1f'|format(value * 100) }}%</strong>
-            <div class="bar"><div style="width: {{ value * 100 }}%"></div></div></div>
+        <div class="bar-row"><span>{{ name.replace('_', ' ')|capitalize }}</span><strong class="num">{{ '%.1f'|format(value * 100) }}%</strong>
+            <div class="bar-track"><div class="bar-fill" style="width: {{ value * 100 }}%"></div></div></div>
         {% endfor %}
     </div>
     {% else %}
-    <p class="muted-sm">metrics.json not found: run <code>python model/train_model.py</code>.</p>
+    <p class="small text-2">metrics.json not found: run <code>python model/train_model.py</code>.</p>
     {% endif %}
-</div>
+</section>
 
-<div class="card">
+<section class="card mt-6" aria-labelledby="recent-title" data-reveal>
     <div class="card-header">
-        <h2 class="card-title">{{ tile('clock', 'blue', 'sm') }}Recent payments</h2>
+        <h2 class="card-title" id="recent-title">{{ tile('clock', 'info', 'sm') }}Recent payments</h2>
         <a href="{{ url_for('payments.transactions') }}" class="btn btn-outline btn-sm">{{ icon('arrow-right') }}All transactions</a>
     </div>
-    <div class="table-responsive">
-        <table class="custom-table">
-            <thead><tr><th>Transaction</th><th>Beneficiary</th><th>Amount</th><th>Risk</th><th>Decision</th></tr></thead>
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th scope="col">Transaction</th><th scope="col">Beneficiary</th><th scope="col" class="num">Amount</th><th scope="col">Risk</th><th scope="col">Decision</th></tr></thead>
             <tbody>
             {% for tx in recent_transactions %}
                 <tr>
                     <td><a class="tx-id" href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}">{{ tx.transaction_id }}</a></td>
-                    <td>{{ tx.receiver }}<div class="muted-sm">{{ tx.receiver_country }}</div></td>
-                    <td>{{ money(tx.amount, tx.source_currency or tx.currency) }}</td>
+                    <td>{{ tx.receiver }}<div class="xsmall muted">{{ tx.receiver_country }}</div></td>
+                    <td class="num">{{ money(tx.amount, tx.source_currency or tx.currency) }}</td>
                     <td>{{ risk_badge(tx.risk_level, tx.risk_score) }}</td>
                     <td>{{ decision_badge(tx.decision) }}</td>
                 </tr>
             {% else %}
-                <tr><td colspan="5" class="empty-row">No payments yet.</td></tr>
+                <tr><td colspan="5" class="table-empty">No payments yet.</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -129,28 +135,30 @@
 <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
 (function () {
-    if (!window.Chart) return;  // offline: the counts are still shown as badges
+    if (!window.Chart) return;  // offline or blocked: the counts are still shown as badges and in the aria-labels
     const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     const charts = [];
     function draw() {
         charts.forEach((c) => c.destroy());
         charts.length = 0;
-        const text = css('--text-muted'), grid = css('--border'), surface = css('--surface');
-        const low = css('--low'), med = css('--med'), high = css('--high'), rej = css('--rej');
+        const text = css('--text-2'), grid = css('--border'), surface = css('--surface-1');
+        const ok = css('--success'), hold = css('--warning'), bad = css('--danger'), rej = css('--neutral');
         Chart.defaults.font.family = css('--font-sans');
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const anim = reduce ? false : { duration: 500 };
         const risk = document.getElementById('riskDoughnutChart');
         if (risk) charts.push(new Chart(risk, {
             type: 'doughnut',
             data: { labels: ['Low', 'Medium', 'High'], datasets: [{ data: [{{ stats.low_risk_count }}, {{ stats.med_risk_count }}, {{ stats.high_risk_count }}],
-                backgroundColor: [low, med, high], borderColor: surface, borderWidth: 3, hoverOffset: 6 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: text } } } }
+                backgroundColor: [ok, hold, bad], borderColor: surface, borderWidth: 3, hoverOffset: 4 }] },
+            options: { animation: anim, responsive: true, maintainAspectRatio: false, cutout: '64%', plugins: { legend: { position: 'bottom', labels: { color: text } } } }
         }));
         const dec = document.getElementById('decisionBarChart');
         if (dec) charts.push(new Chart(dec, {
             type: 'bar',
             data: { labels: ['Approved', 'On hold', 'Blocked', 'Rejected'], datasets: [{ data: [{{ stats.approved_txs }}, {{ stats.held_txs }}, {{ stats.blocked_txs }}, {{ stats.rejected_txs }}],
-                backgroundColor: [low, med, high, rej], borderRadius: 8, borderSkipped: false }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+                backgroundColor: [ok, hold, bad, rej], borderRadius: 6, borderSkipped: false, maxBarThickness: 56 }] },
+            options: { animation: anim, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
                 scales: { x: { ticks: { color: text }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: text, precision: 0 }, grid: { color: grid } } } }
         }));
     }
