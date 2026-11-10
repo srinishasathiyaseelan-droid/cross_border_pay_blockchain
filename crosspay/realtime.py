@@ -85,8 +85,50 @@ def public(event: dict) -> dict:
     return {k: v for k, v in event.items() if k != "user_id"}
 
 
-def settlement_event(kind: str, row: dict, decision: str, block=None) -> dict:
+# Human-readable labels for policy reason codes (live console "Why" column and trace drawer).
+REASON_LABELS = {
+    "KYC_NOT_VERIFIED": "KYC not verified",
+    "RISK_SCORE_AT_OR_ABOVE_BLOCK_AT": "Risk score at or above the block threshold",
+    "RISK_SCORE_AT_OR_ABOVE_REVIEW_AT": "Risk score at or above the review threshold",
+    "MODEL_CLASS_HIGH": "Model predicted high risk",
+    "MODEL_CLASS_MEDIUM": "Model predicted medium risk",
+    "SANCTIONS_EXACT_MATCH": "Sanctions list exact match",
+    "SANCTIONS_NEAR_MATCH": "Sanctions list near match",
+    "INVOICE_MISMATCH": "Invoice does not match the payment",
+    "VELOCITY_BURST": "Burst: many payments by this SME in the last hour",
+    "AI_ESCALATION:PURPOSE_RED_FLAG": "Payment purpose flagged (advisory, escalate-only)",
+    "AI_ESCALATION:INVOICE_UNVERIFIED": "Invoice could not be verified for a large amount",
+    "AI_ESCALATION:INVOICE_MISMATCH": "Invoice does not match the payment",
+    "OFFICER_APPROVE": "Released by a compliance officer",
+    "OFFICER_REJECT": "Rejected by a compliance officer",
+    "DUPLICATE_SUBMISSION": "Duplicate submission (idempotency key reused)",
+}
+FEATURE_KEYS = ("amount", "frequency", "previous_transactions", "suspicious_transactions", "account_age",
+                "corridor_risk", "amount_to_age_ratio")
+
+
+def reason_label(code: str) -> str:
+    return REASON_LABELS.get(code, code.replace("_", " ").capitalize())
+
+
+def why(decision: str, reasons) -> str:
+    """The one line shown in the "Why" column: the strictest-looking reason, or "Within policy"."""
+    reasons = list(reasons or ())
+    if not reasons:
+        return "Within policy" if decision == "APPROVED" else decision.capitalize()
+    return reason_label(reasons[-1])
+
+
+def settlement_event(kind: str, row: dict, decision: str, block=None, *, reasons=(), policy_id=None, label=None,
+                     kyc_status=None, latency_ms=None) -> dict:
+    import json
+
     usd = row.get("normalized_usd_amount")
+    try:
+        factors = json.loads(row.get("top_factors") or "[]")
+    except (TypeError, ValueError):
+        factors = []
+    reasons = list(reasons or ())
     return {
         "type": kind,  # "decision" | "review"
         "tx_id": row.get("transaction_id"),
@@ -95,11 +137,31 @@ def settlement_event(kind: str, row: dict, decision: str, block=None) -> dict:
         "risk_level": row.get("risk_level"),
         "risk_score": row.get("risk_score"),
         "amount_usd": round(float(usd), 2) if usd is not None else None,
+        "amount": row.get("amount"),
+        "currency": row.get("source_currency") or row.get("currency"),
         "corridor": f"{row.get('sender_country')} → {row.get('receiver_country')}",
         "engine": row.get("scoring_engine"),
         "block": block,
         "simulated": False,
+        "reasons": reasons,
+        "why": why(decision, reasons),
+        "policy_id": policy_id,
+        "latency_ms": latency_ms,
+        "trace": {
+            "kyc": kyc_status,
+            "features": {k: row.get(k) for k in FEATURE_KEYS if row.get(k) is not None},
+            "top_factors": [{"label": f.get("label") or f.get("feature"), "contribution": f.get("contribution")}
+                            for f in factors[:3] if isinstance(f, dict)],
+            "reasons": [{"code": c, "label": reason_label(c)} for c in reasons],
+            "ledger": label,
+        },
     }
+
+
+def ai_event(tx_id: str, user_id, summary: str) -> dict:
+    """Advisory one-liner for a payment already on the feed. Plain text; the page renders it with textContent."""
+    return {"type": "ai", "tx_id": tx_id, "user_id": user_id, "summary": (summary or "")[:240],
+            "simulated": False}
 
 
 def publish_safely(app, event: dict) -> None:

@@ -15,6 +15,7 @@ STRICT_OVERRIDES = {
     "SANCTIONS_EXACT_MATCH": BLOCKED,
     "SANCTIONS_NEAR_MATCH": HOLD,
     "INVOICE_MISMATCH": HOLD,
+    "VELOCITY_BURST": HOLD,  # too many payments by one SME in the last hour (services.features.velocity_1h)
 }
 # AI-derived signals (P5.5). Escalate-only: they can move an APPROVED payment to HOLD and nothing else.
 AI_ESCALATIONS = {"PURPOSE_RED_FLAG", "INVOICE_MISMATCH", "INVOICE_UNVERIFIED"}

@@ -90,6 +90,15 @@ def build_features(conn, user_id: int, amount_usd: float, sender_country: str, r
     }
 
 
+def velocity_1h(conn, user_id: int, now: datetime = None) -> int:
+    """This SME's payments (any outcome, including the one being decided) in the last 60 minutes. Feeds the
+    escalate-only VELOCITY_BURST policy rule, never the model."""
+    now = now or datetime.now(timezone.utc)
+    since = (now - timedelta(hours=1)).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return int(conn.execute("SELECT COUNT(*) FROM transactions WHERE user_id = ? AND timestamp >= ?",
+                            (user_id, since)).fetchone()[0])
+
+
 def apply_demo_vector(features: dict, scenario: str) -> dict:
     vec = DEMO_VECTORS[scenario]
     out = {**features, **vec}

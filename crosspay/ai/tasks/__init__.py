@@ -29,6 +29,10 @@ def explain_job(tx_id: str):
                          "created_at) VALUES (?, ?, ?, ?, ?, ?)",
                          (tx_id, json.dumps(res.data), res.meta.get("provider"), res.meta.get("model"),
                           res.meta.get("prompt_version"), utcnow_iso()))
+            from ...realtime import ai_event, publish_safely  # live console one-liner (advisory)
+
+            publish_safely(current_app._get_current_object(),
+                           ai_event(tx_id, row["user_id"], res.data.get("summary", "")))
         return res
     return fn
 

@@ -3,8 +3,9 @@
 P0: behaviour moved unchanged from app.py (findings C4, H1, H2, H3 are fixed in later phases).
 """
 import json
+import time
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, session, url_for
 
 from ..db import get_db
 from ..security.decorators import current_user_row, login_required
@@ -103,6 +104,7 @@ def payment():
 @bp.route("/process_payment", methods=["POST"])
 @login_required
 def process_payment():
+    g.pipeline_started = time.perf_counter()  # live console: pipeline latency per decision
     user_id = session["user_id"]
     conn = get_db()
     kyc_record = conn.execute("SELECT * FROM kyc WHERE user_id = ? ORDER BY id DESC LIMIT 1", (user_id,)).fetchone()
