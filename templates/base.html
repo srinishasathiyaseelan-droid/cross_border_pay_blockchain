@@ -18,16 +18,16 @@
     <!-- Top Navigation -->
     <header class="navbar">
         <div class="container nav-container">
-            <a href="{{ url_for('index') }}" class="nav-brand">
+            <a href="{{ url_for('auth.index') }}" class="nav-brand">
                 <span style="font-size: 1.4rem;">🌐</span>
                 <span>CrossPay</span>
                 <span class="brand-badge">SME Settlement</span>
             </a>
 
             <ul class="nav-links">
-                <li><a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a></li>
-                <li><a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Dashboard</a></li>
-                <li><a href="{{ url_for('kyc') }}" class="nav-link {% if request.endpoint == 'kyc' %}active{% endif %}">
+                <li><a href="{{ url_for('auth.index') }}" class="nav-link {% if request.endpoint == 'auth.index' %}active{% endif %}">Home</a></li>
+                <li><a href="{{ url_for('payments.dashboard') }}" class="nav-link {% if request.endpoint == 'payments.dashboard' %}active{% endif %}">Dashboard</a></li>
+                <li><a href="{{ url_for('kyc.kyc') }}" class="nav-link {% if request.endpoint == 'kyc.kyc' %}active{% endif %}">
                     KYC Verification
                     {% if current_kyc %}
                         {% if current_kyc.status == 'VERIFIED' %}
@@ -39,9 +39,9 @@
                         {% endif %}
                     {% endif %}
                 </a></li>
-                <li><a href="{{ url_for('payment') }}" class="nav-link {% if request.endpoint == 'payment' %}active{% endif %}">Send Payment</a></li>
-                <li><a href="{{ url_for('transactions') }}" class="nav-link {% if request.endpoint == 'transactions' %}active{% endif %}">Transactions</a></li>
-                <li><a href="{{ url_for('blockchain_explorer') }}" class="nav-link {% if request.endpoint == 'blockchain_explorer' %}active{% endif %}">Blockchain Ledger</a></li>
+                <li><a href="{{ url_for('payments.payment') }}" class="nav-link {% if request.endpoint == 'payments.payment' %}active{% endif %}">Send Payment</a></li>
+                <li><a href="{{ url_for('payments.transactions') }}" class="nav-link {% if request.endpoint == 'payments.transactions' %}active{% endif %}">Transactions</a></li>
+                <li><a href="{{ url_for('payments.blockchain_explorer') }}" class="nav-link {% if request.endpoint == 'payments.blockchain_explorer' %}active{% endif %}">Blockchain Ledger</a></li>
             </ul>
 
             <div class="nav-actions">
@@ -50,10 +50,10 @@
                         <span class="dot dot-low"></span>
                         <strong>{{ current_user.name }}</strong> ({{ current_user.role|upper }})
                     </span>
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">Sign Out</a>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm">Sign Out</a>
                 {% else %}
-                    <a href="{{ url_for('quick_login', role='sme') }}" class="btn btn-secondary btn-sm">⚡ Quick SME Demo</a>
-                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">Sign In</a>
+                    <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary btn-sm">⚡ Quick SME Demo</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Sign In</a>
                 {% endif %}
             </div>
         </div>

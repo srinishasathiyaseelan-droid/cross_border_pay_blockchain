@@ -13,7 +13,7 @@
             </p>
         </div>
 
-        <form method="POST" action="{{ url_for('register') }}">
+        <form method="POST" action="{{ url_for('auth.register') }}">
             <div class="form-group">
                 <label class="form-label" for="name">Company / Business Legal Name</label>
                 <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Pacific Rim Traders Ltd" required>
@@ -66,7 +66,7 @@
         </form>
 
         <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
-            Already have an account? <a href="{{ url_for('login') }}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Sign In</a>
+            Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Sign In</a>
         </div>
     </div>
 </div>

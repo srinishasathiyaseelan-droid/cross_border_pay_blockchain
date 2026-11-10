@@ -19,7 +19,6 @@ import os
 import time
 from datetime import datetime
 
-LEDGER_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "blockchain_ledger.json")
 
 class Block:
     def __init__(self, index, timestamp, transactions, previous_hash, nonce=0, hash_val=None):
@@ -70,7 +69,8 @@ class Block:
 
 
 class Blockchain:
-    def __init__(self, difficulty=2):
+    def __init__(self, ledger_path, difficulty=2):
+        self.ledger_path = ledger_path
         self.difficulty = difficulty
         self.chain = []
         self.load_chain()
@@ -137,15 +137,16 @@ class Blockchain:
     def save_chain(self):
         try:
             data = [block.to_dict() for block in self.chain]
-            with open(LEDGER_FILE, "w") as f:
+            os.makedirs(os.path.dirname(os.path.abspath(self.ledger_path)), exist_ok=True)
+            with open(self.ledger_path, "w") as f:
                 json.dump(data, f, indent=4)
         except Exception as e:
             print(f"Error saving blockchain ledger: {e}")
 
     def load_chain(self):
-        if os.path.exists(LEDGER_FILE):
+        if os.path.exists(self.ledger_path):
             try:
-                with open(LEDGER_FILE, "r") as f:
+                with open(self.ledger_path, "r") as f:
                     data = json.load(f)
                     self.chain = [Block.from_dict(b) for b in data]
                     if not self.chain:
@@ -321,7 +322,3 @@ class SmartContractEngine:
             'block_hash': block.hash
         }
 
-
-# Singleton instances for application use
-blockchain = Blockchain(difficulty=2)
-smart_contract = SmartContractEngine(blockchain)

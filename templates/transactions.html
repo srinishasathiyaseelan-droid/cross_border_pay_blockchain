@@ -13,7 +13,7 @@
                 Complete traceable audit log of ML risk evaluations, smart contract triggers, and blockchain settlements.
             </p>
         </div>
-        <a href="{{ url_for('payment') }}" class="btn btn-primary btn-sm">
+        <a href="{{ url_for('payments.payment') }}" class="btn btn-primary btn-sm">
             + New Payment Request
         </a>
     </div>
@@ -21,26 +21,26 @@
     <!-- Filter & Search Controls -->
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="{{ url_for('transactions', status='ALL') }}" class="btn btn-sm {% if status_filter == 'ALL' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('payments.transactions', status='ALL') }}" class="btn btn-sm {% if status_filter == 'ALL' %}btn-primary{% else %}btn-secondary{% endif %}">
                 All Transactions
             </a>
-            <a href="{{ url_for('transactions', status='APPROVED') }}" class="btn btn-sm {% if status_filter == 'APPROVED' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('payments.transactions', status='APPROVED') }}" class="btn btn-sm {% if status_filter == 'APPROVED' %}btn-primary{% else %}btn-secondary{% endif %}">
                 🟢 Approved
             </a>
-            <a href="{{ url_for('transactions', status='HOLD') }}" class="btn btn-sm {% if status_filter == 'HOLD' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('payments.transactions', status='HOLD') }}" class="btn btn-sm {% if status_filter == 'HOLD' %}btn-primary{% else %}btn-secondary{% endif %}">
                 🟡 On Hold
             </a>
-            <a href="{{ url_for('transactions', status='BLOCKED') }}" class="btn btn-sm {% if status_filter == 'BLOCKED' %}btn-primary{% else %}btn-secondary{% endif %}">
+            <a href="{{ url_for('payments.transactions', status='BLOCKED') }}" class="btn btn-sm {% if status_filter == 'BLOCKED' %}btn-primary{% else %}btn-secondary{% endif %}">
                 🔴 Blocked
             </a>
         </div>
 
-        <form method="GET" action="{{ url_for('transactions') }}" style="display: flex; gap: 8px;">
+        <form method="GET" action="{{ url_for('payments.transactions') }}" style="display: flex; gap: 8px;">
             <input type="hidden" name="status" value="{{ status_filter }}">
             <input type="text" name="q" value="{{ query }}" placeholder="Search TX ID, Sender, Receiver..." class="form-control" style="width: 240px; padding: 6px 12px; font-size: 0.84rem;">
             <button type="submit" class="btn btn-secondary btn-sm">Search</button>
             {% if query %}
-                <a href="{{ url_for('transactions', status=status_filter) }}" class="btn btn-outline btn-sm">Clear</a>
+                <a href="{{ url_for('payments.transactions', status=status_filter) }}" class="btn btn-outline btn-sm">Clear</a>
             {% endif %}
         </form>
     </div>
@@ -138,11 +138,11 @@
                                 {% endif %}
                             </td>
                             <td style="text-align: right; white-space: nowrap;">
-                                <a href="{{ url_for('result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">
+                                <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">
                                     View Receipt
                                 </a>
                                 {% if tx.decision == 'HOLD' %}
-                                    <form method="POST" action="{{ url_for('resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline-block; margin-left: 4px;">
+                                    <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline-block; margin-left: 4px;">
                                         <input type="hidden" name="action" value="approve">
                                         <button type="submit" class="btn btn-warning btn-sm" title="Compliance Release">
                                             ✓ Release

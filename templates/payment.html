@@ -44,7 +44,7 @@
                 only <strong>KYC-VERIFIED</strong> SMEs can submit cross-border payment settlements.
             </p>
             <div style="display: flex; gap: 12px; justify-content: center;">
-                <a href="{{ url_for('kyc') }}" class="btn btn-primary" style="padding: 11px 24px;">
+                <a href="{{ url_for('kyc.kyc') }}" class="btn btn-primary" style="padding: 11px 24px;">
                     Complete KYC Verification Now →
                 </a>
             </div>
@@ -93,7 +93,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ url_for('process_payment') }}" id="payment-form">
+            <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form">
                 <!-- SME Entities Grid -->
                 <div class="form-grid">
                     <div class="form-group">

@@ -1,8 +1,25 @@
-node_modules
-.env
-.venv/
-venv/
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local state (never committed)
+.env
+*.env
+!.env.example
+instance/
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Editors / OS
+node_modules
 .gitignore.backup
+Thumbs.db
+.DS_Store

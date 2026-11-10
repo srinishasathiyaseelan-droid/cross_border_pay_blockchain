@@ -220,19 +220,19 @@
 
     <!-- Navigation & Quick Actions -->
     <div style="display: flex; gap: 14px; justify-content: space-between; flex-wrap: wrap;">
-        <a href="{{ url_for('payment') }}" class="btn btn-secondary">
+        <a href="{{ url_for('payments.payment') }}" class="btn btn-secondary">
             ← Initiate Another Settlement
         </a>
         <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('transactions') }}" class="btn btn-outline">
+            <a href="{{ url_for('payments.transactions') }}" class="btn btn-outline">
                 📋 View Transaction History
             </a>
             {% if tx.decision == 'APPROVED' %}
-                <a href="{{ url_for('blockchain_explorer') }}" class="btn btn-primary">
+                <a href="{{ url_for('payments.blockchain_explorer') }}" class="btn btn-primary">
                     ⛓️ Inspect on Blockchain Ledger →
                 </a>
             {% elif tx.decision == 'HOLD' %}
-                <form method="POST" action="{{ url_for('resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline;">
+                <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline;">
                     <input type="hidden" name="action" value="approve">
                     <button type="submit" class="btn btn-warning">
                         🛡️ Compliance Review: Release Hold & Settle

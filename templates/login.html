@@ -19,16 +19,16 @@
                 ⚡ 1-Click Academic Demo Logins
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('quick_login', role='sme') }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
+                <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
                     🏢 Verified SME Demo
                 </a>
-                <a href="{{ url_for('quick_login', role='admin') }}" class="btn btn-outline btn-sm" style="font-size: 0.78rem;">
+                <a href="{{ url_for('auth.quick_login', role='admin') }}" class="btn btn-outline btn-sm" style="font-size: 0.78rem;">
                     🛡️ Compliance Admin
                 </a>
             </div>
         </div>
 
-        <form method="POST" action="{{ url_for('login') }}">
+        <form method="POST" action="{{ url_for('auth.login') }}">
             <div class="form-group">
                 <label class="form-label" for="email">Business Email</label>
                 <input type="email" id="email" name="email" class="form-control" placeholder="e.g. demo@globallogistics.com" required value="demo@globallogistics.com">
@@ -46,7 +46,7 @@
         </form>
 
         <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
-            Don't have an SME account? <a href="{{ url_for('register') }}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Register New SME</a>
+            Don't have an SME account? <a href="{{ url_for('auth.register') }}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Register New SME</a>
         </div>
     </div>
 </div>

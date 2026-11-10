@@ -1,0 +1,104 @@
+"""CrossPay: risk-adaptive cross-border settlement for SMEs (Flask application factory)."""
+import json
+import logging
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv(override=False)
+
+from flask import Flask, session  # noqa: E402
+
+from .config import CONFIGS, ROOT  # noqa: E402
+from . import db as dbmod  # noqa: E402
+
+log = logging.getLogger("crosspay")
+
+
+def create_app(config_name: str = None, overrides: dict = None) -> Flask:
+    config_name = config_name or os.getenv("CROSSPAY_ENV", "dev")
+    app = Flask(
+        __name__,
+        template_folder=os.path.join(ROOT, "templates"),
+        static_folder=os.path.join(ROOT, "static"),
+    )
+    app.config.from_object(CONFIGS[config_name])
+    if overrides:
+        app.config.update(overrides)
+
+    if not app.config.get("SECRET_KEY"):
+        if config_name == "prod":
+            raise RuntimeError("SECRET_KEY must be set when CROSSPAY_ENV=prod")
+        app.config["SECRET_KEY"] = os.urandom(32).hex()
+        log.warning("SECRET_KEY not set: using a random per-process key (sessions reset on restart)")
+
+    dbmod.init_db(app)
+    app.teardown_appcontext(dbmod.close_db)
+
+    from .services.currency import CurrencyService
+    from .ledger.chain import Blockchain, SmartContractEngine
+
+    chain = Blockchain(app.config["LEDGER_PATH"], difficulty=2)
+    app.extensions["currency"] = CurrencyService()
+    app.extensions["blockchain"] = chain
+    app.extensions["contract"] = SmartContractEngine(chain)
+    app.extensions["model"] = _load_model(app)
+    app.extensions["metrics"] = _load_metrics(app)
+
+    from .blueprints import admin, api, auth, kyc, payments
+
+    for bp in (auth.bp, kyc.bp, payments.bp, admin.bp, api.bp):
+        app.register_blueprint(bp)
+
+    @app.context_processor
+    def inject_global_data():
+        from .services.currency import COUNTRY_TO_DEFAULT_CURRENCY, SUPPORTED_CURRENCIES
+
+        user = kyc_info = None
+        if "user_id" in session:
+            conn = dbmod.get_db()
+            row = conn.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchone()
+            krow = conn.execute(
+                "SELECT * FROM kyc WHERE user_id = ? ORDER BY id DESC LIMIT 1", (session["user_id"],)
+            ).fetchone()
+            user = dict(row) if row else None
+            kyc_info = dict(krow) if krow else None
+        return dict(
+            current_user=user,
+            current_kyc=kyc_info,
+            metrics=app.extensions["metrics"],
+            supported_currencies=SUPPORTED_CURRENCIES,
+            country_currencies=COUNTRY_TO_DEFAULT_CURRENCY,
+        )
+
+    return app
+
+
+_MODEL_CACHE = {}
+
+
+def _load_model(app):
+    path = app.config["MODEL_PATH"]
+    if not os.path.exists(path):
+        log.warning("Model file not found at %s; run python model/train_model.py", path)
+        return None
+    st = os.stat(path)
+    key = (os.path.abspath(path), st.st_mtime_ns, st.st_size)
+    if key in _MODEL_CACHE:
+        return _MODEL_CACHE[key]
+    try:
+        import joblib
+
+        _MODEL_CACHE[key] = joblib.load(path)
+        return _MODEL_CACHE[key]
+    except Exception as exc:  # noqa: BLE001
+        log.error("Could not load model: %s", exc)
+        return None
+
+
+def _load_metrics(app):
+    try:
+        with open(app.config["METRICS_PATH"], encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}

@@ -1,0 +1,12 @@
+C1: CONFIRMED - anonymous POST /resolve_hold/TX-2026-8802 -> HTTP 302, decision now APPROVED
+C2: CONFIRMED - GET /quick_login/admin with no password -> role=admin
+C3: CONFIRMED - app.secret_key is the literal in app.py:37
+H3: CONFIRMED - anonymous /dashboard -> 200, /result/TX-2026-8803 -> 200
+C4: CONFIRMED - sender-chosen features stored as-is: {'risk_level': 'LOW', 'decision': 'APPROVED', 'suspicious_transactions': 0, 'account_age': 60}
+H4: CONFIRMED - POST /process_payment without any CSRF token -> 302
+C5: CONFIRMED - new user self-submitted KYC -> VERIFIED; password of 1 char accepted (L6)
+L1: CONFIRMED - empty receiver/country accepted -> /result/TX-2026-5244
+H5: CONFIRMED - INR 1,000,000 -> EUR with USD rate missing: normalized_usd_amount=1000000.0
+M8: CONFIRMED - is_cached first=False second=True (flag is time-based, >0.1 s)
+C6: CONFIRMED - app.run(debug=True, port=5000) in __main__
+H2: CONFIRMED - TX id = TX-2026- + randint(1000,9999) -> 9,000 values; block mined before INSERT

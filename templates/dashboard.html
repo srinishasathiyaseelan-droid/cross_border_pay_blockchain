@@ -14,10 +14,10 @@
         </p>
     </div>
     <div style="display: flex; gap: 10px;">
-        <a href="{{ url_for('payment') }}" class="btn btn-primary">
+        <a href="{{ url_for('payments.payment') }}" class="btn btn-primary">
             + New Settlement
         </a>
-        <a href="{{ url_for('blockchain_explorer') }}" class="btn btn-secondary">
+        <a href="{{ url_for('payments.blockchain_explorer') }}" class="btn btn-secondary">
             ⛓️ Blockchain Ledger
         </a>
     </div>
@@ -207,7 +207,7 @@
         <h3 class="card-title">
             <span>🕒</span> Recent SME Payment Requests
         </h3>
-        <a href="{{ url_for('transactions') }}" class="btn btn-outline btn-sm">View Full History →</a>
+        <a href="{{ url_for('payments.transactions') }}" class="btn btn-outline btn-sm">View Full History →</a>
     </div>
 
     <div class="table-responsive">

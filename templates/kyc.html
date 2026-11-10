@@ -66,7 +66,7 @@
             </div>
 
             {% if kyc and kyc.status == 'VERIFIED' %}
-                <a href="{{ url_for('payment') }}" class="btn btn-primary">
+                <a href="{{ url_for('payments.payment') }}" class="btn btn-primary">
                     Proceed to Payment Request →
                 </a>
             {% endif %}
@@ -112,7 +112,7 @@
             <span class="badge badge-neutral">SQLite Persistent</span>
         </div>
 
-        <form id="kyc-form" method="POST" action="{{ url_for('kyc') }}">
+        <form id="kyc-form" method="POST" action="{{ url_for('kyc.kyc') }}">
             <input type="hidden" id="simulate_action" name="simulate_action" value="auto_validate">
 
             <div class="form-grid">
