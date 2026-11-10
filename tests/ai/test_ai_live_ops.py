@@ -147,3 +147,30 @@ def test_restart_releases_jobs_left_pending(tmp_path, fx_mock):
     assert conn.execute("SELECT status, error_code FROM ai_jobs WHERE tx_id='TX-X'").fetchone()[:] == ("FAILED", "INTERRUPTED")
     conn.close()
     assert TestConfig.AI_BACKFILL is False
+
+
+def test_weekly_report_context_precomputes_derived_figures(app, db):
+    from crosspay.ai import context
+
+    with app.app_context():
+        f = context.weekly_report(db, days=3650).facts
+    total = sum(v["count"] for v in f["payments_by_decision"].values())
+    assert f["total_payments"] == total and total > 0
+    assert abs(sum(v["share_of_payments_percent"] for v in f["payments_by_decision"].values()) - 100) < 0.5
+    assert 0 <= f["approval_rate_percent"] <= 100
+
+
+def test_report_quoting_given_shares_passes_and_invented_math_is_still_rejected(app, db, fake_llm, admin_client):
+    from crosspay.ai import context
+    from crosspay.ai.pipeline import run_task
+
+    with app.app_context():
+        f = context.weekly_report(db, days=3650).facts
+        rate = f["approval_rate_percent"]
+        fake_llm.script("report", {"title": "Weekly summary", "body": f"Approval rate was {rate}% of "
+                                   f"{f['total_payments']} payments.", "key_points": []})
+        assert run_task("report", context.weekly_report(db, days=3650), 1, db).status == "OK"
+        fake_llm.script("report", {"title": "Weekly summary", "body": "Volume grew 37.9% week on week.",
+                                   "key_points": []})
+        assert run_task("report", context.weekly_report(db, days=3649), 1, db).status == \
+            "REJECTED_GUARD:UNSUPPORTED_NUMBER"
