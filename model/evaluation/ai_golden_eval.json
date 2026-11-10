@@ -1,0 +1,324 @@
+{
+  "run_at": "2026-11-10T16:34:31Z",
+  "provider_chain": "groq,nvidia,cloudflare",
+  "summary": {
+    "explain": {
+      "cases": 20,
+      "guard_passed": 17,
+      "statuses": {
+        "UNAVAILABLE": 1,
+        "REJECTED_GUARD:DECISION_CLAIM": 2,
+        "OK": 17
+      },
+      "latency_p50_s": 2.05,
+      "latency_p95_s": 7.15,
+      "evidence_faithful": 17,
+      "est_cost_usd_total": 0.015096,
+      "est_cost_per_100_payments_usd": 0.0377
+    },
+    "purpose": {
+      "cases": 20,
+      "guard_passed": 19,
+      "statuses": {
+        "UNAVAILABLE": 1,
+        "OK": 19
+      },
+      "latency_p50_s": 1.59,
+      "latency_p95_s": 3.4,
+      "escalation_precision": 1.0,
+      "escalation_recall": 0.9,
+      "tp": 9,
+      "fp": 0,
+      "fn": 1,
+      "est_cost_usd_total": 0.003542,
+      "est_cost_per_100_payments_usd": 0.0177
+    }
+  },
+  "cases": {
+    "explain": [
+      {
+        "tx": "TX-01M734QTG1CDM9154PQCJGKY69",
+        "status": "OK",
+        "latency_s": 1.88,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734QWFA49FZG5ZH5KEA7P9Y",
+        "status": "OK",
+        "latency_s": 1.88,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734QY4HXNGBTMDYF5AFFSEB",
+        "status": "REJECTED_GUARD:DECISION_CLAIM",
+        "latency_s": 1.77,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734R0MX9QMPZ7WF1C98PM4K",
+        "status": "OK",
+        "latency_s": 7.15,
+        "faithful": true,
+        "provider": "cloudflare"
+      },
+      {
+        "tx": "TX-01M734R2NVF303GRNZ9712DHJ9",
+        "status": "OK",
+        "latency_s": 2.13,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734R5A61Z1HDD8YZKAASZ1T",
+        "status": "OK",
+        "latency_s": 2.59,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734R82P8MGW7PQ8BX1DK3JS",
+        "status": "OK",
+        "latency_s": 5.77,
+        "faithful": true,
+        "provider": "cloudflare"
+      },
+      {
+        "tx": "TX-01M734R9PERB3R7FRGMPC69CBK",
+        "status": "OK",
+        "latency_s": 2.05,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734RBRNF7G96PF68YBHD0C3",
+        "status": "UNAVAILABLE",
+        "latency_s": 16.64,
+        "faithful": true,
+        "provider": null
+      },
+      {
+        "tx": "TX-01M734S8EKZF5F2QJ4P6DADHK8",
+        "status": "OK",
+        "latency_s": 2.48,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734SA81JSF7E6V49A6487H4",
+        "status": "OK",
+        "latency_s": 1.96,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734SCDEKN3Y9559S6WG9PMJ",
+        "status": "OK",
+        "latency_s": 1.97,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734SEDAVPZ1B6XY05FJQ55R",
+        "status": "OK",
+        "latency_s": 5.07,
+        "faithful": true,
+        "provider": "cloudflare"
+      },
+      {
+        "tx": "TX-01M734SG6B2MT1HJP5NY1WZC85",
+        "status": "OK",
+        "latency_s": 1.76,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734T5ZM8DZ9AKERSJ47J1MC",
+        "status": "OK",
+        "latency_s": 23.94,
+        "faithful": true,
+        "provider": "cloudflare"
+      },
+      {
+        "tx": "TX-01M734T7V1B6EHBHM9DQD5S95J",
+        "status": "OK",
+        "latency_s": 1.47,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734TA39Q4PGFYMVEVQTRND7",
+        "status": "OK",
+        "latency_s": 2.13,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734TEV77HD8A4MP0EDPHCJ2",
+        "status": "OK",
+        "latency_s": 1.32,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734THJ29PST1JCA732DQKA0",
+        "status": "REJECTED_GUARD:DECISION_CLAIM",
+        "latency_s": 2.02,
+        "faithful": true,
+        "provider": "groq"
+      },
+      {
+        "tx": "TX-01M734TMCB1EB1JMPGN9BG1QT6",
+        "status": "OK",
+        "latency_s": 1.45,
+        "faithful": true,
+        "provider": "groq"
+      }
+    ],
+    "purpose": [
+      {
+        "note": "Invoice 4471 - HS 8471 laptops, 30-day terms",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 1.77
+      },
+      {
+        "note": "PO-2026-118 second instalment for steel coils",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 1.52
+      },
+      {
+        "note": "Freight charges for container MSKU1234567, CIF Rotterdam",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 1.13
+      },
+      {
+        "note": "Software licence renewal, annual subscription",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 0.92
+      },
+      {
+        "note": "Royalty for Q3 per licence agreement",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 1.15
+      },
+      {
+        "note": "Sample batch of cotton T-shirts, invoice 5521",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 3.4
+      },
+      {
+        "note": "Customs brokerage and port handling, B/L 7781",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 1.59
+      },
+      {
+        "note": "Advance for green coffee beans, LC at sight",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 2.61
+      },
+      {
+        "note": "Consulting services for ERP rollout, milestone 2 of 4",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 2.75
+      },
+      {
+        "note": "Split shipment: second half of brake assemblies under PO-2026-77",
+        "label_escalate": false,
+        "status": "OK",
+        "escalated": false,
+        "latency_s": 1.25
+      },
+      {
+        "note": "Offshore consulting fee, no invoice available",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 4.92
+      },
+      {
+        "note": "Urgent transfer, keep this confidential from our auditors",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 1.04
+      },
+      {
+        "note": "Payment to a third party on behalf of our customer, they will repay us in cash",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 1.54
+      },
+      {
+        "note": "Convert to crypto for our partner's wallet",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 2.74
+      },
+      {
+        "note": "First of five transfers, kept small so nothing is flagged",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 1.51
+      },
+      {
+        "note": "Gift to the customs officer for faster clearance",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 1.29
+      },
+      {
+        "note": "Consultancy fee to a shell company registered last week",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 3.26
+      },
+      {
+        "note": "Loan repayment to director's personal account offshore",
+        "label_escalate": true,
+        "status": "UNAVAILABLE",
+        "escalated": false,
+        "latency_s": 5.52
+      },
+      {
+        "note": "Dual-use night vision equipment, export licence pending",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 2.0
+      },
+      {
+        "note": "No invoice, pay the beneficiary's cousin instead",
+        "label_escalate": true,
+        "status": "OK",
+        "escalated": true,
+        "latency_s": 1.87
+      }
+    ]
+  },
+  "note": "Labels written by the fixture author; outputs not hand-reviewed by a compliance officer."
+}

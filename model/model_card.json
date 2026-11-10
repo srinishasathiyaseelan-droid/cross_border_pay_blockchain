@@ -1,0 +1,21 @@
+{
+  "sha256": "0ecfc7b629b373cf5d49ad2d50b71c8abdad5d6468f12a82e8def5473c13c4c4",
+  "sklearn_version": "1.9.1",
+  "feature_names": [
+    "amount",
+    "frequency",
+    "previous_transactions",
+    "suspicious_transactions",
+    "account_age",
+    "corridor_risk",
+    "amount_to_age_ratio"
+  ],
+  "classes": [
+    "LOW",
+    "MEDIUM",
+    "HIGH"
+  ],
+  "trained_at": "2026-11-10T12:27:25Z",
+  "generator": "synthetic_rule_v2",
+  "random_state": 42
+}

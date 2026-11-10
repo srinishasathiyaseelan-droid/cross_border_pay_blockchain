@@ -1,0 +1,329 @@
+"""SQLite access for CrossPay.
+
+One connection per request, stored on flask.g and closed in teardown_appcontext (M6).
+init_db() creates tables, applies additive column migrations and seeds demo data once.
+"""
+import os
+import secrets
+import sqlite3
+from datetime import datetime, timedelta, timezone
+
+from flask import current_app, g
+from werkzeug.security import generate_password_hash
+
+
+def utcnow_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def connect(path: str) -> sqlite3.Connection:
+    conn = sqlite3.connect(path, timeout=30, isolation_level=None, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 30000")
+    return conn
+
+
+def get_db() -> sqlite3.Connection:
+    if "db" not in g:
+        g.db = connect(current_app.config["DB_PATH"])
+    return g.db
+
+
+def close_db(_exc=None) -> None:
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+
+SCHEMA = [
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'sme',
+        created_at TEXT NOT NULL
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS kyc (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        business_name TEXT NOT NULL,
+        country TEXT NOT NULL,
+        business_type TEXT NOT NULL,
+        government_id TEXT NOT NULL,
+        address TEXT NOT NULL,
+        status TEXT DEFAULT 'PENDING',
+        verification_notes TEXT,
+        submitted_at TEXT,
+        verified_at TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_id TEXT UNIQUE NOT NULL,
+        user_id INTEGER NOT NULL,
+        sender TEXT NOT NULL,
+        receiver TEXT NOT NULL,
+        sender_country TEXT NOT NULL,
+        receiver_country TEXT NOT NULL,
+        currency TEXT NOT NULL,
+        amount REAL NOT NULL,
+        source_currency TEXT,
+        target_currency TEXT,
+        exchange_rate REAL DEFAULT 1.0,
+        converted_amount REAL,
+        exchange_rate_provider TEXT,
+        rate_timestamp TEXT,
+        normalized_usd_amount REAL,
+        frequency INTEGER NOT NULL,
+        previous_transactions INTEGER NOT NULL,
+        suspicious_transactions INTEGER NOT NULL,
+        account_age INTEGER NOT NULL,
+        corridor_risk REAL DEFAULT 0.25,
+        risk_level TEXT NOT NULL,
+        risk_score REAL NOT NULL,
+        decision TEXT NOT NULL,
+        blockchain_hash TEXT,
+        smart_contract_status TEXT NOT NULL,
+        block_number INTEGER,
+        notes TEXT,
+        timestamp TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )""",
+]
+
+SCHEMA += [
+    # P3: signed audit chain (source of truth for the ledger), double-submit guard, officer reviews
+    """
+    CREATE TABLE IF NOT EXISTS audit_chain (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        record_id TEXT UNIQUE NOT NULL,
+        tx_id TEXT NOT NULL,
+        record_type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        previous_hash TEXT NOT NULL UNIQUE,
+        current_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )""",
+    "CREATE INDEX IF NOT EXISTS ix_audit_chain_tx ON audit_chain (tx_id)",
+    """
+    CREATE TABLE IF NOT EXISTS idempotency_keys (
+        user_id INTEGER NOT NULL,
+        key TEXT NOT NULL,
+        tx_id TEXT,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, key)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS hold_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tx_id TEXT NOT NULL,
+        admin_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        copilot_memo TEXT,
+        ai_draft TEXT,
+        ai_agreement REAL,
+        kyc_status_at_review TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(admin_id) REFERENCES users(id)
+    )""",
+]
+
+SCHEMA += [
+    # P5: advisory LLM layer
+    """
+    CREATE TABLE IF NOT EXISTS llm_calls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task TEXT NOT NULL,
+        prompt_version TEXT,
+        provider TEXT,
+        model TEXT,
+        tx_id TEXT,
+        user_id INTEGER,
+        input_hash TEXT,
+        redacted_input TEXT,
+        status TEXT NOT NULL,
+        guard_outcome TEXT,
+        output_json TEXT,
+        latency_ms INTEGER,
+        input_tokens INTEGER DEFAULT 0,
+        output_tokens INTEGER DEFAULT 0,
+        cost_usd REAL DEFAULT 0,
+        created_at TEXT NOT NULL
+    )""",
+    "CREATE INDEX IF NOT EXISTS ix_llm_calls_created ON llm_calls (created_at)",
+    """
+    CREATE TABLE IF NOT EXISTS ai_cache (
+        task TEXT NOT NULL,
+        prompt_version TEXT NOT NULL,
+        input_hash TEXT NOT NULL,
+        output_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (task, prompt_version, input_hash)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS ai_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task TEXT NOT NULL,
+        tx_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        result_json TEXT,
+        error_code TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (task, tx_id)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS ai_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS risk_explanations (
+        tx_id TEXT PRIMARY KEY,
+        output_json TEXT NOT NULL,
+        provider TEXT,
+        model TEXT,
+        prompt_version TEXT,
+        created_at TEXT NOT NULL
+    )""",
+]
+
+SCHEMA += [
+    # P6: invoice uploads and report drafts
+    """
+    CREATE TABLE IF NOT EXISTS invoice_uploads (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        path TEXT NOT NULL,
+        deterministic_json TEXT,
+        fields_json TEXT,
+        verification_json TEXT,
+        status TEXT,
+        created_at TEXT NOT NULL
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS report_drafts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        tx_id TEXT,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        key_points TEXT,
+        status TEXT NOT NULL DEFAULT 'DRAFT',
+        created_by INTEGER,
+        created_at TEXT NOT NULL,
+        signed_by INTEGER,
+        signed_at TEXT
+    )""",
+]
+
+# Additive migrations: (table, column, definition). Applied when the column is missing.
+COLUMNS = [
+    # P2: honest risk pipeline
+    ("transactions", "amount_to_age_ratio", "REAL"),
+    ("transactions", "p_low", "REAL"),
+    ("transactions", "p_med", "REAL"),
+    ("transactions", "p_high", "REAL"),
+    ("transactions", "scoring_engine", "TEXT"),
+    ("transactions", "top_factors", "TEXT"),
+    ("transactions", "feature_source", "TEXT DEFAULT 'db'"),
+    ("kyc", "reviewed_by", "INTEGER"),
+    ("kyc", "review_reason", "TEXT"),
+    ("kyc", "reviewed_at", "TEXT"),
+    # P3: ledger consistency
+    ("transactions", "rate_stale", "INTEGER DEFAULT 0"),
+    ("transactions", "policy_reasons", "TEXT"),
+    ("transactions", "decided_at", "TEXT"),
+    ("transactions", "idempotency_key", "TEXT"),
+    # P5/P6: advisory signals stored next to the payment (never inputs to the model)
+    ("transactions", "purpose_category", "TEXT"),
+    ("transactions", "purpose_risk", "REAL"),
+    ("transactions", "purpose_flags", "TEXT"),
+    ("transactions", "ai_escalations", "TEXT"),
+    ("transactions", "input_guard_flags", "TEXT"),
+    ("transactions", "invoice_flags", "TEXT"),
+    ("transactions", "invoice_token", "TEXT"),
+]
+
+
+def init_db(app) -> None:
+    os.makedirs(os.path.dirname(os.path.abspath(app.config["DB_PATH"])), exist_ok=True)
+    conn = connect(app.config["DB_PATH"])
+    try:
+        conn.execute("PRAGMA journal_mode = WAL")
+        for stmt in SCHEMA:
+            conn.execute(stmt)
+        for table, col, definition in COLUMNS:
+            existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+            if col not in existing:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {definition}")
+        if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
+            seed_initial_data(conn, app.config)
+    finally:
+        conn.close()
+
+
+def _iso(dt: datetime) -> str:
+    return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def seed_initial_data(conn: sqlite3.Connection, config) -> None:
+    """Demo fixtures: an established SME (account opened 26 months ago) with three past payments."""
+    now_dt = datetime.now(timezone.utc)
+    now = _iso(now_dt)
+    opened = _iso(now_dt - timedelta(days=26 * 31))
+    # C2: seed passwords come from the environment; when unset they are random and unknown to anyone
+    # (the demo accounts are then reachable only through /quick_login, which exists only in DEMO_MODE).
+    sme_pwd = generate_password_hash(config.get("DEMO_SME_PASSWORD") or secrets.token_urlsafe(18), method=config.get("PASSWORD_HASH_METHOD", "scrypt"))
+    admin_pwd = generate_password_hash(config.get("DEMO_ADMIN_PASSWORD") or secrets.token_urlsafe(18), method=config.get("PASSWORD_HASH_METHOD", "scrypt"))
+    conn.execute("BEGIN")
+    cur = conn.execute(
+        "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)",
+        ("Global Logistics Ltd (SME Demo)", "demo@globallogistics.com", sme_pwd, "sme", opened),
+    )
+    sme_id = cur.lastrowid
+    conn.execute(
+        "INSERT INTO users (name, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)",
+        ("Compliance Administrator", "admin@crosspay.org", admin_pwd, "admin", opened),
+    )
+    conn.execute(
+        """INSERT INTO kyc (user_id, business_name, country, business_type, government_id, address,
+               status, verification_notes, submitted_at, verified_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (sme_id, "Global Logistics SME Ltd", "United States", "Import/Export Trade SME", "US-EIN-984721094",
+         "124 Financial District Blvd, New York, NY 10004", "VERIFIED",
+         "Automated Tax ID and SME Registry Validation Successful", now, now),
+    )
+    seed = [
+        ("TX-2026-8801", "EuroTech Industrial Gmbh", "Germany", 5400.00, "EUR", 0.92, 4968.00, 2, 48, 0, 28, 0.20,
+         "LOW", 8.4, "APPROVED", "0x7c4f68b3d0a98f121e78c85e2bfa7c9082ef45b91b8a924467d5e4b2d189f3a1",
+         "EXECUTED_SETTLED", 1, "Raw material component purchase - Invoice #8801"),
+        ("TX-2026-8802", "Apex Pacific Trade Corp", "Brazil", 28500.00, "EUR", 0.92, 26220.00, 7, 6, 1, 6, 0.55,
+         "MEDIUM", 62.8, "HOLD", "PENDING_ADDITIONAL_VERIFICATION", "HELD_IN_ESCROW", None,
+         "High volume overseas electronics shipment batch"),
+        ("TX-2026-8803", "Shadow Frontier Express", "Nigeria", 145000.00, "INR", 83.25, 12071250.00, 19, 1, 4, 1, 0.88,
+         "HIGH", 94.6, "BLOCKED", "NOT RECORDED (POLICY REJECT)", "REJECTED_BLOCKED", None,
+         "Unverified overseas offshore consulting fee"),
+    ]
+    for days_ago, (tx_id, receiver, rc, amount, tgt, rate, conv, freq, prev, susp, age, corr, level, score, decision,
+                   bhash, sc_status, block, notes) in zip((45, 20, 9), seed):
+        ts = _iso(now_dt - timedelta(days=days_ago))
+        conn.execute(
+            """INSERT INTO transactions (
+                transaction_id, user_id, sender, receiver, sender_country, receiver_country,
+                currency, amount, source_currency, target_currency, exchange_rate, converted_amount,
+                exchange_rate_provider, rate_timestamp, normalized_usd_amount,
+                frequency, previous_transactions, suspicious_transactions, account_age, corridor_risk,
+                risk_level, risk_score, decision, blockchain_hash, smart_contract_status, block_number, notes, timestamp
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (tx_id, sme_id, "Global Logistics SME Ltd", receiver, "United States", rc, "USD", amount, "USD", tgt,
+             rate, conv, "ExchangeRate-API", ts, amount, freq, prev, susp, age, corr, level, score, decision, bhash,
+             sc_status, block, notes, ts),
+        )
+    conn.execute("COMMIT")

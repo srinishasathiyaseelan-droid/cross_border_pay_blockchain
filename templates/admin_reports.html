@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, tile, money, ai_label %}
+{% block title %}Report drafts{% endblock %}
+
+{% block content %}
+<div class="page-head" data-reveal>
+    <div>
+        <h1 class="page-title">{{ tile('file-text', 'ai') }}Compliance report drafts</h1>
+        <p class="page-sub">The AI writes prose around numbers taken from the database. A draft containing any number or ID that is not in its input is rejected. Every draft stays a DRAFT until an officer signs it.</p>
+    </div>
+</div>
+
+{% if ai_on %}
+<div class="grid-2" data-reveal>
+    <form method="POST" class="card" aria-labelledby="h-weekly">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2 class="card-title mb-1" id="h-weekly">{{ tile('chart', 'brand', 'sm') }}Weekly summary</h2>
+        <p class="card-sub mb-4">Counts and USD volume by decision, top corridors and officer reviews for the last 7 days.</p>
+        <button type="submit" name="kind" value="weekly" class="btn btn-ai">{{ icon('sparkles') }}Draft weekly summary</button>
+    </form>
+    <form method="POST" class="card" aria-labelledby="h-sar">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2 class="card-title mb-4" id="h-sar">{{ tile('ban', 'danger', 'sm') }}Narrative for a blocked payment</h2>
+        <div class="field"><label class="field-label" for="tx_id">Blocked transaction</label>
+        <select id="tx_id" name="tx_id" class="select" required>
+            {% for b in blocked %}<option value="{{ b.transaction_id }}">{{ b.transaction_id }} · {{ b.receiver }} ({{ b.receiver_country }}) · {{ "{:,.2f}".format(b.normalized_usd_amount or 0) }} USD</option>
+            {% else %}<option value="">No blocked transactions</option>{% endfor %}
+        </select></div>
+        <button type="submit" name="kind" value="sar" class="btn btn-ai" {% if not blocked %}disabled{% endif %}>{{ icon('sparkles') }}Draft narrative</button>
+    </form>
+</div>
+{% else %}
+<div class="alert alert-info mb-6">{{ icon('info') }}<span>AI is switched off, so no new drafts can be generated. Existing drafts are listed below.</span></div>
+{% endif %}
+
+<div class="stack mt-6">
+{% for d in drafts %}
+<article class="advisory" aria-labelledby="draft-{{ d.id }}" data-reveal>
+    <div class="cluster between">
+        <div>
+            <h2 class="section-title" id="draft-{{ d.id }}">{{ d.title }}</h2>
+            <p class="xsmall text-2">{{ 'Weekly summary' if d.kind == 'weekly' else 'Narrative for ' ~ d.tx_id }} · <span class="num">{{ d.created_at }}</span></p>
+        </div>
+        <div class="chips">
+            {% if d.status == 'DRAFT' %}<span class="draft-stamp">DRAFT</span>{% else %}<span class="badge badge-verified">{{ icon('check') }}Signed by {{ d.signer }}</span>{% endif %}
+            {{ ai_label() }}
+        </div>
+    </div>
+    <div class="advisory-body report-body">{{ d.body }}</div>
+    {% if d.key_points_list %}<ul>{% for p in d.key_points_list %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+    <div class="btn-row mt-4">
+        <a href="{{ url_for('admin.report_markdown', report_id=d.id) }}" class="btn btn-outline btn-sm">{{ icon('upload') }}Export Markdown</a>
+        {% if d.status == 'DRAFT' %}
+        <form method="POST" class="m-0">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="report_id" value="{{ d.id }}">
+            <button type="submit" name="kind" value="sign" class="btn btn-success btn-sm">{{ icon('check') }}I reviewed it: sign off</button>
+        </form>
+        {% endif %}
+    </div>
+</article>
+{% else %}
+<div class="card empty">{{ tile('file-text', 'neutral') }}<h2>No drafts yet</h2><p>Draft a weekly summary or a narrative above.</p></div>
+{% endfor %}
+</div>
+{% endblock %}

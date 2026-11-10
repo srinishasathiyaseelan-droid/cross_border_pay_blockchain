@@ -1,0 +1,38 @@
+# Adapted from Netvrio (sandysunny99/razorpay-ai-risk-manager @98bbc09) .github/workflows/ci.yml — Flask/pytest commands.
+name: ci
+
+on:
+  push:
+    branches: [main, hardening-llm, ui-redesign]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install
+        run: pip install -r requirements-dev.txt pip-audit==2.9.0
+      - name: Lint
+        run: ruff check crosspay tests model app.py --select E,F,W --ignore E501,E402
+      - name: Tests (no network, FX mocked, AI faked)
+        env:
+          CROSSPAY_ENV: test
+          LLM_ENABLED: "0"
+        run: pytest -q -m "not live_redteam" --cov=crosspay --cov-fail-under=75
+      - name: Dependency audit
+        run: pip-audit -r requirements.txt
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

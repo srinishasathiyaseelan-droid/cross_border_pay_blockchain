@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, tile %}
+{% block title %}AI operations{% endblock %}
+{% block content %}
+<div class="page-head" data-reveal>
+    <div>
+        <h1 class="page-title">{{ tile('sparkles', 'ai') }}AI operations</h1>
+        <p class="page-sub">The LLM layer is advisory. It never decides APPROVE, HOLD or BLOCK, and the app works with it off.</p>
+    </div>
+    <form method="POST" action="{{ url_for('admin.ai_ops') }}" class="m-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="kill_switch" value="{{ 'off' if kill_switch else 'on' }}">
+        <button type="submit" class="btn {{ 'btn-primary' if kill_switch else 'btn-destructive' }} btn-hero">
+            {{ icon('power') }}{{ 'Turn AI back on' if kill_switch else 'Kill switch: turn all AI off' }}
+        </button>
+    </form>
+</div>
+
+<section class="kpis" aria-label="AI status" data-reveal>
+    <div class="kpi">{{ tile('power', 'success' if llm_enabled else 'neutral') }}<div><div class="kpi-label">LLM_ENABLED</div><div class="kpi-value text-lg">{{ 'on' if llm_enabled else 'off' }}</div><div class="kpi-sub">startup setting</div></div></div>
+    <div class="kpi">{{ tile('ban', 'danger' if kill_switch else 'neutral') }}<div><div class="kpi-label">Kill switch</div><div class="kpi-value text-lg">{{ 'ON' if kill_switch else 'off' }}</div><div class="kpi-sub">runtime override</div></div></div>
+    <div class="kpi">{{ tile('activity', 'info') }}<div><div class="kpi-label">Calls today</div><div class="kpi-value" data-ticker="{{ calls_today }}">{{ calls_today }}</div><div class="kpi-sub">UTC day</div></div></div>
+    <div class="kpi">{{ tile('chart', 'warning') }}<div><div class="kpi-label">Spend today (estimated)</div><div class="kpi-value text-lg">${{ '%.4f'|format(spend) }}</div><div class="kpi-sub">of ${{ budget }} daily budget</div>
+        <div class="progress" style="margin-top:8px;--value:{{ [100, (spend / budget * 100) if budget else 0]|min }}%"><i></i></div></div></div>
+</section>
+
+<div class="grid-2 mt-6" data-reveal>
+    <section class="card" aria-labelledby="h-prov">
+        <h2 class="card-title mb-3" id="h-prov">{{ tile('layers', 'brand', 'sm') }}Providers (fallback order)</h2>
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th scope="col">Provider</th><th scope="col">Model</th><th scope="col">Configured</th><th scope="col">Circuit</th><th scope="col" class="num">Failures</th></tr></thead>
+            <tbody>
+            {% for name, st in providers.items() %}
+            <tr><td><strong>{{ name }}</strong></td><td class="num xsmall">{{ st.model or '—' }}</td>
+                <td>{{ 'yes' if st.configured else 'no key' }}</td>
+                <td><span class="badge {{ 'badge-danger' if st.open else 'badge-success' }}">{{ 'open, skipped 60 s' if st.open else 'closed' }}</span></td>
+                <td class="num">{{ st.failures }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+    <section class="card" aria-labelledby="h-guard">
+        <h2 class="card-title mb-3" id="h-guard">{{ tile('shield', 'danger', 'sm') }}Guard rejections (all time)</h2>
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th scope="col">Guard outcome</th><th scope="col" class="num">Count</th></tr></thead>
+            <tbody>
+            {% for code, n in by_guard %}<tr><td class="num xsmall">{{ code }}</td><td class="num">{{ n }}</td></tr>
+            {% else %}<tr><td colspan="2" class="table-empty">No rejections recorded.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+</div>
+
+<div class="grid-2 mt-6" data-reveal>
+    <section class="card" aria-labelledby="h-calls">
+        <h2 class="card-title mb-3" id="h-calls">{{ tile('list', 'info', 'sm') }}Calls today by task and status</h2>
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th scope="col">Task</th><th scope="col">Status</th><th scope="col" class="num">Count</th></tr></thead>
+            <tbody>
+            {% for task, status, n in by_status %}<tr><td>{{ task }}</td><td class="num xsmall">{{ status }}</td><td class="num">{{ n }}</td></tr>
+            {% else %}<tr><td colspan="3" class="table-empty">No calls today.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+    <section class="card" aria-labelledby="h-agree">
+        <h2 class="card-title mb-1" id="h-agree">{{ tile('user', 'ai', 'sm') }}Officer agreement with AI drafts</h2>
+        <p class="card-sub mb-3">Similarity between the officer's reason and the copilot draft. Values near 1 suggest automation bias.</p>
+        <div class="table-wrap"><table class="table">
+            <thead><tr><th scope="col">Officer</th><th scope="col" class="num">Reviews</th><th scope="col" class="num">Mean similarity</th></tr></thead>
+            <tbody>
+            {% for name, n, avg in agreement %}<tr><td>{{ name }}</td><td class="num">{{ n }}</td><td class="num">{{ avg }}</td></tr>
+            {% else %}<tr><td colspan="3" class="table-empty">No copilot-assisted reviews yet.</td></tr>{% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+</div>
+
+<section class="card mt-6" aria-labelledby="h-flags" data-reveal>
+    <h2 class="card-title mb-3" id="h-flags">{{ tile('filter', 'neutral', 'sm') }}Feature flags</h2>
+    <div class="chips">{% for name, on in flags.items() %}<span class="badge {{ 'badge-success' if on else 'badge-neutral' }}">{{ name }}: {{ 'on' if on else 'off' }}</span>{% endfor %}</div>
+</section>
+{% endblock %}

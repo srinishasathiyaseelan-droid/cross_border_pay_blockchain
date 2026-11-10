@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, tile, decision_badge, risk_badge, kyc_badge, money, ai_label, pipeline %}
+{% block title %}UI kit{% endblock %}
+
+{% macro kit(caller_id) %}
+<section class="kit-section">
+    <h2>Buttons</h2>
+    <div class="kit-row">
+        <button class="btn btn-primary btn-hero">{{ icon('send') }}Hero CTA</button>
+        <button class="btn btn-primary">Primary</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-outline">Outline</button>
+        <button class="btn btn-ghost">Ghost</button>
+        <button class="btn btn-destructive">{{ icon('x') }}Destructive</button>
+        <button class="btn btn-ai">{{ icon('sparkles') }}AI action</button>
+        <a class="btn btn-link" href="#">Link</a>
+        <button class="btn btn-secondary btn-icon" aria-label="Refresh">{{ icon('refresh') }}</button>
+    </div>
+    <div class="kit-row">
+        <button class="btn btn-primary btn-sm">Small 32</button>
+        <button class="btn btn-primary">Medium 40</button>
+        <button class="btn btn-primary btn-lg">Large 48</button>
+        <button class="btn btn-primary" disabled>Disabled</button>
+        <button class="btn btn-primary is-busy" aria-busy="true">Loading</button>
+        <button class="btn btn-success">{{ icon('check') }}Release</button>
+        <button class="btn btn-warning">{{ icon('pause') }}Hold</button>
+    </div>
+</section>
+
+<section class="kit-section">
+    <h2>Form fields</h2>
+    <div class="form-grid">
+        <div class="field"><label class="field-label" for="k-in-{{ caller_id }}">Beneficiary</label>
+            <input id="k-in-{{ caller_id }}" class="input" placeholder="e.g. EuroTech Industrial GmbH" aria-describedby="k-h-{{ caller_id }}">
+            <p class="field-hint" id="k-h-{{ caller_id }}">2 to 120 characters.</p></div>
+        <div class="field"><label class="field-label" for="k-err-{{ caller_id }}">Receiver country</label>
+            <input id="k-err-{{ caller_id }}" class="input" value="Atlantis" aria-invalid="true" aria-describedby="k-e-{{ caller_id }}">
+            <p class="field-error" id="k-e-{{ caller_id }}">{{ icon('alert') }}Choose a country from the supported list.</p></div>
+        <div class="field"><label class="field-label" for="k-sel-{{ caller_id }}">Currency</label>
+            <select id="k-sel-{{ caller_id }}" class="select"><option>USD · US Dollar</option><option>EUR · Euro</option></select></div>
+        <div class="field"><label class="field-label" for="k-amt-{{ caller_id }}">Amount</label>
+            <div class="input-money"><span class="prefix">USD</span><input id="k-amt-{{ caller_id }}" class="input" value="4500.00" inputmode="decimal"></div></div>
+        <div class="field"><label class="field-label" for="k-ro-{{ caller_id }}">Read-only</label><input id="k-ro-{{ caller_id }}" class="input" value="Global Logistics SME Ltd" readonly></div>
+        <div class="field"><label class="field-label" for="k-ta-{{ caller_id }}">Officer reason</label><textarea id="k-ta-{{ caller_id }}" class="textarea" placeholder="At least 20 characters, in your own words"></textarea></div>
+    </div>
+    <div class="kit-row">
+        <label class="check"><input type="checkbox" checked> Checkbox</label>
+        <label class="check"><input type="radio" name="r-{{ caller_id }}" checked> Radio A</label>
+        <label class="check"><input type="radio" name="r-{{ caller_id }}"> Radio B</label>
+        <label class="check switch"><input type="checkbox" role="switch" checked> AI explanations</label>
+    </div>
+    <div class="upload"><label class="field-label" for="k-up-{{ caller_id }}">Invoice (PDF, up to 5 MB)</label><input id="k-up-{{ caller_id }}" type="file" accept="application/pdf"></div>
+</section>
+
+<section class="kit-section">
+    <h2>Badges, tiles, segmented control</h2>
+    <div class="kit-row">{{ decision_badge('APPROVED') }}{{ decision_badge('HOLD') }}{{ decision_badge('BLOCKED') }}{{ decision_badge('REJECTED') }}
+        {{ risk_badge('LOW', 9.1) }}{{ risk_badge('MEDIUM', 52.4) }}{{ risk_badge('HIGH', 97.4) }}{{ kyc_badge('VERIFIED') }}{{ kyc_badge('PENDING') }}
+        <span class="badge badge-ai">{{ icon('sparkles') }}AI</span><span class="badge badge-outline">Outline</span></div>
+    <div class="kit-row">{{ tile('send') }}{{ tile('check', 'success') }}{{ tile('pause', 'warning') }}{{ tile('ban', 'danger') }}{{ tile('info', 'info') }}{{ tile('sparkles', 'ai') }}{{ tile('x', 'neutral') }}{{ tile('layers', 'brand', 'lg') }}{{ tile('link', 'brand', 'sm') }}</div>
+    <div class="segmented" role="group" aria-label="Example filter"><a href="#" aria-current="true">{{ icon('layers') }}All</a><a href="#">{{ icon('check') }}Approved</a><a href="#">{{ icon('pause') }}On hold</a></div>
+</section>
+
+<section class="kit-section">
+    <h2>Alerts, toast, feedback</h2>
+    <div class="stack-sm">
+        <div class="alert alert-info">{{ icon('info') }}<span>Risk features are computed from your account history.</span></div>
+        <div class="alert alert-success">{{ icon('check') }}<span>KYC verified by a compliance officer.</span></div>
+        <div class="alert alert-warning">{{ icon('alert') }}<span>Exchange rate is stale (served from cache).</span></div>
+        <div class="alert alert-danger">{{ icon('alert') }}<span>Exchange rate service unavailable, nothing was stored.</span></div>
+        <div class="toast toast-success" style="animation:none">{{ icon('check') }}<span>Payment released and recorded.</span><button class="toast-close" aria-label="Dismiss">{{ icon('x') }}</button></div>
+        <div class="card"><span class="skeleton" style="width:60%"></span><span class="skeleton" style="width:80%;margin-top:8px"></span></div>
+        <div class="kit-row"><span class="spinner" role="status" aria-label="Loading"></span><div class="progress" style="width:240px;--value:52%"><i></i></div></div>
+        <div class="card empty">{{ tile('search', 'neutral') }}<h3>No payments match this filter</h3><p>Clear the filter or submit a payment.</p></div>
+    </div>
+</section>
+
+<section class="kit-section">
+    <h2>Stepper, table, receipt, advisory</h2>
+    {{ pipeline([('KYC', 'id-card'), ('Payment', 'send'), ('Risk model', 'cpu'), ('Policy', 'scale'), ('Settlement', 'link')], 4) }}
+    <div class="card">
+        <div class="table-wrap"><table class="table" data-sortable>
+            <thead><tr><th><button data-sort="0">Transaction <span class="sort"></span></button></th><th><button data-sort="1">USD <span class="sort"></span></button></th><th>Decision</th></tr></thead>
+            <tbody><tr><td class="tx-id">TX-2026-8801</td><td class="num" data-value="5400">5,400.00</td><td>{{ decision_badge('APPROVED') }}</td></tr>
+            <tr><td class="tx-id">TX-2026-8802</td><td class="num" data-value="28500">28,500.00</td><td>{{ decision_badge('HOLD') }}</td></tr>
+            <tr><td class="tx-id">TX-2026-8803</td><td class="num" data-value="145000">145,000.00</td><td>{{ decision_badge('BLOCKED') }}</td></tr></tbody>
+        </table></div>
+        <nav class="pagination" aria-label="Pages"><a href="#" aria-label="Previous page">{{ icon('arrow-left') }}</a><span aria-current="page">1</span><a href="#">2</a><a href="#" aria-label="Next page">{{ icon('arrow-right') }}</a></nav>
+    </div>
+    <div class="receipt mt-6">
+        <div class="receipt-head">{{ tile('pause', 'warning', 'lg') }}<div><div class="receipt-kicker">Example receipt (sample data from the demo fixtures)</div>
+            <div class="receipt-amount">28,500.00 USD</div><div class="receipt-title">On hold for compliance review</div></div><span class="stamp stamp-hold">HOLD</span></div>
+    </div>
+    <div class="advisory mt-4">{{ ai_label() }}<div class="advisory-body"><p class="advisory-summary">Advisory text sits in a labelled box below the facts it explains.</p></div></div>
+</section>
+{% endmacro %}
+
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-title">{{ tile('layers') }}UI kit</h1>
+        <p class="page-sub">Every component and state of the "Signed Ledger" design system (<code>DESIGN.md</code>), in light and dark. The sample values come from the demo fixtures.</p>
+    </div>
+</div>
+<div class="grid-2">
+    <div class="kit-theme" data-kit-theme="light"><p class="small muted mb-4">Light</p>{{ kit('l') }}</div>
+    <div class="kit-theme" data-kit-theme="dark"><p class="small muted mb-4">Dark</p>{{ kit('d') }}</div>
+</div>
+<dialog class="dialog" id="kit-dialog" aria-labelledby="kit-dialog-title">
+    <h2 id="kit-dialog-title" class="section-title">Dialog</h2>
+    <p class="text-2" style="margin:12px 0 20px">Native &lt;dialog&gt;: focus is trapped and Escape closes it.</p>
+    <form method="dialog" class="btn-row cluster-end"><button class="btn btn-ghost">Cancel</button><button class="btn btn-primary">Confirm</button></form>
+</dialog>
+<div class="btn-row">
+    <button class="btn btn-secondary" onclick="document.getElementById('kit-dialog').showModal()">Open dialog</button>
+    <details class="dropdown"><summary class="btn btn-secondary">Dropdown {{ icon('chevron-down') }}</summary>
+        <div class="dropdown-menu" role="menu"><a href="#" role="menuitem">{{ icon('eye') }}Receipt</a><a href="#" role="menuitem">{{ icon('upload') }}Export</a></div></details>
+    <button class="btn btn-ghost tooltip" data-tip="Tooltips use the native focus and hover states">Tooltip</button>
+</div>
+{% endblock %}

@@ -1,53 +1,32 @@
 {% extends "base.html" %}
-
-{% block title %}Sign In{% endblock %}
+{% from "_macros.html" import icon, tile %}
+{% block title %}Sign in{% endblock %}
 
 {% block content %}
-<div style="max-width: 480px; margin: 40px auto;">
-    <div class="card">
-        <div style="text-align: center; margin-bottom: 24px;">
-            <span style="font-size: 2.2rem;">🔐</span>
-            <h2 style="font-size: 1.5rem; font-weight: 700; margin-top: 8px;">Sign In to CrossPay</h2>
-            <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 4px;">
-                Access SME Cross-Border Settlement & Risk Management
-            </p>
-        </div>
-
-        <!-- Quick Demo Access Bar -->
-        <div style="background: rgba(30, 41, 59, 0.6); border: 1px dashed var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 22px;">
-            <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; text-align: center;">
-                ⚡ 1-Click Academic Demo Logins
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <a href="{{ url_for('quick_login', role='sme') }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
-                    🏢 Verified SME Demo
-                </a>
-                <a href="{{ url_for('quick_login', role='admin') }}" class="btn btn-outline btn-sm" style="font-size: 0.78rem;">
-                    🛡️ Compliance Admin
-                </a>
-            </div>
-        </div>
-
-        <form method="POST" action="{{ url_for('login') }}">
-            <div class="form-group">
-                <label class="form-label" for="email">Business Email</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="e.g. demo@globallogistics.com" required value="demo@globallogistics.com">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required value="sme123">
-                <div class="form-hint">Default demo password: <code>sme123</code></div>
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 11px;">
-                Sign In to Platform
-            </button>
-        </form>
-
-        <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
-            Don't have an SME account? <a href="{{ url_for('register') }}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Register New SME</a>
-        </div>
+<div class="auth" data-reveal>
+    <div class="auth-head">
+        {{ tile('lock', 'brand', 'lg') }}
+        <h1 class="page-title">Sign in to CrossPay</h1>
     </div>
+    {% if demo_mode %}
+    <div class="demo-box">
+        <p>{{ icon('zap') }} Demo mode: one-click accounts with demo data.</p>
+        <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary">{{ icon('building') }}Demo SME</a>
+        <a href="{{ url_for('auth.quick_login', role='admin') }}" class="btn btn-secondary">{{ icon('shield') }}Officer</a>
+    </div>
+    {% endif %}
+    <form class="card" method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" data-once>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+            <label class="field-label" for="email">Business email</label>
+            <input type="email" id="email" name="email" class="input" autocomplete="username" required>
+        </div>
+        <div class="field">
+            <label class="field-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="input" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block btn-hero">{{ icon('arrow-right') }}Sign in</button>
+        <p class="small text-2 text-center mt-4">No account yet? <a href="{{ url_for('auth.register') }}">Register an SME</a></p>
+    </form>
 </div>
 {% endblock %}

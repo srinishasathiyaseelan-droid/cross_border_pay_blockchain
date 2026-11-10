@@ -1,73 +1,47 @@
 {% extends "base.html" %}
-
-{% block title %}Register SME Account{% endblock %}
+{% from "_macros.html" import icon, tile %}
+{% block title %}Register an SME{% endblock %}
 
 {% block content %}
-<div style="max-width: 540px; margin: 30px auto;">
-    <div class="card">
-        <div style="text-align: center; margin-bottom: 24px;">
-            <span style="font-size: 2.2rem;">🏢</span>
-            <h2 style="font-size: 1.5rem; font-weight: 700; margin-top: 8px;">Register SME Account</h2>
-            <p style="font-size: 0.86rem; color: var(--text-muted); margin-top: 4px;">
-                Onboard your business to enable risk-adaptive cross-border settlements
-            </p>
-        </div>
-
-        <form method="POST" action="{{ url_for('register') }}">
-            <div class="form-group">
-                <label class="form-label" for="name">Company / Business Legal Name</label>
-                <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Pacific Rim Traders Ltd" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="email">Authorized Email Address</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="compliance@pacificrim.com" required>
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label" for="country">Country of Incorporation</label>
-                    <select id="country" name="country" class="form-control">
-                        <option value="United States">United States</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Singapore">Singapore</option>
-                        <option value="Japan">Japan</option>
-                        <option value="India">India</option>
-                        <option value="Brazil">Brazil</option>
-                        <option value="Other">Other Jurisdiction</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="business_type">SME Business Structure</label>
-                    <select id="business_type" name="business_type" class="form-control">
-                        <option value="Import/Export Trader">Import/Export Trader</option>
-                        <option value="Private Limited Company">Private Limited Company</option>
-                        <option value="Sole Proprietorship">Sole Proprietorship</option>
-                        <option value="Partnership">Partnership</option>
-                        <option value="Wholesale Distributor">Wholesale Distributor</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="password">Create Secure Password</label>
-                <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 6 characters" required>
-            </div>
-
-            <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 20px; font-size: 0.8rem; color: #93c5fd;">
-                ℹ️ <strong>System Note:</strong> After registration, you must complete the simulated KYC verification process before initiating any payment settlements.
-            </div>
-
-            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px;">
-                Complete Registration & Proceed to KYC
-            </button>
-        </form>
-
-        <div style="text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted);">
-            Already have an account? <a href="{{ url_for('login') }}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Sign In</a>
-        </div>
+<div class="auth w-auto-narrow" data-reveal>
+    <div class="auth-head">
+        {{ tile('building', 'info', 'lg') }}
+        <h1 class="page-title">Register your SME</h1>
+        <p class="text-2">After registering, submit KYC. A compliance officer verifies it before you can send payments.</p>
     </div>
+    <form class="card" method="POST" action="{{ url_for('auth.register') }}" data-once>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+            <label class="field-label" for="name">Registered business name</label>
+            <input type="text" id="name" name="name" class="input" maxlength="120" autocomplete="organization" required>
+        </div>
+        <div class="field">
+            <label class="field-label" for="email">Business email</label>
+            <input type="email" id="email" name="email" class="input" autocomplete="email" required>
+        </div>
+        <div class="form-grid">
+            <div class="field">
+                <label class="field-label" for="country">Country of incorporation</label>
+                <select id="country" name="country" class="select">
+                    {% for c in ['United States', 'United Kingdom', 'Germany', 'Singapore', 'Japan', 'India', 'Canada', 'Australia', 'France', 'United Arab Emirates', 'Brazil'] %}
+                    <option value="{{ c }}">{{ c }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label class="field-label" for="business_type">Business structure</label>
+                <select id="business_type" name="business_type" class="select">
+                    <option>Import/Export Trader</option><option>Private Limited Company</option><option>Sole Proprietorship</option>
+                    <option>Partnership</option><option>Wholesale Distributor</option>
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label class="field-label" for="password">Password</label>
+            <input type="password" id="password" name="password" class="input" minlength="10" autocomplete="new-password" required aria-describedby="pw-hint">
+            <p class="field-hint" id="pw-hint">At least 10 characters.</p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block btn-hero">{{ icon('arrow-right') }}Create account and continue to KYC</button>
+        <p class="small text-2 text-center mt-4">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+    </form>
 </div>
 {% endblock %}

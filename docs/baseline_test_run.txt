@@ -1,0 +1,35 @@
+# Baseline test run — commit d12451c, 2026-11-10T11:54:29Z
+# Python Python 3.12.10, scikit-learn 1.9.1
+
+$ python -m unittest tests/test_currency_conversion.py
+............
+----------------------------------------------------------------------
+Ran 12 tests in 2.902s
+
+OK
+[ML Engine] Random Forest Classifier successfully loaded.
+
+$ python tests/test_flow.py
+[ML Engine] Random Forest Classifier successfully loaded.
+==================================================================
+  RUNNING SYSTEM INTEGRATION & END-TO-END FLOW TESTS              
+==================================================================
+[PASS] 1. Home page loads with workflow diagram
+[PASS] 2. SME Authentication & Session initialized
+[PASS] 3. Simulated KYC Verification module confirms VERIFIED status
+[PASS] 4. Payment form accessible with Currency Conversion Engine & 1-Click Scenarios
+[PASS] 5. Supported Currencies API returns 9 currencies (USD, EUR, GBP, INR, SGD, AED, AUD, CAD, JPY)
+[PASS] 6. Live Currency Conversion API: $100.00 USD -> ₹9,392.92 (Rate: 1 USD = 93.929192 INR)
+[PASS] 7. Scenario 1 (Low Risk): USD -> EUR -> ML: LOW RISK -> APPROVED -> Block Mined on Blockchain
+[PASS] 8. Scenario 2 (Medium Risk): USD -> EUR -> ML: MEDIUM RISK -> HOLD -> Pending Escrow
+[PASS] 9. Scenario 3 (High Risk): USD -> INR -> ML: HIGH RISK -> BLOCKED -> Smart Contract Rejection
+[PASS] 10. Blockchain ledger integrity cryptographically validated! (26 Blocks)
+[PASS] 11. Dashboard Analytics, Multi-Currency Volume & Model Performance verified
+[PASS] 12. Transaction history with confirmed exchange rates and converted amounts verified
+==================================================================
+  ALL 12 VERIFICATION CHECKS PASSED SUCCESSFULLY!                 
+==================================================================
+
+$ git status --short (after run)
+ M blockchain/blockchain_ledger.json
+?? docs/

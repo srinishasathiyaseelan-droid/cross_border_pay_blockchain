@@ -1,472 +1,417 @@
 /**
- * Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments
- * Interactive JavaScript Library with Live Currency Conversion
+ * CrossPay front-end behaviour (vanilla JS, no build step).
+ * - Live FX conversion (GET /api/convert_currency)
+ * - Live risk preview from the SAME server model (POST /api/risk_preview; nothing is stored)  [M5]
+ * - Demo scenarios (DEMO_MODE only): send scenario=low|medium|high; the server loads a fixed vector  [C4]
+ * - Ledger verification, double-submit guard, AI advisory polling, theme toggle
  */
+(function () {
+    'use strict';
 
-const CURRENCY_SYMBOLS = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'INR': '₹',
-    'SGD': 'S$',
-    'AED': 'AED',
-    'AUD': 'A$',
-    'CAD': 'C$',
-    'JPY': '¥'
-};
+    const CURRENCY_SYMBOLS = { USD: '$', EUR: '€', GBP: '£', INR: '₹', SGD: 'S$', AED: 'AED ', AUD: 'A$', CAD: 'C$', JPY: '¥' };
+    const $ = (id) => document.getElementById(id);
+    const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-const COUNTRY_TO_CURRENCY = {
-    'United States': 'USD',
-    'United Kingdom': 'GBP',
-    'Germany': 'EUR',
-    'France': 'EUR',
-    'Singapore': 'SGD',
-    'Japan': 'JPY',
-    'India': 'INR',
-    'United Arab Emirates': 'AED',
-    'Australia': 'AUD',
-    'Canada': 'CAD',
-    'Brazil': 'USD',
-    'Nigeria': 'USD'
-};
+    function setText(el, text) { if (el) el.textContent = text; }
 
-let conversionDebounceTimer = null;
-let currentNormalizedUsdAmount = 4500.0;
+    function jsonPost(url, body) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(body)
+        }).then((r) => r.json().then((d) => ({ ok: r.ok, status: r.status, data: d })));
+    }
 
-document.addEventListener('DOMContentLoaded', function () {
-    // 1. Auto-dismiss flash alerts after 5 seconds
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.transition = 'opacity 0.5s ease';
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 500);
-        }, 5000);
-    });
+    /* ---------- Theme (per-viewer convenience only) ---------- */
+    function initTheme() {
+        const btn = $('theme-toggle');
+        const root = document.documentElement;
+        try {
+            const saved = localStorage.getItem('crosspay-theme');
+            if (saved === 'light' || saved === 'dark') root.setAttribute('data-theme', saved);
+        } catch (e) { /* storage unavailable */ }
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const current = root.getAttribute('data-theme') ||
+                (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            const next = current === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', next);
+            try { localStorage.setItem('crosspay-theme', next); } catch (e) { /* ignore */ }
+            document.dispatchEvent(new CustomEvent('crosspay:theme', { detail: next }));
+        });
+    }
 
-    // 2. Setup Currency Conversion Engine if on Payment page
-    initCurrencyConverter();
+    /* ---------- Toasts (server flashes): auto-dismiss after 7 s, paused while hovered or focused ---------- */
+    function initFlashes() {
+        document.querySelectorAll('.toast').forEach((t) => {
+            let timer = null;
+            const leave = () => { t.classList.add('is-leaving'); setTimeout(() => t.remove(), 260); };
+            const arm = () => { clearTimeout(timer); timer = setTimeout(leave, 7000); };
+            const hold = () => clearTimeout(timer);
+            t.addEventListener('mouseenter', hold); t.addEventListener('focusin', hold);
+            t.addEventListener('mouseleave', arm); t.addEventListener('focusout', arm);
+            const close = t.querySelector('.toast-close');
+            if (close) close.addEventListener('click', leave);
+            if (!t.classList.contains('toast-danger')) arm();   // errors stay until dismissed
+        });
+    }
 
-    // 3. Setup Scenario Fillers if on Payment page
-    initScenarioFillers();
+    /* ---------- Mobile navigation sheet: focus trap, Escape closes, focus returns to the opener ---------- */
+    function initNav() {
+        const opener = $('nav-open'), sheet = $('nav-sheet'), scrim = $('nav-scrim');
+        if (!opener || !sheet || !scrim) return;
+        const focusables = () => Array.from(sheet.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])')).filter((n) => !n.disabled);
+        const close = () => {
+            sheet.classList.remove('is-open'); scrim.classList.remove('is-open');
+            sheet.setAttribute('aria-hidden', 'true'); opener.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('keydown', onKey); opener.focus();
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') { close(); return; }
+            if (e.key !== 'Tab') return;
+            const f = focusables(); if (!f.length) return;
+            if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+            else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+        };
+        opener.addEventListener('click', () => {
+            sheet.classList.add('is-open'); scrim.classList.add('is-open');
+            sheet.setAttribute('aria-hidden', 'false'); opener.setAttribute('aria-expanded', 'true');
+            document.addEventListener('keydown', onKey);
+            const f = focusables(); if (f.length) f[0].focus();
+        });
+        scrim.addEventListener('click', close);
+        sheet.querySelectorAll('[data-close-sheet]').forEach((b) => b.addEventListener('click', close));
+    }
 
-    // 4. Setup Live Risk Preview on Payment form
-    initLiveRiskPreview();
+    /* ---------- Sortable tables: <table class="table" data-sortable>, <th><button data-sort="col-index"> ---------- */
+    function initSortable() {
+        document.querySelectorAll('table[data-sortable]').forEach((table) => {
+            table.querySelectorAll('th button[data-sort]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const th = btn.closest('th');
+                    const idx = Number(btn.dataset.sort);
+                    const dir = th.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+                    table.querySelectorAll('th').forEach((h) => h.removeAttribute('aria-sort'));
+                    th.setAttribute('aria-sort', dir);
+                    const body = table.tBodies[0];
+                    const rows = Array.from(body.rows).filter((r) => !r.querySelector('.table-empty'));
+                    const key = (r) => { const c = r.cells[idx]; const v = c ? (c.dataset.value || c.textContent.trim()) : ''; const n = parseFloat(v); return isNaN(n) ? v.toLowerCase() : n; };
+                    rows.sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * (dir === 'ascending' ? 1 : -1); });
+                    rows.forEach((r) => body.appendChild(r));
+                });
+            });
+        });
+    }
 
-    // 5. Setup Blockchain Verification API Trigger
-    initBlockchainVerifier();
+    /* ---------- Payment form ---------- */
+    function paymentPayload() {
+        const v = (id) => ($(id) ? $(id).value : '');
+        return {
+            amount: v('amount'), sender_currency: v('sender_currency'), receiver_currency: v('receiver_currency'),
+            sender_country: v('sender_country'), receiver_country: v('receiver_country'),
+            receiver: v('receiver') || 'preview', notes: v('notes'), scenario: v('scenario')
+        };
+    }
 
-    // 6. Setup Form Submit & Duplicate Submission Prevention
-    initFormSubmissionGuard();
-});
+    function initCurrencyConverter() {
+        const amount = $('amount');
+        const src = $('sender_currency');
+        const tgt = $('receiver_currency');
+        if (!amount || !src || !tgt) return;
+        const symbol = () => { setText($('amount-currency-symbol'), (CURRENCY_SYMBOLS[src.value] || '').trim()); setText($('source-currency-label'), src.value); };
+        const countryDefaults = window.CROSSPAY_COUNTRY_CURRENCY || {};
+        [['sender_country', src], ['receiver_country', tgt]].forEach(([id, sel]) => {
+            const c = $(id);
+            if (c) c.addEventListener('change', () => { if (countryDefaults[c.value]) sel.value = countryDefaults[c.value]; symbol(); convert(); preview(); });
+        });
+        const convert = debounce(performConversion, 450);
+        [amount, src, tgt].forEach((el) => { el.addEventListener('input', () => { symbol(); convert(); }); el.addEventListener('change', () => { symbol(); convert(); }); });
+        const btn = $('btn-convert-currency');
+        if (btn) btn.addEventListener('click', performConversion);
+        symbol();
+        performConversion();
+    }
 
-/**
- * Real-Time Currency Conversion Engine
- */
-function initCurrencyConverter() {
-    const senderCurrSelect = document.getElementById('sender_currency');
-    const receiverCurrSelect = document.getElementById('receiver_currency');
-    const senderCountrySelect = document.getElementById('sender_country');
-    const receiverCountrySelect = document.getElementById('receiver_country');
-    const amountInput = document.getElementById('amount');
-    const convertBtn = document.getElementById('btn-convert-currency');
+    function performConversion() {
+        const amount = $('amount'), src = $('sender_currency'), tgt = $('receiver_currency');
+        const loading = $('conversion-loading-indicator'), errBox = $('conversion-error-box'), details = $('conversion-details-content');
+        if (!amount || !amount.value || parseFloat(amount.value) <= 0) return;
+        if (loading) loading.hidden = false;
+        if (errBox) errBox.hidden = true;
+        const btn = $('btn-convert-currency');
+        if (btn) btn.classList.add('is-busy');
+        const qs = new URLSearchParams({ amount: amount.value, from: src.value, to: tgt.value });
+        fetch('/api/convert_currency?' + qs.toString(), { credentials: 'same-origin' })
+            .then((r) => r.json())
+            .then((d) => {
+                if (loading) loading.hidden = true;
+                if (btn) btn.classList.remove('is-busy');
+                if (!d.success) {
+                    if (errBox) { errBox.hidden = false; setText($('conversion-error-text'), d.error || 'Rate unavailable.'); }
+                    if (details) details.classList.add('is-dim');
+                    return;
+                }
+                if (details) details.classList.remove('is-dim');
+                setText($('display-exchange-rate'), d.exchange_rate_formatted);
+                setText($('display-converted-amount'), d.formatted_converted_amount);
+                setText($('display-target-currency-code'), d.target_currency + ' · ' + d.target_name);
+                setText($('display-rate-provider'), d.provider);
+                setText($('display-rate-timestamp'), 'Updated ' + d.last_updated + (d.stale ? ' · STALE RATE' : ''));
+                setText($('display-usd-amount'), '$' + Number(d.normalized_usd_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                preview();
+            })
+            .catch(() => {
+                if (loading) loading.hidden = true;
+                if (btn) btn.classList.remove('is-busy');
+                if (errBox) { errBox.hidden = false; setText($('conversion-error-text'), 'Could not reach the rate service.'); }
+            });
+    }
 
-    if (!senderCurrSelect || !receiverCurrSelect || !amountInput) return;
+    const preview = debounce(function () {
+        const box = $('risk-preview');
+        if (!box || !$('amount') || !$('amount').value) return;
+        box.classList.add('is-loading');
+        jsonPost('/api/risk_preview', paymentPayload()).then(({ ok, data }) => {
+            box.classList.remove('is-loading');
+            if (!ok || !data.success) { box.dataset.level = 'unknown'; setText($('live-risk-level'), '—'); setText($('live-risk-detail'), data.error || 'Preview unavailable'); return; }
+            box.dataset.level = data.level.toLowerCase();
+            setText($('live-risk-level'), data.level);
+            setText($('live-risk-score'), data.score.toFixed(1));
+            setText($('live-decision'), data.decision);
+            setText($('live-risk-detail'), (data.engine === 'model' ? 'Random Forest' : 'Fallback rules') +
+                (data.feature_source === 'demo_vector' ? ' · demo vector' : ' · your account history'));
+            const meter = $('live-risk-meter');
+            if (meter) meter.style.setProperty('--value', Math.min(100, data.score) + '%');
+        }).catch(() => box.classList.remove('is-loading'));
+    }, 500);
 
-    // Auto-update currency symbol prefix next to amount input
-    const updateSymbolPrefix = () => {
-        const symbolEl = document.getElementById('amount-currency-symbol');
-        const labelEl = document.getElementById('source-currency-label');
-        const curr = senderCurrSelect.value;
-        const sym = CURRENCY_SYMBOLS[curr] || '$';
-        if (symbolEl) symbolEl.innerText = sym;
-        if (labelEl) labelEl.innerText = `${curr} ${sym}`;
+    function initRiskPreview() {
+        if (!$('risk-preview')) return;
+        ['amount', 'sender_country', 'receiver_country', 'sender_currency', 'receiver_currency'].forEach((id) => {
+            const el = $(id);
+            if (el) { el.addEventListener('input', preview); el.addEventListener('change', preview); }
+        });
+    }
+
+    const SCENARIOS = {
+        low: { sender_country: 'United States', sender_currency: 'USD', receiver: 'EuroTech Industrial GmbH', receiver_country: 'Germany', receiver_currency: 'EUR', amount: '4500', notes: 'Invoice 8841 - machined steel components, 30-day terms' },
+        medium: { sender_country: 'United States', sender_currency: 'USD', receiver: 'Apex Pacific Trade Pvt Ltd', receiver_country: 'India', receiver_currency: 'INR', amount: '28500', notes: 'Seasonal electronics shipment, larger than usual batch' },
+        high: { sender_country: 'United States', sender_currency: 'USD', receiver: 'Shadow Frontier Express', receiver_country: 'Nigeria', receiver_currency: 'INR', amount: '145000', notes: 'Offshore consulting fee, no invoice attached' }
     };
 
-    // Auto-suggest currency on country change
-    if (senderCountrySelect) {
-        senderCountrySelect.addEventListener('change', function () {
-            const defaultCurr = COUNTRY_TO_CURRENCY[this.value];
-            if (defaultCurr && senderCurrSelect.querySelector(`option[value="${defaultCurr}"]`)) {
-                senderCurrSelect.value = defaultCurr;
-                updateSymbolPrefix();
-                debounceConversion();
-            }
-        });
-    }
-
-    if (receiverCountrySelect) {
-        receiverCountrySelect.addEventListener('change', function () {
-            const defaultCurr = COUNTRY_TO_CURRENCY[this.value];
-            if (defaultCurr && receiverCurrSelect.querySelector(`option[value="${defaultCurr}"]`)) {
-                receiverCurrSelect.value = defaultCurr;
-                debounceConversion();
-            }
-        });
-    }
-
-    senderCurrSelect.addEventListener('change', () => {
-        updateSymbolPrefix();
-        debounceConversion();
-    });
-
-    receiverCurrSelect.addEventListener('change', () => {
-        debounceConversion();
-    });
-
-    amountInput.addEventListener('input', () => {
-        debounceConversion();
-    });
-
-    if (convertBtn) {
-        convertBtn.addEventListener('click', () => {
-            performCurrencyConversion();
-        });
-    }
-
-    updateSymbolPrefix();
-    // Initial fetch on page load
-    performCurrencyConversion();
-}
-
-function debounceConversion() {
-    clearTimeout(conversionDebounceTimer);
-    conversionDebounceTimer = setTimeout(() => {
-        performCurrencyConversion();
-    }, 450);
-}
-
-function performCurrencyConversion() {
-    const amountInput = document.getElementById('amount');
-    const senderCurrSelect = document.getElementById('sender_currency');
-    const receiverCurrSelect = document.getElementById('receiver_currency');
-
-    const loadingIndicator = document.getElementById('conversion-loading-indicator');
-    const errorBox = document.getElementById('conversion-error-box');
-    const errorText = document.getElementById('conversion-error-text');
-    const detailsContent = document.getElementById('conversion-details-content');
-
-    const rateDisplay = document.getElementById('display-exchange-rate');
-    const convertedAmountDisplay = document.getElementById('display-converted-amount');
-    const targetCurrCodeDisplay = document.getElementById('display-target-currency-code');
-    const rateProviderDisplay = document.getElementById('display-rate-provider');
-    const rateTimestampDisplay = document.getElementById('display-rate-timestamp');
-
-    const hiddenRate = document.getElementById('confirmed_exchange_rate');
-    const hiddenConverted = document.getElementById('confirmed_converted_amount');
-    const hiddenProvider = document.getElementById('confirmed_rate_provider');
-    const hiddenTimestamp = document.getElementById('confirmed_rate_timestamp');
-
-    const convertBtn = document.getElementById('btn-convert-currency');
-
-    if (!amountInput || !senderCurrSelect || !receiverCurrSelect) return;
-
-    const amount = parseFloat(amountInput.value);
-    const sourceCurr = senderCurrSelect.value;
-    const targetCurr = receiverCurrSelect.value;
-
-    // Validation
-    if (isNaN(amount) || amount <= 0) {
-        if (errorBox && errorText) {
-            errorText.innerText = "Please enter a valid transaction amount greater than 0.";
-            errorBox.style.display = 'block';
-            if (detailsContent) detailsContent.style.opacity = '0.35';
-        }
-        return;
-    }
-
-    // Show loading feedback
-    if (loadingIndicator) loadingIndicator.style.display = 'flex';
-    if (errorBox) errorBox.style.display = 'none';
-    if (detailsContent) detailsContent.style.opacity = '0.35';
-    if (convertBtn) {
-        convertBtn.disabled = true;
-        const icon = document.getElementById('convert-btn-icon');
-        if (icon) icon.innerHTML = '<span class="spinner-pulse"></span>';
-    }
-
-    const url = `/api/convert_currency?amount=${encodeURIComponent(amount)}&source_currency=${encodeURIComponent(sourceCurr)}&target_currency=${encodeURIComponent(targetCurr)}`;
-
-    fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            if (loadingIndicator) loadingIndicator.style.display = 'none';
-            if (detailsContent) detailsContent.style.opacity = '1.0';
-            if (convertBtn) {
-                convertBtn.disabled = false;
-                const icon = document.getElementById('convert-btn-icon');
-                if (icon) icon.innerText = '🔄';
-            }
-
-            if (!data.success) {
-                if (errorBox && errorText) {
-                    errorText.innerText = data.error || "Failed to fetch live exchange rate.";
-                    errorBox.style.display = 'block';
-                }
-                return;
-            }
-
-            // Populate Display
-            if (rateDisplay) {
-                rateDisplay.innerText = data.exchange_rate_formatted || `1 ${sourceCurr} = ${Number(data.exchange_rate).toFixed(6)} ${targetCurr}`;
-            }
-
-            if (convertedAmountDisplay) {
-                convertedAmountDisplay.innerText = data.formatted_converted_amount;
-            }
-
-            if (targetCurrCodeDisplay) {
-                targetCurrCodeDisplay.innerText = `${data.target_currency} (${data.target_name || 'Settlement Currency'})`;
-            }
-
-            if (rateProviderDisplay) {
-                rateProviderDisplay.innerText = data.provider || "ExchangeRate-API";
-            }
-
-            if (rateTimestampDisplay) {
-                rateTimestampDisplay.innerText = `Last Updated: ${data.last_updated || 'Real-time'}`;
-            }
-
-            // Populate Hidden Snapshot fields for strict confirmed submission
-            if (hiddenRate) hiddenRate.value = data.exchange_rate;
-            if (hiddenConverted) hiddenConverted.value = data.converted_amount;
-            if (hiddenProvider) hiddenProvider.value = data.provider;
-            if (hiddenTimestamp) hiddenTimestamp.value = data.last_updated;
-
-            // Track normalized amount for ML risk preview
-            currentNormalizedUsdAmount = data.normalized_usd_amount || amount;
-            updateRiskPreview();
-        })
-        .catch(err => {
-            if (loadingIndicator) loadingIndicator.style.display = 'none';
-            if (detailsContent) detailsContent.style.opacity = '1.0';
-            if (convertBtn) {
-                convertBtn.disabled = false;
-                const icon = document.getElementById('convert-btn-icon');
-                if (icon) icon.innerText = '🔄';
-            }
-            if (errorBox && errorText) {
-                errorText.innerText = "Network error: Could not connect to exchange rate service.";
-                errorBox.style.display = 'block';
-            }
-            console.error("Currency conversion API error:", err);
-        });
-}
-
-/**
- * Duplicate Submission Prevention Guard
- */
-function initFormSubmissionGuard() {
-    const form = document.getElementById('payment-form');
-    const submitBtn = document.getElementById('btn-submit-payment');
-    const submitText = document.getElementById('submit-btn-text');
-    const amountInput = document.getElementById('amount');
-
-    if (!form || !submitBtn) return;
-
-    form.addEventListener('submit', function (e) {
-        const amount = parseFloat(amountInput ? amountInput.value : 0);
-        if (isNaN(amount) || amount <= 0) {
-            e.preventDefault();
-            alert("Validation Error: Transaction amount must be a positive number greater than 0.");
-            return;
-        }
-
-        // Prevent duplicate double clicks
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.75';
-        submitBtn.style.cursor = 'not-allowed';
-        if (submitText) {
-            submitText.innerHTML = '<span class="spinner-pulse" style="margin-right:8px;"></span> Verifying KYC, ML Risk & Executing Smart Contract...';
-        }
-    });
-}
-
-/**
- * 1-Click Test Scenario Fillers for Risk Engine Validation
- */
-function fillDemoScenario(scenarioNumber) {
-    const senderCountryInput = document.getElementById('sender_country');
-    const senderCurrencyInput = document.getElementById('sender_currency');
-    const receiverInput = document.getElementById('receiver');
-    const receiverCountryInput = document.getElementById('receiver_country');
-    const receiverCurrencyInput = document.getElementById('receiver_currency');
-    const amountInput = document.getElementById('amount');
-    const frequencyInput = document.getElementById('frequency');
-    const prevTxInput = document.getElementById('previous_transactions');
-    const suspTxInput = document.getElementById('suspicious_transactions');
-    const ageInput = document.getElementById('account_age');
-    const notesInput = document.getElementById('notes');
-
-    if (!receiverInput) return;
-
-    if (scenarioNumber === 1) {
-        // SCENARIO 1: LOW RISK -> Expected: AUTO-APPROVE -> USD to EUR Settlement
-        if (senderCountryInput) senderCountryInput.value = "United States";
-        if (senderCurrencyInput) senderCurrencyInput.value = "USD";
-        receiverInput.value = "EuroTech Industrial Gmbh";
-        if (receiverCountryInput) receiverCountryInput.value = "Germany";
-        if (receiverCurrencyInput) receiverCurrencyInput.value = "EUR";
-        amountInput.value = "4500";
-        frequencyInput.value = "2";
-        prevTxInput.value = "48";
-        suspTxInput.value = "0";
-        ageInput.value = "26";
-        if (notesInput) notesInput.value = "Routine supply chain invoice settlement - legitimate SME corridor (USD to EUR)";
-        highlightFilledForm("var(--color-low)");
-    } else if (scenarioNumber === 2) {
-        // SCENARIO 2: MEDIUM RISK -> Expected: HOLD FOR REVIEW -> USD to EUR (moderate volume)
-        if (senderCountryInput) senderCountryInput.value = "United States";
-        if (senderCurrencyInput) senderCurrencyInput.value = "USD";
-        receiverInput.value = "Apex Pacific Trade Corp";
-        if (receiverCountryInput) receiverCountryInput.value = "Brazil";
-        if (receiverCurrencyInput) receiverCurrencyInput.value = "EUR";
-        amountInput.value = "28500";
-        frequencyInput.value = "7";
-        prevTxInput.value = "6";
-        suspTxInput.value = "1";
-        ageInput.value = "6";
-        if (notesInput) notesInput.value = "Unusual seasonal volume transfer - moderate velocity variance (USD to EUR)";
-        highlightFilledForm("var(--color-med)");
-    } else if (scenarioNumber === 3) {
-        // SCENARIO 3: HIGH RISK -> Expected: BLOCK -> USD to INR (extreme volume spike)
-        if (senderCountryInput) senderCountryInput.value = "United States";
-        if (senderCurrencyInput) senderCurrencyInput.value = "USD";
-        receiverInput.value = "Shadow Frontier Express";
-        if (receiverCountryInput) receiverCountryInput.value = "Nigeria";
-        if (receiverCurrencyInput) receiverCurrencyInput.value = "INR";
-        amountInput.value = "145000";
-        frequencyInput.value = "19";
-        prevTxInput.value = "1";
-        suspTxInput.value = "4";
-        ageInput.value = "1";
-        if (notesInput) notesInput.value = "Rapid velocity spike on newly created account with prior suspicious flags (USD to INR)";
-        highlightFilledForm("var(--color-high)");
-    }
-
-    // Update symbol prefix
-    const symbolEl = document.getElementById('amount-currency-symbol');
-    const labelEl = document.getElementById('source-currency-label');
-    const curr = senderCurrencyInput ? senderCurrencyInput.value : 'USD';
-    const sym = CURRENCY_SYMBOLS[curr] || '$';
-    if (symbolEl) symbolEl.innerText = sym;
-    if (labelEl) labelEl.innerText = `${curr} ${sym}`;
-
-    // Trigger conversion and live preview
-    performCurrencyConversion();
-}
-
-function highlightFilledForm(color) {
-    const formCard = document.querySelector('.payment-form-card');
-    if (formCard) {
-        formCard.style.boxShadow = `0 0 24px ${color}`;
-        setTimeout(() => {
-            formCard.style.boxShadow = '';
-        }, 1200);
-    }
-}
-
-function initScenarioFillers() {
-    const btnLow = document.getElementById('btn-scenario-low');
-    const btnMed = document.getElementById('btn-scenario-med');
-    const btnHigh = document.getElementById('btn-scenario-high');
-
-    if (btnLow) btnLow.addEventListener('click', () => fillDemoScenario(1));
-    if (btnMed) btnMed.addEventListener('click', () => fillDemoScenario(2));
-    if (btnHigh) btnHigh.addEventListener('click', () => fillDemoScenario(3));
-}
-
-/**
- * Client-Side Heuristic Estimator for immediate visual feedback
- */
-function initLiveRiskPreview() {
-    const inputs = ['amount', 'frequency', 'previous_transactions', 'suspicious_transactions', 'account_age', 'receiver_country'];
-    inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener('input', updateRiskPreview);
-            el.addEventListener('change', updateRiskPreview);
-        }
-    });
-    updateRiskPreview();
-}
-
-function updateRiskPreview() {
-    const amountEl = document.getElementById('amount');
-    const suspEl = document.getElementById('suspicious_transactions');
-    const freqEl = document.getElementById('frequency');
-    const previewBadge = document.getElementById('live-risk-badge');
-    const previewDecision = document.getElementById('live-decision-badge');
-
-    if (!amountEl || !previewBadge) return;
-
-    // Use normalized reference USD amount if calculated, else raw amount
-    const evalAmount = currentNormalizedUsdAmount || parseFloat(amountEl.value) || 0;
-    const susp = parseInt(suspEl ? suspEl.value : 0) || 0;
-    const freq = parseInt(freqEl ? freqEl.value : 1) || 1;
-
-    if (evalAmount > 50000 || susp >= 2 || (freq >= 12 && evalAmount > 25000)) {
-        previewBadge.className = 'badge badge-high';
-        previewBadge.innerHTML = '<span class="dot dot-high"></span> HIGH RISK';
-        if (previewDecision) {
-            previewDecision.className = 'badge badge-blocked';
-            previewDecision.innerText = 'DECISION: BLOCK';
-        }
-    } else if (evalAmount > 15000 || freq >= 5 || susp === 1) {
-        previewBadge.className = 'badge badge-med';
-        previewBadge.innerHTML = '<span class="dot dot-med"></span> MEDIUM RISK';
-        if (previewDecision) {
-            previewDecision.className = 'badge badge-hold';
-            previewDecision.innerText = 'DECISION: HOLD';
-        }
-    } else {
-        previewBadge.className = 'badge badge-low';
-        previewBadge.innerHTML = '<span class="dot dot-low"></span> LOW RISK';
-        if (previewDecision) {
-            previewDecision.className = 'badge badge-approved';
-            previewDecision.innerText = 'DECISION: APPROVE';
-        }
-    }
-}
-
-/**
- * Blockchain Integrity Verifier
- */
-function initBlockchainVerifier() {
-    const verifyBtn = document.getElementById('btn-verify-blockchain');
-    const statusBox = document.getElementById('blockchain-verify-result');
-
-    if (!verifyBtn || !statusBox) return;
-
-    verifyBtn.addEventListener('click', function () {
-        verifyBtn.disabled = true;
-        verifyBtn.innerText = "Auditing Cryptographic Hashes...";
-
-        fetch('/api/validate_chain')
-            .then(res => res.json())
-            .then(data => {
-                verifyBtn.disabled = false;
-                verifyBtn.innerText = "Verify Blockchain Integrity";
-
-                if (data.valid) {
-                    statusBox.innerHTML = `
-                        <div class="alert alert-success" style="margin-top:16px;">
-                            <strong>✅ Cryptographic Proof Verified:</strong> All ${data.total_blocks} blocks are linked with authentic SHA-256 parent hashes and Proof-of-Work nonces. Chain is tamper-free!
-                        </div>
-                    `;
-                } else {
-                    statusBox.innerHTML = `
-                        <div class="alert alert-danger" style="margin-top:16px;">
-                            <strong>❌ Integrity Alert:</strong> ${data.message}
-                        </div>
-                    `;
-                }
-            })
-            .catch(err => {
-                verifyBtn.disabled = false;
-                verifyBtn.innerText = "Verify Blockchain Integrity";
-                console.error(err);
+    function initScenarios() {
+        document.querySelectorAll('[data-scenario]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.scenario;
+                const s = SCENARIOS[key];
+                if (!s) return;
+                Object.entries(s).forEach(([id, val]) => { if ($(id)) $(id).value = val; });
+                if ($('scenario')) $('scenario').value = key;
+                const chip = $('scenario-chip');
+                if (chip) { chip.hidden = false; setText($('scenario-chip-label'), 'Demo vector: ' + key.toUpperCase()); }
+                document.querySelectorAll('[data-scenario]').forEach((b) => b.classList.toggle('is-active', b === btn));
+                performConversion();
             });
-    });
-}
+        });
+        const clear = $('scenario-clear');
+        if (clear) clear.addEventListener('click', () => {
+            if ($('scenario')) $('scenario').value = '';
+            if ($('scenario-chip')) $('scenario-chip').hidden = true;
+            document.querySelectorAll('[data-scenario]').forEach((b) => b.classList.remove('is-active'));
+            preview();
+        });
+    }
 
+    function initSubmitGuard() {
+        document.querySelectorAll('form[data-once]').forEach((form) => {
+            form.addEventListener('submit', (e) => {
+                if (form.dataset.submitted === '1') { e.preventDefault(); return; }
+                form.dataset.submitted = '1';
+                const btn = form.querySelector('[type=submit]');
+                if (btn) { btn.classList.add('is-busy'); btn.setAttribute('aria-busy', 'true'); }
+            });
+        });
+    }
+
+    /* ---------- Ledger verification ---------- */
+    function initLedgerVerify() {
+        const btn = $('btn-verify-blockchain');
+        const out = $('blockchain-verify-result');
+        if (!btn || !out) return;
+        btn.addEventListener('click', () => {
+            btn.classList.add('is-busy');
+            fetch('/api/validate_chain', { credentials: 'same-origin' }).then((r) => r.json()).then((d) => {
+                btn.classList.remove('is-busy');
+                out.innerHTML = '';
+                const div = document.createElement('div');
+                div.className = 'alert ' + (d.valid ? 'alert-success' : 'alert-danger');
+                const strong = document.createElement('strong');
+                strong.textContent = d.valid ? 'Chain verified. ' : 'Integrity check failed. ';
+                div.appendChild(strong);
+                div.appendChild(document.createTextNode(d.message + (d.total_blocks !== undefined ? ' (' + d.total_blocks + ' blocks)' : '')));
+                out.appendChild(div);
+            }).catch(() => btn.classList.remove('is-busy'));
+        });
+    }
+
+    /* ---------- AI advisory polling (rendered as plain text only) ---------- */
+    function initAIPanels() {
+        document.querySelectorAll('[data-ai-poll]').forEach((panel) => {
+            const url = panel.dataset.aiPoll;
+            let tries = 0;
+            const tick = () => {
+                fetch(url, { credentials: 'same-origin' }).then((r) => r.json()).then((d) => {
+                    if (d.status === 'DONE' && d.result) { renderAI(panel, d.result); return; }
+                    if (d.status === 'PENDING' && tries++ < 20) { setTimeout(tick, 1500); return; }
+                    panel.classList.add('is-unavailable');
+                    panel.classList.remove('is-loading');
+                }).catch(() => { panel.classList.add('is-unavailable'); panel.classList.remove('is-loading'); });
+            };
+            tick();
+        });
+    }
+
+    function renderAI(panel, result) {
+        panel.classList.remove('is-loading');
+        const target = panel.querySelector('[data-ai-body]');
+        if (!target) return;
+        target.innerHTML = '';
+        const p = document.createElement('p');
+        p.className = 'advisory-summary';
+        p.textContent = result.summary || '';
+        target.appendChild(p);
+        if (Array.isArray(result.factors) && result.factors.length) {
+            const ul = document.createElement('ul');
+            ul.className = 'advisory-list';
+            result.factors.forEach((f) => { const li = document.createElement('li'); li.textContent = f.plain_reason + ' [' + f.evidence_id + ']'; ul.appendChild(li); });
+            target.appendChild(ul);
+        }
+        if (Array.isArray(result.what_would_lower_risk) && result.what_would_lower_risk.length) {
+            const h = document.createElement('div'); h.className = 'advisory-sub'; h.textContent = 'What could lower the risk';
+            target.appendChild(h);
+            const ul = document.createElement('ul'); ul.className = 'advisory-list';
+            result.what_would_lower_risk.forEach((t) => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
+            target.appendChild(ul);
+        }
+        if (result.confidence_note) { const n = document.createElement('p'); n.className = 'advisory-note'; n.textContent = result.confidence_note; target.appendChild(n); }
+        panel.classList.add('is-ready');
+    }
+
+    /* ---------- SME assistant chat ---------- */
+    function initAssistant() {
+        const form = $('assistant-form');
+        if (!form) return;
+        const log = $('assistant-log');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = $('assistant-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            appendMsg(log, 'user', msg);
+            input.value = '';
+            form.classList.add('is-busy');
+            jsonPost(form.dataset.endpoint, { message: msg }).then(({ data }) => {
+                form.classList.remove('is-busy');
+                appendMsg(log, 'ai', data.answer || data.error || 'No answer available.');
+            }).catch(() => { form.classList.remove('is-busy'); appendMsg(log, 'ai', 'The assistant is unavailable.'); });
+        });
+    }
+
+    function appendMsg(log, who, text) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg chat-' + who;
+        div.textContent = text;
+        log.appendChild(div);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    /* ---------- Invoice reader (P6.4): shows extracted fields as text; the user confirms before prefilling ---------- */
+    function initInvoice() {
+        const btn = $('btn-read-invoice');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const file = $('invoice-file').files[0];
+            const out = $('invoice-result');
+            out.textContent = '';
+            if (!file) { out.textContent = 'Choose a PDF first.'; return; }
+            const fd = new FormData();
+            fd.append('invoice', file);
+            btn.classList.add('is-busy');
+            fetch('/api/ai/invoice', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then((r) => r.json()).then((d) => {
+                    btn.classList.remove('is-busy');
+                    if (!d.success) { out.textContent = d.error || 'Could not read the invoice.'; return; }
+                    $('invoice_token').value = d.token;
+                    const f = d.fields || {};
+                    const ver = d.verification || {};
+                    const box = document.createElement('div');
+                    box.className = 'advisory';
+                    const head = document.createElement('div');
+                    head.className = 'advisory-label';
+                    head.textContent = 'AI-generated · advisory · may be wrong';
+                    box.appendChild(head);
+                    const ul = document.createElement('ul');
+                    ul.className = 'advisory-list';
+                    [['Invoice no.', f.invoice_no], ['Seller (beneficiary)', f.seller], ['Currency', f.currency, ver.currency],
+                     ['Total', f.total_amount, ver.total_amount], ['Terms', f.payment_terms]].forEach(([k, v, check]) => {
+                        const li = document.createElement('li');
+                        li.textContent = k + ': ' + (v === null || v === undefined ? 'not found' : v) + (check ? ' (' + check + ')' : '');
+                        ul.appendChild(li);
+                    });
+                    box.appendChild(ul);
+                    if (d.status !== 'OK') {
+                        const p = document.createElement('p'); p.className = 'advisory-note';
+                        p.textContent = 'AI extraction unavailable (' + d.status + '); the exact text check still runs on submit.';
+                        box.appendChild(p);
+                    } else {
+                        const use = document.createElement('button');
+                        use.type = 'button'; use.className = 'btn btn-secondary btn-sm'; use.style.marginTop = '10px';
+                        use.textContent = 'Use these values in the form';
+                        use.addEventListener('click', () => {
+                            if (f.total_amount) $('amount').value = f.total_amount;
+                            if (f.currency && $('sender_currency').querySelector('option[value="' + f.currency + '"]')) $('sender_currency').value = f.currency;
+                            if (f.seller) $('receiver').value = f.seller;
+                            performConversion();
+                        });
+                        box.appendChild(use);
+                    }
+                    out.appendChild(box);
+                }).catch(() => { btn.classList.remove('is-busy'); out.textContent = 'Upload failed.'; });
+        });
+    }
+
+    /* ---------- Natural-language filter ---------- */
+    function initNLFilter() {
+        const form = $('nlq-form');
+        if (!form) return;
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const q = $('nlq-input').value.trim();
+            if (!q) return;
+            form.classList.add('is-busy');
+            jsonPost('/api/ai/nl_filter', { query: q }).then(({ data }) => {
+                form.classList.remove('is-busy');
+                if (data.success && data.query_string !== undefined) { window.location.search = data.query_string; return; }
+                const out = $('nlq-error');
+                if (out) { out.hidden = false; out.textContent = data.error || 'Could not understand that filter.'; }
+            }).catch(() => form.classList.remove('is-busy'));
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initTheme();
+        initFlashes();
+        initNav();
+        initSortable();
+        initCurrencyConverter();
+        initScenarios();
+        initRiskPreview();
+        initSubmitGuard();
+        initLedgerVerify();
+        initAIPanels();
+        initAssistant();
+        initNLFilter();
+        initInvoice();
+    });
+})();

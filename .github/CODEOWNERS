@@ -1,0 +1,5 @@
+# Prompt and guardrail changes need review by the AI owner (LLM04).
+/crosspay/ai/prompts/   @sandysunny99
+/crosspay/ai/guard.py    @sandysunny99
+/crosspay/ai/input_guard.py @sandysunny99
+/crosspay/policy/        @sandysunny99

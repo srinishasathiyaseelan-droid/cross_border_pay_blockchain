@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, tile, decision_badge, risk_badge, kyc_badge, money, ai_label %}
+{% block title %}Review {{ tx.transaction_id }}{% endblock %}
+
+{% block content %}
+<div class="page-head" data-reveal>
+    <div>
+        <h1 class="page-title">{{ tile('scale', 'warning') }}Compliance review</h1>
+        <p class="page-sub"><span class="tx-id">{{ tx.transaction_id }}</span> · {{ tx.sender }} → {{ tx.receiver }} ({{ tx.receiver_country }})</p>
+    </div>
+    <div class="chips">{{ decision_badge(tx.decision) }} {{ risk_badge(tx.risk_level, tx.risk_score) }}
+        {% if tx.feature_source == 'demo_vector' %}<span class="badge badge-warning">{{ icon('zap') }}DEMO VECTOR</span>{% endif %}</div>
+</div>
+
+<div class="grid-aside">
+    {# Facts first: everything here comes from the database #}
+    <div class="stack">
+        <section class="card" aria-labelledby="h-facts" data-reveal>
+            <h2 class="card-title mb-4" id="h-facts">{{ tile('file-text', 'info', 'sm') }}Facts from the database</h2>
+            <dl class="kv-list">
+                <dt>Amount</dt><dd>{{ money(tx.amount, tx.source_currency) }} → {{ money(tx.converted_amount, tx.target_currency) }} <span class="xsmall muted">({{ money(tx.normalized_usd_amount, 'USD') }})</span></dd>
+                <dt>Exchange rate</dt><dd class="num xsmall">1 {{ tx.source_currency }} = {{ tx.exchange_rate }} {{ tx.target_currency }}{% if tx.rate_stale %} · STALE{% endif %}</dd>
+                <dt>Corridor</dt><dd>{{ tx.sender_country }} → {{ tx.receiver_country }} · risk <span class="num">{{ tx.corridor_risk }}</span></dd>
+                <dt>KYC</dt><dd>{% if kyc %}{{ kyc_badge(kyc.status) }}{% else %}missing{% endif %}</dd>
+                <dt>Behaviour</dt><dd>{{ tx.frequency }} payments / 30 days · {{ tx.previous_transactions }} previous · {{ tx.suspicious_transactions }} held or blocked before · {{ tx.account_age }} months</dd>
+                <dt>Model</dt><dd>{{ tx.scoring_engine or 'seed' }}{% if tx.p_low is not none %} · P(LOW/MED/HIGH) <span class="num">{{ tx.p_low }}/{{ tx.p_med }}/{{ tx.p_high }}</span>{% endif %}</dd>
+                <dt>Reason codes</dt><dd><div class="reason-codes">{% for r in tx.policy_reasons_list %}<span class="badge badge-outline num">{{ r }}</span>{% else %}—{% endfor %}</div></dd>
+                <dt>Purpose note</dt><dd>{{ tx.notes or '—' }}</dd>
+                {% if input_flags %}<dt>Input guard</dt><dd><span class="badge badge-danger">{{ icon('alert') }}{{ input_flags|join(', ') }}</span></dd>{% endif %}
+                {% if tx.invoice_flags and tx.invoice_flags != '[]' %}<dt>Invoice check</dt><dd class="num xsmall">{{ tx.invoice_flags }}</dd>{% endif %}
+            </dl>
+        </section>
+
+        <section class="card" aria-labelledby="h-ev" data-reveal>
+            <h2 class="card-title mb-3" id="h-ev">{{ tile('layers', 'brand', 'sm') }}Evidence items</h2>
+            <ul class="factor-list small">{% for e in evidence %}<li><span class="num xsmall muted">{{ e.id }}</span> {{ e.text }}</li>{% endfor %}</ul>
+        </section>
+
+        <section class="card" aria-labelledby="h-hist" data-reveal>
+            <h2 class="card-title mb-3" id="h-hist">{{ tile('clock', 'neutral', 'sm') }}This SME's recent payments</h2>
+            <div class="table-wrap"><table class="table">
+                <thead><tr><th scope="col">Transaction</th><th scope="col">Date</th><th scope="col">Country</th><th scope="col" class="num">USD</th><th scope="col">Risk</th><th scope="col">Decision</th></tr></thead>
+                <tbody>{% for h in history %}<tr><td class="tx-id">{{ h.transaction_id[:16] }}…</td><td class="num xsmall">{{ h.timestamp[:10] }}</td><td>{{ h.receiver_country }}</td><td class="num">{{ "{:,.0f}".format(h.normalized_usd_amount or 0) }}</td><td>{{ risk_badge(h.risk_level) }}</td><td>{{ decision_badge(h.decision) }}</td></tr>
+                {% else %}<tr><td colspan="6" class="table-empty">No other payments.</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </section>
+    </div>
+
+    {# Decision column: the officer acts; AI is collapsed by default (G3) #}
+    <div class="stack">
+        {% if tx.decision == 'HOLD' %}
+        <section class="card" aria-labelledby="h-decide" data-reveal>
+            <h2 class="card-title mb-4" id="h-decide">{{ tile('shield', 'brand', 'sm') }}Your decision</h2>
+            <form method="POST" class="decision-form" data-once>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="field m-0"><label class="field-label" for="reason">Reason, in your own words</label>
+                    <textarea id="reason" name="reason" class="textarea" minlength="20" required aria-describedby="reason-hint"></textarea>
+                    <p class="field-hint" id="reason-hint">At least 20 characters. It must not copy the AI draft; its similarity to the draft is stored.</p></div>
+                <div class="field m-0"><label class="field-label" for="memo">Decision memo <span class="muted">(optional)</span></label>
+                    <textarea id="memo" name="memo" class="textarea" maxlength="4000" placeholder="What you checked"></textarea></div>
+                <div class="btn-row cluster-end">
+                    <button type="submit" name="action" value="reject" class="btn btn-destructive">{{ icon('x') }}Reject</button>
+                    <button type="submit" name="action" value="approve" class="btn btn-success">{{ icon('check') }}Release and settle</button>
+                </div>
+                <p class="xsmall muted">Neither button is pre-selected.</p>
+            </form>
+        </section>
+        {% endif %}
+
+        <details class="advisory collapse" {% if copilot and request.args.get('open') %}open{% endif %} data-reveal>
+            <summary><span class="section-title">{{ tile('sparkles', 'ai', 'sm') }}AI copilot</span>
+                <span class="cluster">{{ ai_label() }}{{ icon('chevron-down', 'chev') }}</span></summary>
+            <div class="advisory-body">
+            {% if copilot %}
+                <p class="advisory-summary">{{ copilot.case_summary }}</p>
+                {% if copilot.checklist %}<p class="advisory-sub">Checks and documents</p>
+                <ul>{% for c in copilot.checklist %}<li>{{ icon('file-check' if c.kind == 'document' else 'search') }} {{ c.item }}</li>{% endfor %}</ul>{% endif %}
+                {% if copilot.risk_for %}<p class="advisory-sub">Points raising concern</p>
+                <ul>{% for p in copilot.risk_for %}<li>{{ p.point }} <span class="num xsmall muted">[{{ p.evidence_id }}]</span></li>{% endfor %}</ul>{% endif %}
+                {% if copilot.risk_against %}<p class="advisory-sub">Points lowering concern</p>
+                <ul>{% for p in copilot.risk_against %}<li>{{ p.point }} <span class="num xsmall muted">[{{ p.evidence_id }}]</span></li>{% endfor %}</ul>{% endif %}
+                <p class="advisory-sub">Draft memo (write your own)</p>
+                <p class="advisory-note pre-wrap">{{ copilot.draft_memo }}</p>
+            {% elif ai_on %}
+                <p class="small text-2">The copilot summarises the evidence and drafts a neutral memo. It never suggests Release or Reject.</p>
+            {% else %}
+                <p class="small text-2">AI is switched off. Decide from the facts.</p>
+            {% endif %}
+            {% if ai_on and tx.decision == 'HOLD' %}
+            <form method="POST" class="mt-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" name="action" value="generate" class="btn btn-ai btn-sm">{{ icon('sparkles') }}{{ 'Regenerate' if copilot else 'Generate' }} copilot draft</button>
+            </form>
+            {% endif %}
+            </div>
+        </details>
+
+        {% if reviews %}
+        <section class="card" aria-labelledby="h-rev" data-reveal>
+            <h2 class="card-title mb-3" id="h-rev">{{ tile('clock', 'neutral', 'sm') }}Review history</h2>
+            {% for r in reviews %}<p class="small"><strong>{{ r.admin_name }}</strong> · {{ r.action }} · <span class="num xsmall muted">{{ r.created_at }}</span><br><span class="text-2">{{ r.reason }}</span>
+                {% if r.ai_agreement is not none %}<br><span class="xsmall muted">similarity to the AI draft <span class="num">{{ r.ai_agreement }}</span></span>{% endif %}</p>{% endfor %}
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

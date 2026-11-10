@@ -1,0 +1,8 @@
+# gitleaks config. The only allowlisted paths are files deleted in P1 that remain in history (commit d12451c).
+# Those keys are public test keys or already compromised (see README security note); purging needs a history rewrite.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "removed _legacy_archive (history only)"
+paths = ['''^_legacy_archive/''']
