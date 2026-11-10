@@ -20,7 +20,7 @@ CIRCUIT_COOLDOWN_S = 60.0
 # Retry-After (or RATE_LIMIT_COOLDOWN_S) and the call falls through to the next provider. A short Retry-After is
 # honoured in place when it fits inside the call's timeout.
 RATE_LIMIT_COOLDOWN_S = 20.0
-RETRY_IN_PLACE_MAX_S = 3.0
+RETRY_IN_PLACE_MAX_S = 10.0  # free tiers reset per-minute token windows within seconds
 
 
 class Router:

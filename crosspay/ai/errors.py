@@ -5,6 +5,7 @@ same categories and Retry-After clamp (60 s); returns an error CODE only (never 
 contain URLs or keys) so the router can store it safely.
 """
 import calendar
+import math
 import email.utils
 import time
 from dataclasses import dataclass
@@ -36,8 +37,15 @@ class Classified:
 def parse_retry_after(value: Optional[str], max_delay: int = 60) -> Optional[int]:
     if not value or not value.strip():
         return None
-    try:
-        return min(max(0, int(value.strip())), max_delay)
+    v = value.strip().lower()
+    try:  # seconds, possibly fractional ("7.66"), or Groq-style durations ("697ms", "2.5s")
+        if v.endswith("ms"):
+            secs = float(v[:-2]) / 1000
+        elif v.endswith("s") and v[:-1].replace(".", "", 1).isdigit():
+            secs = float(v[:-1])
+        else:
+            secs = float(v)
+        return min(max(0, math.ceil(secs)), max_delay)
     except ValueError:
         pass
     parsed = email.utils.parsedate(value)
@@ -53,6 +61,8 @@ def classify(exc: Exception) -> Classified:
         st = exc.response.status_code
         ra = parse_retry_after(exc.response.headers.get("retry-after"))
         if st == 429:
+            if ra is None:  # Groq-style per-minute token window: "x-ratelimit-reset-tokens: 7.2s"
+                ra = parse_retry_after(exc.response.headers.get("x-ratelimit-reset-tokens"))
             return Classified("RATE_LIMITED", True, ra, st)
         if st == 401:
             return Classified("AUTHENTICATION_ERROR", False, None, st)

@@ -75,3 +75,30 @@ def test_selftest_shows_the_reason(app, admin_client, db, fake_llm):
     app.extensions["ai_router"] = Router([Limited()], sleep=lambda s: None)
     page = admin_client.post("/admin/ai", data={"action": "selftest"}).text
     assert "UNAVAILABLE" in page and "LIMITED:RATE_LIMITED" in page
+
+
+def test_retry_after_parsing_accepts_fractions_and_durations():
+    from crosspay.ai.errors import parse_retry_after
+
+    assert parse_retry_after("7.2") == 8 and parse_retry_after("697ms") == 1 and parse_retry_after("2.5s") == 3
+    assert parse_retry_after("5") == 5 and parse_retry_after("900") == 60 and parse_retry_after("soon") is None
+
+
+def test_groq_token_window_header_is_used_when_retry_after_missing():
+    from crosspay.ai.errors import classify
+
+    req = httpx.Request("POST", "https://example.invalid")
+    resp = httpx.Response(429, headers={"x-ratelimit-reset-tokens": "6.4s"}, request=req)
+    assert classify(httpx.HTTPStatusError("429", request=req, response=resp)).retry_after == 7
+
+
+def test_selftest_stops_before_the_request_timeout(app, db, fake_llm, monkeypatch):
+    import time as _time
+
+    from crosspay.ai import tasks
+
+    t = [0.0]
+    monkeypatch.setattr(_time, "monotonic", lambda: t.__setitem__(0, t[0] + 30) or t[0])
+    with app.app_context():
+        out = tasks.self_test(db, 1, delay=0)
+    assert any(s == "SKIPPED" for _, s, _ in out) and len(out) == 7
