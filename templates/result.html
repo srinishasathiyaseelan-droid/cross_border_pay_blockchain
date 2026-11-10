@@ -205,7 +205,7 @@
                 </tr>
                 <tr>
                     <td style="color: var(--text-muted);">Smart Contract Address</td>
-                    <td><span class="font-mono" style="font-size: 0.76rem; color: #a5b4fc;">{{ contract_address }}</span></td>
+                    <td><span class="font-mono" style="font-size: 0.76rem; color: #a5b4fc;">{{ contract_address }}</span> <span class="badge badge-neutral">{{ contract_label }}</span></td>
                 </tr>
                 <tr>
                     <td style="color: var(--text-muted);">Smart Contract State</td>
@@ -243,12 +243,12 @@
                     ⛓️ Inspect on Blockchain Ledger →
                 </a>
             {% elif tx.decision == 'HOLD' and is_admin %}
-                <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline;">
+                <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" class="review-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="action" value="approve">
-                    <button type="submit" class="btn btn-warning">
-                        🛡️ Compliance Review: Release Hold & Settle
-                    </button>
+                    <label class="form-label" for="reason">Officer reason (your own words, min 20 characters)</label>
+                    <textarea id="reason" name="reason" class="form-control" minlength="20" required></textarea>
+                    <button type="submit" name="action" value="approve" class="btn btn-success">Release and settle</button>
+                    <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
                 </form>
             {% endif %}
         </div>

@@ -4,6 +4,14 @@ pragma solidity ^0.8.20;
 /**
  * @title RiskAdaptiveCrossBorderSettlement
  * @dev Academic Prototype: Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments
+ *
+ * REFERENCE DESIGN ONLY. This contract has never been deployed; the Flask app simulates its rules in Python
+ * (crosspay/policy/engine.py) and the address shown in the UI is labelled "simulated".
+ *
+ * Hardening (Nov 2026, audit H7):
+ *  - the risk input can only be submitted by the risk oracle (the CrossPay backend's key) via onlyOracle,
+ *    so a sender can no longer pass its own RiskLevel.LOW;
+ *  - only keccak256(governmentId) is stored on chain, never the raw ID.
  * 
  * Flow:
  * 1. KYC verification check for sender and receiver SMEs
@@ -22,7 +30,7 @@ contract RiskAdaptiveCrossBorderSettlement {
     struct SMECustomer {
         string businessName;
         string country;
-        string governmentId;
+        bytes32 governmentIdHash; // keccak256 of the ID, computed off-chain; the raw ID never goes on chain
         bool isKYCVerified;
         uint256 registeredTimestamp;
     }
@@ -44,6 +52,7 @@ contract RiskAdaptiveCrossBorderSettlement {
     }
 
     address public complianceAdmin;
+    address public riskOracle;
     uint256 public totalTransactionsCount;
     uint256 public approvedCount;
     uint256 public heldCount;
@@ -62,6 +71,11 @@ contract RiskAdaptiveCrossBorderSettlement {
     event HoldReleased(string indexed transactionId, bytes32 newTxHash);
 
     // --- Modifiers ---
+    modifier onlyOracle() {
+        require(msg.sender == riskOracle, "Only the risk oracle can submit risk assessments");
+        _;
+    }
+
     modifier onlyAdmin() {
         require(msg.sender == complianceAdmin, "Only compliance admin can execute this action");
         _;
@@ -72,8 +86,13 @@ contract RiskAdaptiveCrossBorderSettlement {
         _;
     }
 
-    constructor() {
+    constructor(address _riskOracle) {
         complianceAdmin = msg.sender;
+        riskOracle = _riskOracle;
+    }
+
+    function setRiskOracle(address _riskOracle) external onlyAdmin {
+        riskOracle = _riskOracle;
     }
 
     // --- KYC Management ---
@@ -81,13 +100,13 @@ contract RiskAdaptiveCrossBorderSettlement {
         address _sme,
         string memory _businessName,
         string memory _country,
-        string memory _govId,
+        bytes32 _govIdHash,
         bool _verified
     ) external onlyAdmin {
         smeRegistry[_sme] = SMECustomer({
             businessName: _businessName,
             country: _country,
-            governmentId: _govId,
+            governmentIdHash: _govIdHash,
             isKYCVerified: _verified,
             registeredTimestamp: block.timestamp
         });
@@ -96,6 +115,7 @@ contract RiskAdaptiveCrossBorderSettlement {
 
     // --- Core Risk-Adaptive Settlement Engine ---
     function processSettlement(
+        address _sme,
         string memory _txId,
         string memory _receiverBusiness,
         string memory _senderCountry,
@@ -104,7 +124,7 @@ contract RiskAdaptiveCrossBorderSettlement {
         uint256 _amount,
         RiskLevel _risk,
         uint256 _riskScorePercentage
-    ) external onlyVerifiedKYC(msg.sender) returns (SettlementStatus) {
+    ) external onlyOracle onlyVerifiedKYC(_sme) returns (SettlementStatus) {
         require(bytes(_txId).length > 0, "Invalid transaction ID");
         require(_amount > 0, "Amount must be greater than zero");
 
@@ -114,12 +134,12 @@ contract RiskAdaptiveCrossBorderSettlement {
         // Risk-Adaptive Decision Logic
         if (_risk == RiskLevel.LOW) {
             // LOW RISK: Auto-Approve and record on-chain
-            bytes32 txHash = keccak256(abi.encodePacked(_txId, msg.sender, _amount, block.timestamp, block.number));
+            bytes32 txHash = keccak256(abi.encodePacked(_txId, _sme, _amount, block.timestamp, block.number));
             
             ledger[_txId] = CrossBorderTransaction({
                 transactionId: _txId,
-                senderAddress: msg.sender,
-                senderBusiness: smeRegistry[msg.sender].businessName,
+                senderAddress: _sme,
+                senderBusiness: smeRegistry[_sme].businessName,
                 receiverBusiness: _receiverBusiness,
                 senderCountry: _senderCountry,
                 receiverCountry: _receiverCountry,
@@ -141,8 +161,8 @@ contract RiskAdaptiveCrossBorderSettlement {
             // MEDIUM RISK: Hold in compliance escrow for review
             ledger[_txId] = CrossBorderTransaction({
                 transactionId: _txId,
-                senderAddress: msg.sender,
-                senderBusiness: smeRegistry[msg.sender].businessName,
+                senderAddress: _sme,
+                senderBusiness: smeRegistry[_sme].businessName,
                 receiverBusiness: _receiverBusiness,
                 senderCountry: _senderCountry,
                 receiverCountry: _receiverCountry,
@@ -164,8 +184,8 @@ contract RiskAdaptiveCrossBorderSettlement {
             // HIGH RISK: Block transaction and strictly reject settlement
             ledger[_txId] = CrossBorderTransaction({
                 transactionId: _txId,
-                senderAddress: msg.sender,
-                senderBusiness: smeRegistry[msg.sender].businessName,
+                senderAddress: _sme,
+                senderBusiness: smeRegistry[_sme].businessName,
                 receiverBusiness: _receiverBusiness,
                 senderCountry: _senderCountry,
                 receiverCountry: _receiverCountry,

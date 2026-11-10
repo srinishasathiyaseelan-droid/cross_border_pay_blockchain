@@ -33,6 +33,9 @@
             <a href="{{ url_for('payments.transactions', status='BLOCKED') }}" class="btn btn-sm {% if status_filter == 'BLOCKED' %}btn-primary{% else %}btn-secondary{% endif %}">
                 🔴 Blocked
             </a>
+            <a href="{{ url_for('payments.transactions', status='REJECTED') }}" class="btn btn-sm {% if status_filter == 'REJECTED' %}btn-primary{% else %}btn-secondary{% endif %}">
+                Rejected
+            </a>
         </div>
 
         <form method="GET" action="{{ url_for('payments.transactions') }}" style="display: flex; gap: 8px;">
@@ -113,6 +116,8 @@
                                     <span class="badge badge-approved">APPROVED</span>
                                 {% elif tx.decision == 'HOLD' %}
                                     <span class="badge badge-hold">HOLD</span>
+                                {% elif tx.decision == 'REJECTED' %}
+                                    <span class="badge badge-rejected">REJECTED</span>
                                 {% else %}
                                     <span class="badge badge-blocked">BLOCKED</span>
                                 {% endif %}
@@ -142,13 +147,7 @@
                                     View Receipt
                                 </a>
                                 {% if tx.decision == 'HOLD' and is_admin %}
-                                    <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" style="display: inline-block; margin-left: 4px;">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <input type="hidden" name="action" value="approve">
-                                        <button type="submit" class="btn btn-warning btn-sm" title="Compliance Release">
-                                            ✓ Release
-                                        </button>
-                                    </form>
+                                    <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-warning btn-sm">Review</a>
                                 {% endif %}
                             </td>
                         </tr>

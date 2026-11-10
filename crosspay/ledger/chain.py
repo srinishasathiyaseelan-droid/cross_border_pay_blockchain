@@ -1,328 +1,210 @@
-"""
-Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments
-Module: Blockchain Ledger & Smart Contract Simulation Engine
+"""Simulated settlement ledger (H2, H7, M3, M4).
 
-Features:
-- Cryptographic SHA-256 block hashing and tamper-proof chain verification
-- Proof-of-Work (PoW) consensus simulation for block mining
-- Smart Contract execution rules mirroring the Solidity contract:
-    * KYC Validation Enforcement
-    * LOW RISK -> Auto-Approve -> Smart Contract execution -> Block mined on-chain
-    * MEDIUM RISK -> Hold in Escrow -> Pending manual verification -> Not mined
-    * HIGH RISK -> Blocked -> Smart Contract rejects -> Ledger settlement denied
-- Persistent storage to JSON ledger file
+- PoW blocks are built in memory inside the payment's DB transaction and stored in the HMAC-signed audit chain
+  (crosspay/ledger/audit.py). The audit chain is the source of truth.
+- The JSON file at LEDGER_PATH is only a derived explorer view, rebuilt from the audit chain after each commit,
+  written atomically (temp file + os.replace) under a file lock, and not tracked in git.
+- Every hash is deterministic (no time.time()), so blocks and transaction hashes can be re-verified.
+- verify() checks the genesis block, PoW links and difficulty, the audit chain HMACs, and that each transaction row
+  still matches its signed audit record.
 """
-
 import hashlib
 import json
+import logging
 import os
+import threading
 import time
-from datetime import datetime
+
+from .audit import AuditChain, canonical
+from .filelock import FileLock
+
+log = logging.getLogger(__name__)
+
+GENESIS_TIMESTAMP = "2026-01-01T00:00:00Z"
+GENESIS_TX = [{
+    "transaction_id": "GENESIS-0000",
+    "sender": "SME-SYSTEM-ROOT",
+    "receiver": "NETWORK-GENESIS",
+    "amount": 0.0,
+    "currency": "SYS",
+    "decision": "APPROVED",
+    "notes": "Genesis block - CrossPay simulated settlement ledger",
+}]
+# Fields of a transaction row that are signed into its audit record and re-checked by verify().
+SIGNED_FIELDS = ("transaction_id", "user_id", "sender", "receiver", "sender_country", "receiver_country",
+                 "source_currency", "target_currency", "amount", "exchange_rate", "converted_amount",
+                 "normalized_usd_amount", "risk_level", "risk_score", "decision")
+NOT_RECORDED = {
+    "HOLD": "PENDING_ADDITIONAL_VERIFICATION",
+    "BLOCKED": "NOT RECORDED (SECURITY BLOCK)",
+    "REJECTED": "NOT RECORDED (REJECTED)",
+}
 
 
 class Block:
     def __init__(self, index, timestamp, transactions, previous_hash, nonce=0, hash_val=None):
         self.index = index
         self.timestamp = timestamp
-        self.transactions = transactions  # List of approved transaction dicts
+        self.transactions = transactions
         self.previous_hash = previous_hash
         self.nonce = nonce
         self.hash = hash_val or self.calculate_hash()
 
-    def calculate_hash(self):
-        block_content = {
-            "index": self.index,
-            "timestamp": self.timestamp,
-            "transactions": self.transactions,
-            "previous_hash": self.previous_hash,
-            "nonce": self.nonce
-        }
-        encoded = json.dumps(block_content, sort_keys=True).encode()
-        return hashlib.sha256(encoded).hexdigest()
+    def calculate_hash(self) -> str:
+        content = {"index": self.index, "timestamp": self.timestamp, "transactions": self.transactions,
+                   "previous_hash": self.previous_hash, "nonce": self.nonce}
+        return hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
 
-    def mine_block(self, difficulty=2):
+    def mine(self, difficulty: int) -> "Block":
         target = "0" * difficulty
+        self.nonce = 0
+        self.hash = self.calculate_hash()
         while not self.hash.startswith(target):
             self.nonce += 1
             self.hash = self.calculate_hash()
+        return self
 
-    def to_dict(self):
-        return {
-            "index": self.index,
-            "timestamp": self.timestamp,
-            "transactions": self.transactions,
-            "previous_hash": self.previous_hash,
-            "nonce": self.nonce,
-            "hash": self.hash
-        }
+    def to_dict(self) -> dict:
+        return {"index": self.index, "timestamp": self.timestamp, "transactions": self.transactions,
+                "previous_hash": self.previous_hash, "nonce": self.nonce, "hash": self.hash}
 
     @classmethod
-    def from_dict(cls, data):
-        return cls(
-            index=data["index"],
-            timestamp=data["timestamp"],
-            transactions=data["transactions"],
-            previous_hash=data["previous_hash"],
-            nonce=data["nonce"],
-            hash_val=data["hash"]
-        )
+    def from_dict(cls, d) -> "Block":
+        return cls(d["index"], d["timestamp"], d["transactions"], d["previous_hash"], d["nonce"], d["hash"])
 
 
-class Blockchain:
-    def __init__(self, ledger_path, difficulty=2):
-        self.ledger_path = ledger_path
+def genesis_block(difficulty: int) -> Block:
+    return Block(0, GENESIS_TIMESTAMP, GENESIS_TX, "0" * 64).mine(difficulty)
+
+
+def settlement_record(row: dict, decision: str, decided_at: str) -> dict:
+    """The deterministic payload that is hashed, signed and (if approved) mined."""
+    rec = {k: row.get(k) for k in SIGNED_FIELDS}
+    rec["decision"] = decision
+    rec["decided_at"] = decided_at
+    return rec
+
+
+def tx_hash(record: dict) -> str:
+    return "0x" + hashlib.sha256(canonical(record).encode()).hexdigest()
+
+
+class Ledger:
+    def __init__(self, view_path: str, difficulty: int, audit: AuditChain):
+        self.view_path = view_path
         self.difficulty = difficulty
-        self.chain = []
-        self.load_chain()
+        self.audit = audit
+        self._genesis = genesis_block(difficulty)
+        self._lock = threading.Lock()
 
-    def create_genesis_block(self):
-        genesis_tx = [{
-            "transaction_id": "GENESIS-0000",
-            "sender": "SME-SYSTEM-ROOT",
-            "receiver": "NETWORK-GENESIS",
-            "amount": 0.0,
-            "currency": "SYS",
-            "risk_level": "LOW",
-            "status": "APPROVED",
-            "smart_contract_status": "CONTRACT_INITIALIZED",
-            "timestamp": "2026-01-01 00:00:00",
-            "notes": "Genesis Block - Risk-Adaptive SME Cross-Border Settlement Network initialized"
-        }]
-        genesis_block = Block(0, "2026-01-01 00:00:00", genesis_tx, "0" * 64, nonce=42)
-        genesis_block.mine_block(self.difficulty)
-        self.chain.append(genesis_block)
-        self.save_chain()
+    # ---- reading -------------------------------------------------------------------------------------------
+    def blocks(self, conn) -> list:
+        out = [self._genesis]
+        for r in conn.execute("SELECT payload FROM audit_chain WHERE record_type IN ('decision', 'release', 'seed') "
+                              "ORDER BY id ASC"):
+            block = json.loads(r[0]).get("block")
+            if block:
+                out.append(Block.from_dict(block))
+        return out
 
-    def get_latest_block(self):
-        if not self.chain:
-            self.create_genesis_block()
-        return self.chain[-1]
+    def build_block(self, conn, record: dict, timestamp: str) -> Block:
+        """Must be called inside the DB transaction that will also append the audit record."""
+        last = self.blocks(conn)[-1]
+        return Block(last.index + 1, timestamp, [record], last.hash).mine(self.difficulty)
 
-    def add_block_for_transaction(self, approved_tx):
-        """
-        Only APPROVED transactions can be added to the blockchain ledger!
-        Creates and mines a new block containing this settlement.
-        """
-        latest_block = self.get_latest_block()
-        new_block = Block(
-            index=len(self.chain),
-            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            transactions=[approved_tx],
-            previous_hash=latest_block.hash
-        )
-        new_block.mine_block(self.difficulty)
-        self.chain.append(new_block)
-        self.save_chain()
-        return new_block
+    # ---- verification --------------------------------------------------------------------------------------
+    def verify(self, conn) -> dict:
+        blocks = self.blocks(conn)
+        result = {"valid": True, "message": "", "total_blocks": len(blocks), "audit_records": 0, "mismatches": []}
+        expected_genesis = genesis_block(self.difficulty)
+        if blocks[0].hash != expected_genesis.hash:
+            return {**result, "valid": False, "message": "Genesis block does not match the expected genesis."}
+        for prev, cur in zip(blocks, blocks[1:]):
+            if cur.hash != cur.calculate_hash():
+                return {**result, "valid": False, "message": f"Block {cur.index} hash does not match its contents."}
+            if cur.previous_hash != prev.hash:
+                return {**result, "valid": False, "message": f"Block {cur.index} is not linked to block {prev.index}."}
+            if not cur.hash.startswith("0" * self.difficulty):
+                return {**result, "valid": False, "message": f"Block {cur.index} fails the PoW difficulty."}
+            if cur.index != prev.index + 1:
+                return {**result, "valid": False, "message": f"Block {cur.index} has a gap in numbering."}
+        ok, msg, n = self.audit.verify(conn)
+        result["audit_records"] = n
+        if not ok:
+            return {**result, "valid": False, "message": msg}
+        mismatches = self.consistency(conn)
+        if mismatches:
+            return {**result, "valid": False, "mismatches": mismatches,
+                    "message": f"{len(mismatches)} transaction row(s) differ from their signed audit record: "
+                               + ", ".join(mismatches[:5])}
+        result["message"] = (f"Genesis, {len(blocks) - 1} settlement block(s) and {n} HMAC-signed audit record(s) "
+                             "verified; every transaction row matches its audit record.")
+        return result
 
-    def is_chain_valid(self):
-        for i in range(1, len(self.chain)):
-            current = self.chain[i]
-            previous = self.chain[i - 1]
+    def consistency(self, conn) -> list:
+        latest = {}
+        for r in conn.execute("SELECT tx_id, payload FROM audit_chain ORDER BY id ASC"):
+            latest[r[0]] = json.loads(r[1])
+        bad = []
+        for tx_id, payload in latest.items():
+            row = conn.execute("SELECT * FROM transactions WHERE transaction_id = ?", (tx_id,)).fetchone()
+            rec = payload.get("record")
+            if row is None or rec is None:
+                bad.append(tx_id)
+                continue
+            row = dict(row)
+            for k in SIGNED_FIELDS:
+                if k == "decision":
+                    continue
+                a, b = row.get(k), rec.get(k)
+                if isinstance(a, float) or isinstance(b, float):
+                    if a is None or b is None or abs(float(a) - float(b)) > 1e-9:
+                        bad.append(tx_id)
+                        break
+                elif a != b:
+                    bad.append(tx_id)
+                    break
+            else:
+                if row["decision"] != payload.get("decision") or row.get("blockchain_hash") != payload.get("tx_hash_or_label"):
+                    bad.append(tx_id)
+        return bad
 
-            # Re-calculate hash check
-            if current.hash != current.calculate_hash():
-                return False, f"Block {current.index} hash mismatch!"
-
-            # Check chain link
-            if current.previous_hash != previous.hash:
-                return False, f"Block {current.index} previous_hash does not match Block {previous.index} hash!"
-
-            # Check proof of work
-            if not current.hash.startswith("0" * self.difficulty):
-                return False, f"Block {current.index} does not satisfy difficulty requirement!"
-
-        return True, "Blockchain ledger integrity verified. All cryptographic hashes intact."
-
-    def save_chain(self):
-        try:
-            data = [block.to_dict() for block in self.chain]
-            os.makedirs(os.path.dirname(os.path.abspath(self.ledger_path)), exist_ok=True)
-            with open(self.ledger_path, "w") as f:
-                json.dump(data, f, indent=4)
-        except Exception as e:
-            print(f"Error saving blockchain ledger: {e}")
-
-    def load_chain(self):
-        if os.path.exists(self.ledger_path):
-            try:
-                with open(self.ledger_path, "r") as f:
-                    data = json.load(f)
-                    self.chain = [Block.from_dict(b) for b in data]
-                    if not self.chain:
-                        self.create_genesis_block()
-            except Exception as e:
-                print(f"Error loading blockchain ledger: {e}")
-                self.create_genesis_block()
-        else:
-            self.create_genesis_block()
+    # ---- derived JSON view ---------------------------------------------------------------------------------
+    def export_view(self, conn) -> None:
+        data = [b.to_dict() for b in self.blocks(conn)]
+        path = os.path.abspath(self.view_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"
+        with self._lock, FileLock(path + ".lock"):
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            for attempt in range(20):
+                try:
+                    os.replace(tmp, path)
+                    return
+                except PermissionError:  # Windows: a reader has the file open; retry briefly
+                    time.sleep(0.05 * (attempt + 1))
+            log.error("Could not replace ledger view %s; it will be rebuilt on the next commit", path)
 
 
 class SmartContractEngine:
-    """
-    Executes the Smart Contract Settlement logic.
-    Governs whether a transaction is Approved, Held, or Blocked.
-    """
+    """Python simulation of blockchain/smart_contract.sol. The decision itself comes from policy.engine."""
+
     CONTRACT_ADDRESS = "0x9E7bC432851Db070c797bAf315cFE0D39B8F2A18"
-    ABI_VERSION = "v1.2.0-RiskAdaptive"
+    CONTRACT_LABEL = "simulated (reference design, not deployed)"
+    ABI_VERSION = "v1.3.0-RiskAdaptive-sim"
 
-    def __init__(self, blockchain_instance):
-        self.blockchain = blockchain_instance
+    def __init__(self, config):
+        self.review_at = float(config["REVIEW_AT"])
+        self.block_at = float(config["BLOCK_AT"])
 
-    @staticmethod
-    def preview_decision(scored):
-        return {"LOW": "APPROVED", "MEDIUM": "HOLD"}.get(scored["level"], "BLOCKED")
+    def decide(self, kyc_status, risk_level, risk_score, overrides=(), ai_escalations=()):
+        from ..policy import engine
 
-    def evaluate_settlement(self, kyc_status, tx_data, risk_level, risk_score):
-        """
-        Executes smart contract settlement rules:
-        1. KYC requirement: SME must be VERIFIED.
-        2. Risk Level Evaluation:
-           - LOW -> APPROVE -> Mint block on Blockchain -> Smart contract executed
-           - MEDIUM -> HOLD -> Place in compliance hold -> Block NOT mined
-           - HIGH -> BLOCK -> Reject transaction -> Block NOT mined
-        """
-        tx_id = tx_data['transaction_id']
+        return engine.evaluate(kyc_status, risk_level, risk_score, self.review_at, self.block_at,
+                               overrides=overrides, ai_escalations=ai_escalations)
 
-        # Rule 1: KYC Validation check
-        if kyc_status != 'VERIFIED':
-            return {
-                'decision': 'REJECTED',
-                'risk_level': risk_level,
-                'risk_score': risk_score,
-                'smart_contract_status': 'REJECTED_UNVERIFIED_KYC',
-                'blockchain_hash': 'NOT RECORDED (KYC UNVERIFIED)',
-                'block_number': None,
-                'contract_address': self.CONTRACT_ADDRESS,
-                'execution_message': 'Smart Contract Guard: SME account KYC is not verified.'
-            }
-
-        # Rule 2: Risk-Adaptive Evaluation
-        if risk_level == 'LOW':
-            decision = 'APPROVED'
-            smart_contract_status = 'EXECUTED_SETTLED'
-            
-            # Generate deterministic cryptographic transaction payload hash including currency conversion snapshot
-            src_curr = tx_data.get('source_currency', tx_data.get('currency', 'USD'))
-            tgt_curr = tx_data.get('target_currency', src_curr)
-            conv_amt = tx_data.get('converted_amount', tx_data['amount'])
-            rate = tx_data.get('exchange_rate', 1.0)
-            provider = tx_data.get('exchange_rate_provider', 'N/A')
-            rate_time = tx_data.get('rate_timestamp', 'N/A')
-
-            payload_str = f"{tx_id}:{tx_data['sender']}:{tx_data['receiver']}:{tx_data['amount']}:{src_curr}:{conv_amt}:{tgt_curr}:{rate}:{risk_score}:{time.time()}"
-            tx_hash = "0x" + hashlib.sha256(payload_str.encode()).hexdigest()
-            
-            # Package transaction for blockchain recording
-            record_tx = {
-                "transaction_id": tx_id,
-                "sender": tx_data['sender'],
-                "receiver": tx_data['receiver'],
-                "sender_country": tx_data.get('sender_country', 'N/A'),
-                "receiver_country": tx_data.get('receiver_country', 'N/A'),
-                "amount": tx_data['amount'],
-                "currency": src_curr,
-                "source_currency": src_curr,
-                "target_currency": tgt_curr,
-                "exchange_rate": rate,
-                "converted_amount": conv_amt,
-                "exchange_rate_provider": provider,
-                "rate_timestamp": rate_time,
-                "risk_level": risk_level,
-                "risk_score": risk_score,
-                "decision": decision,
-                "tx_hash": tx_hash,
-                "smart_contract_status": smart_contract_status,
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-
-            # Mine and add block to local blockchain
-            block = self.blockchain.add_block_for_transaction(record_tx)
-            
-            return {
-                'decision': decision,
-                'risk_level': risk_level,
-                'risk_score': risk_score,
-                'smart_contract_status': smart_contract_status,
-                'blockchain_hash': tx_hash,
-                'block_number': block.index,
-                'contract_address': self.CONTRACT_ADDRESS,
-                'block_hash': block.hash,
-                'execution_message': f'Smart Contract Settlement executed successfully on Block #{block.index}. Ledger updated.'
-            }
-
-        elif risk_level == 'MEDIUM':
-            decision = 'HOLD'
-            smart_contract_status = 'HELD_IN_ESCROW'
-            
-            return {
-                'decision': decision,
-                'risk_level': risk_level,
-                'risk_score': risk_score,
-                'smart_contract_status': smart_contract_status,
-                'blockchain_hash': 'PENDING_ADDITIONAL_VERIFICATION',
-                'block_number': None,
-                'contract_address': self.CONTRACT_ADDRESS,
-                'execution_message': 'Smart Contract Trigger: Moderate risk pattern detected. Transaction held in escrow pending secondary compliance audit.'
-            }
-
-        else:  # HIGH RISK
-            decision = 'BLOCKED'
-            smart_contract_status = 'REJECTED_BLOCKED'
-
-            return {
-                'decision': decision,
-                'risk_level': risk_level,
-                'risk_score': risk_score,
-                'smart_contract_status': smart_contract_status,
-                'blockchain_hash': 'NOT RECORDED (SECURITY BLOCK)',
-                'block_number': None,
-                'contract_address': self.CONTRACT_ADDRESS,
-                'execution_message': 'Smart Contract Policy Rule: High risk anomaly detected. Transaction blocked to prevent fraudulent SME drainage.'
-            }
-
-    def release_hold(self, tx_data):
-        """
-        Compliance administrator releases a previously held transaction.
-        Mines block and completes smart contract settlement.
-        """
-        tx_id = tx_data['transaction_id']
-        src_curr = tx_data.get('source_currency', tx_data.get('currency', 'USD'))
-        tgt_curr = tx_data.get('target_currency', src_curr)
-        conv_amt = tx_data.get('converted_amount', tx_data['amount'])
-        rate = tx_data.get('exchange_rate', 1.0)
-        provider = tx_data.get('exchange_rate_provider', 'N/A')
-        rate_time = tx_data.get('rate_timestamp', 'N/A')
-
-        payload_str = f"RELEASED:{tx_id}:{tx_data['sender']}:{tx_data['amount']}:{src_curr}:{conv_amt}:{tgt_curr}:{time.time()}"
-        tx_hash = "0x" + hashlib.sha256(payload_str.encode()).hexdigest()
-
-        record_tx = {
-            "transaction_id": tx_id,
-            "sender": tx_data['sender'],
-            "receiver": tx_data['receiver'],
-            "sender_country": tx_data.get('sender_country', 'N/A'),
-            "receiver_country": tx_data.get('receiver_country', 'N/A'),
-            "amount": tx_data['amount'],
-            "currency": src_curr,
-            "source_currency": src_curr,
-            "target_currency": tgt_curr,
-            "exchange_rate": rate,
-            "converted_amount": conv_amt,
-            "exchange_rate_provider": provider,
-            "rate_timestamp": rate_time,
-            "risk_level": tx_data.get('risk_level', 'MEDIUM'),
-            "risk_score": tx_data.get('risk_score', 50.0),
-            "decision": "APPROVED",
-            "tx_hash": tx_hash,
-            "smart_contract_status": "EXECUTED_SETTLED_POST_AUDIT",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-
-        block = self.blockchain.add_block_for_transaction(record_tx)
-        return {
-            'tx_hash': tx_hash,
-            'block_number': block.index,
-            'block_hash': block.hash
-        }
-
+    def preview_decision(self, scored) -> str:
+        return self.decide("VERIFIED", scored["level"], scored["score"]).decision

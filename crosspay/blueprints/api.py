@@ -32,9 +32,9 @@ def _same_origin():
 @bp.route("/validate_chain")
 @login_required
 def validate_chain():
-    chain = current_app.extensions["blockchain"]
-    is_valid, msg = chain.is_chain_valid()
-    return jsonify({"valid": is_valid, "message": msg, "total_blocks": len(chain.chain)})
+    from ..db import get_db
+
+    return jsonify(current_app.extensions["ledger"].verify(get_db()))
 
 
 @bp.route("/metrics")

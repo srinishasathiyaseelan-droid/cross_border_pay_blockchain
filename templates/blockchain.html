@@ -37,19 +37,19 @@
         </div>
         <div>
             <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Consensus Mechanism</div>
-            <div style="font-weight: 700; color: #fff; margin-top: 2px;">Proof-of-Work (PoW Difficulty: 2)</div>
+            <div style="font-weight: 700; color: #fff; margin-top: 2px;">Proof-of-Work (difficulty {{ difficulty }}) + HMAC-SHA256 audit chain ({{ audit_records }} records)</div>
         </div>
         <div>
             <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Smart Contract Address</div>
-            <div class="font-mono" style="font-size: 0.74rem; color: #a5b4fc; margin-top: 2px;">{{ contract_address }}</div>
+            <div class="font-mono" style="font-size: 0.74rem; color: #a5b4fc; margin-top: 2px;">{{ contract_address }}</div><div class="muted-sm">{{ contract_label }}</div>
         </div>
         <div>
             <div style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Chain State Verification</div>
             <div style="font-weight: 700; color: #34d399; margin-top: 2px;">
                 {% if is_valid %}
-                    ✓ Cryptographically Intact ({{ chain|length }} Blocks)
+                    ✓ Verified ({{ chain|length }} blocks)
                 {% else %}
-                    ✕ Integrity Error Detected
+                    ✕ {{ validation_msg }}
                 {% endif %}
             </div>
         </div>
@@ -109,9 +109,9 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <strong style="color: #34d399; font-size: 0.95rem;">
-                                {{ "{:,.2f}".format(tx.amount) }} {{ tx.currency }}
+                                {{ "{:,.2f}".format(tx.amount or 0) }} {{ tx.source_currency or tx.currency }}
                             </strong>
-                            <span class="badge badge-low" style="font-size: 0.68rem;">{{ tx.status or 'APPROVED' }}</span>
+                            <span class="badge badge-low" style="font-size: 0.68rem;">{{ tx.decision or 'APPROVED' }}</span>
                         </div>
                     </div>
                 {% endfor %}

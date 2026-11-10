@@ -96,6 +96,44 @@ SCHEMA = [
     )""",
 ]
 
+SCHEMA += [
+    # P3: signed audit chain (source of truth for the ledger), double-submit guard, officer reviews
+    """
+    CREATE TABLE IF NOT EXISTS audit_chain (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        record_id TEXT UNIQUE NOT NULL,
+        tx_id TEXT NOT NULL,
+        record_type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        previous_hash TEXT NOT NULL UNIQUE,
+        current_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL
+    )""",
+    "CREATE INDEX IF NOT EXISTS ix_audit_chain_tx ON audit_chain (tx_id)",
+    """
+    CREATE TABLE IF NOT EXISTS idempotency_keys (
+        user_id INTEGER NOT NULL,
+        key TEXT NOT NULL,
+        tx_id TEXT,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, key)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS hold_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tx_id TEXT NOT NULL,
+        admin_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        copilot_memo TEXT,
+        ai_draft TEXT,
+        ai_agreement REAL,
+        kyc_status_at_review TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY(admin_id) REFERENCES users(id)
+    )""",
+]
+
 # Additive migrations: (table, column, definition). Applied when the column is missing.
 COLUMNS = [
     # P2: honest risk pipeline
@@ -109,6 +147,11 @@ COLUMNS = [
     ("kyc", "reviewed_by", "INTEGER"),
     ("kyc", "review_reason", "TEXT"),
     ("kyc", "reviewed_at", "TEXT"),
+    # P3: ledger consistency
+    ("transactions", "rate_stale", "INTEGER DEFAULT 0"),
+    ("transactions", "policy_reasons", "TEXT"),
+    ("transactions", "decided_at", "TEXT"),
+    ("transactions", "idempotency_key", "TEXT"),
 ]
 
 
@@ -116,6 +159,7 @@ def init_db(app) -> None:
     os.makedirs(os.path.dirname(os.path.abspath(app.config["DB_PATH"])), exist_ok=True)
     conn = connect(app.config["DB_PATH"])
     try:
+        conn.execute("PRAGMA journal_mode = WAL")
         for stmt in SCHEMA:
             conn.execute(stmt)
         for table, col, definition in COLUMNS:

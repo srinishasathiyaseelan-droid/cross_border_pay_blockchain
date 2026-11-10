@@ -101,3 +101,45 @@ and country validation; preview equals the stored score and writes nothing; demo
 outside DEMO_MODE.
 
 **How verified:** `pytest -q` → 60 passed.
+
+## P3 — Ledger and database consistency (H2, H7, M3, M4, M8, M9, L2, L3)
+
+**Findings fixed**
+- **H2** Transaction IDs are `TX-` + ULID (48-bit ms time + 80 random bits). `crosspay/services/settlement.py` runs,
+  inside one `BEGIN IMMEDIATE` transaction: claim idempotency key → INSERT as `PENDING_SETTLEMENT` → policy decision →
+  build the PoW block in memory → UPDATE the row → append the HMAC audit record carrying the block → COMMIT. The
+  explorer JSON is written only after COMMIT; any exception rolls back row, audit record and block together.
+  A hidden `idempotency_key` + UNIQUE `(user_id, key)` row stops a double-submit (ported from Netvrio, SQLite not Redis).
+- **H7** Solidity: `onlyOracle` on `processSettlement` (risk comes from the oracle, not the sender), `bytes32
+  governmentIdHash` instead of the raw ID, header states it is a reference design. The UI labels the contract address
+  "simulated (reference design, not deployed)".
+- **M3** The audit chain in SQLite is the source of truth. `blockchain/blockchain_ledger.json` is untracked; the
+  explorer view lives at `LEDGER_PATH` (default `instance/`), is rebuilt from the audit chain, and is written via temp
+  file + `os.replace` under a cross-process file lock. Fixture rows get the same signed history at startup, so block #1
+  is TX-2026-8801 in both the DB and the ledger.
+- **M4** `crosspay/ledger/audit.py` (ported from Netvrio `audit_log.py`): HMAC-SHA256 with `LEDGER_SIGNING_KEY`,
+  UNIQUE(previous_hash) fork guard, `verify()` and `verify_incremental()`. `Ledger.verify()` checks the genesis block,
+  PoW hash/link/difficulty/numbering, the HMAC chain, and that every transaction row matches its signed audit record.
+  Transaction hashes are SHA-256 over a canonical record (no `time.time()`). PoW difficulty defaults to 3 (config).
+- **M8** Stale-rate policy: on an API failure the last good rates are served for up to
+  `EXCHANGE_RATE_MAX_STALE_HOURS` (24) and flagged `stale=true` (stored as `rate_stale`); `is_cached` now means a real
+  cache hit.
+- **M9** `hold_reviews` table (tx, admin, action, reason ≥ 20 chars, KYC status at review, time); KYC is re-checked
+  before a release; officer actions are signed into the audit chain.
+- **L2** New timestamps are ISO-8601 UTC (`2026-11-10T12:00:00Z`), provider rate times are normalised.
+- **L3** `REJECTED` is a first-class decision: KYC gate and officer rejections, with its own filter and badge.
+- `crosspay/policy/engine.py` (ported from Netvrio): thresholds `REVIEW_AT=40`, `BLOCK_AT=80` from config; the model's
+  class can only tighten the outcome; deterministic overrides and the AI escalation hook are stricter-only.
+
+**Files:** `crosspay/ledger/{audit,chain,filelock}.py`, `crosspay/policy/engine.py`, `crosspay/security/idempotency.py`,
+`crosspay/services/{settlement,currency}.py`, `crosspay/util.py`, `crosspay/db.py`, blueprints, templates,
+`blockchain/smart_contract.sol`; `blockchain/blockchain_ledger.json` removed from git.
+
+**Tests added:** `tests/test_ledger_p3.py` — forced IntegrityError after the decision → no row, no audit record, no
+block, view unchanged; edited audit payload → HMAC failure; edited transaction row → mismatch reported; re-signing
+without the key detected; double-submit → one transaction; 10 concurrent submits → 10 rows, contiguous blocks, valid
+chain, view in sync; release needs a ≥ 20-char reason and records a review; release re-checks KYC; REJECTED filter;
+stale-rate window; ISO timestamps; policy thresholds, KYC gate, AI escalations never lower and never block,
+no LLM parameter in the policy signature; Solidity hardening present.
+
+**How verified:** `pytest -q` → 98 passed.

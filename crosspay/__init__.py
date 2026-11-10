@@ -49,13 +49,23 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
 
     csrf = CSRFProtect(app)  # H4
 
+    from .ledger.audit import AuditChain
+    from .ledger.chain import Ledger, SmartContractEngine
     from .services.currency import CurrencyService
-    from .ledger.chain import Blockchain, SmartContractEngine
+    from .services.settlement import bootstrap_ledger
 
-    chain = Blockchain(app.config["LEDGER_PATH"], difficulty=2)
-    app.extensions["currency"] = CurrencyService()
-    app.extensions["blockchain"] = chain
-    app.extensions["contract"] = SmartContractEngine(chain)
+    audit = AuditChain(app.config["LEDGER_SIGNING_KEY"])
+    ledger = Ledger(app.config["LEDGER_PATH"], int(app.config["POW_DIFFICULTY"]), audit)
+    app.extensions["currency"] = CurrencyService(max_stale_hours=app.config["EXCHANGE_RATE_MAX_STALE_HOURS"])
+    app.extensions["audit"] = audit
+    app.extensions["ledger"] = ledger
+    app.extensions["contract"] = SmartContractEngine(app.config)
+    conn = dbmod.connect(app.config["DB_PATH"])
+    try:
+        bootstrap_ledger(conn, ledger, audit)  # M3: fixtures get the same signed history as live payments
+        ledger.export_view(conn)
+    finally:
+        conn.close()
     app.extensions["model"] = _load_model(app)
     from .services.scoring import Scorer
 

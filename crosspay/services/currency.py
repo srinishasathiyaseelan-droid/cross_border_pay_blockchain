@@ -119,6 +119,20 @@ COUNTRY_TO_DEFAULT_CURRENCY = {
     "Pakistan": "USD"
 }
 
+def _iso_utc(value) -> str:
+    """Provider timestamps ('Sat, 24 Oct 2026 00:00:01 +0000') -> '2026-10-24T00:00:01Z'."""
+    from email.utils import parsedate_to_datetime
+
+    dt = None
+    if value:
+        try:
+            dt = parsedate_to_datetime(str(value))
+        except (TypeError, ValueError):
+            dt = None
+    dt = (dt or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0)
+    return dt.isoformat().replace("+00:00", "Z")
+
+
 # -------------------------------------------------------------------------
 # Custom Exceptions
 # -------------------------------------------------------------------------
@@ -143,9 +157,15 @@ class ExchangeRateAPIError(CurrencyConversionError):
 # Exchange Rate Service Implementation
 # -------------------------------------------------------------------------
 class CurrencyService:
-    def __init__(self):
+    def __init__(self, max_stale_hours: float = None):
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = threading.Lock()
+        if max_stale_hours is None:
+            try:
+                max_stale_hours = float(os.environ.get("EXCHANGE_RATE_MAX_STALE_HOURS", "24"))
+            except ValueError:
+                max_stale_hours = 24.0
+        self.max_stale_seconds = max_stale_hours * 3600
         
     @property
     def api_key(self) -> Optional[str]:
@@ -281,10 +301,8 @@ class CurrencyService:
         if not rates_dict or not isinstance(rates_dict, dict):
             raise ExchangeRateAPIError("Exchange Rate API response missing valid 'rates' dictionary.")
 
-        # Extract timestamp
-        time_last_update = data.get("time_last_update_utc")
-        if not time_last_update:
-            time_last_update = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S UTC")
+        # Provider timestamp, normalised to ISO-8601 UTC (L2)
+        time_last_update = _iso_utc(data.get("time_last_update_utc"))
 
         provider = data.get("provider") or self.provider_name
 
@@ -313,18 +331,20 @@ class CurrencyService:
 
         with self._cache_lock:
             cached_entry = self._cache.get(base)
-            if cached_entry:
-                age = time.time() - cached_entry["fetched_at"]
-                if age < self.cache_ttl_seconds:
-                    return cached_entry
+        if cached_entry and time.time() - cached_entry["fetched_at"] < self.cache_ttl_seconds:
+            return {**cached_entry, "from_cache": True, "stale": False}  # M8: flag reflects a real cache hit
 
-        # Fetch fresh rates
-        fresh_data = self.fetch_rates_from_api(base)
+        try:
+            fresh_data = self.fetch_rates_from_api(base)
+        except ExchangeRateAPIError:
+            # M8 stale-rate policy: serve the last good rates up to EXCHANGE_RATE_MAX_STALE_HOURS old, flagged.
+            if cached_entry and time.time() - cached_entry["fetched_at"] <= self.max_stale_seconds:
+                return {**cached_entry, "from_cache": True, "stale": True}
+            raise
 
         with self._cache_lock:
             self._cache[base] = fresh_data
-
-        return fresh_data
+        return {**fresh_data, "from_cache": False, "stale": False}
 
     def get_exchange_rate(self, source_currency: str, target_currency: str) -> Dict[str, Any]:
         """
@@ -342,8 +362,8 @@ class CurrencyService:
                 "rate": Decimal("1.0"),
                 "rate_formatted": f"1 {src} = 1.000000 {tgt}",
                 "provider": "Direct Parity (1:1)",
-                "last_updated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
-                "is_cached": True
+                "last_updated": _iso_utc(None),
+                "is_cached": False
             }
 
         rates_data = self.get_rates(src)
@@ -362,7 +382,8 @@ class CurrencyService:
             "rate_formatted": f"1 {src} = {rate:.6f} {tgt}",
             "provider": rates_data.get("provider", self.provider_name),
             "last_updated": rates_data.get("last_updated"),
-            "is_cached": (time.time() - rates_data["fetched_at"]) > 0.1
+            "is_cached": rates_data.get("from_cache", False),
+            "stale": rates_data.get("stale", False),
         }
 
     def convert(
@@ -406,12 +427,13 @@ class CurrencyService:
                 )
         if rates_data is None:
             rate_info = {"provider": "Direct Parity (1:1)",
-                         "last_updated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
-                         "is_cached": False}
+                         "last_updated": _iso_utc(None),
+                         "is_cached": False, "stale": False}
         else:
             rate_info = {"provider": rates_data.get("provider", self.provider_name),
                          "last_updated": rates_data.get("last_updated"),
-                         "is_cached": rates_data.get("from_cache", False)}
+                         "is_cached": rates_data.get("from_cache", False),
+                         "stale": rates_data.get("stale", False)}
 
         converted_dec = self.quantize_amount(amount_dec * rate_dec, tgt)
         normalized_usd = self.quantize_amount(amount_dec * usd_rate, "USD")
@@ -435,7 +457,8 @@ class CurrencyService:
             "normalized_usd_amount": float(normalized_usd),
             "provider": rate_info["provider"],
             "last_updated": rate_info["last_updated"],
-            "is_cached": rate_info["is_cached"]
+            "is_cached": rate_info["is_cached"],
+            "stale": rate_info["stale"],
         }
 
     def clear_cache(self):

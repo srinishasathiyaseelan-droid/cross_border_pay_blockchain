@@ -85,6 +85,7 @@
 
             <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form" data-once>
                 <input type="hidden" id="scenario" name="scenario" value="">
+                <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
                 <div id="scenario-chip" class="scenario-chip" hidden><span id="scenario-chip-label"></span> <button type="button" id="scenario-clear">clear</button></div>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <!-- SME Entities Grid -->

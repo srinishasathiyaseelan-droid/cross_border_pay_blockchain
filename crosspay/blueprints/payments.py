@@ -3,12 +3,13 @@
 P0: behaviour moved unchanged from app.py (findings C4, H1, H2, H3 are fixed in later phases).
 """
 import json
-import random
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 
 from ..db import get_db, utcnow_iso
 from ..security.decorators import current_user_row, login_required
+from ..security.idempotency import new_key
+from ..services.settlement import DuplicateSubmission, settle_payment
 from ..services.features import (
     ALLOWED_COUNTRIES,
     DEMO_VECTORS,
@@ -93,6 +94,7 @@ def payment():
         kyc=dict(kyc_record) if kyc_record else None,
         is_verified=bool(kyc_record and kyc_record["status"] == "VERIFIED"),
         countries=ALLOWED_COUNTRIES,
+        idempotency_key=new_key(),
         supported_currencies=SUPPORTED_CURRENCIES,
         country_currencies=COUNTRY_TO_DEFAULT_CURRENCY,
     )
@@ -121,46 +123,18 @@ def process_payment():
         flash(f"Exchange rate service unavailable, nothing was stored: {e}", "danger")
         return redirect(url_for("payments.payment"))
 
-    sender, receiver, notes = data["sender"], data["receiver"], data["notes"]
-    sender_country, receiver_country = data["sender_country"], data["receiver_country"]
-    normalized_usd = conversion["normalized_usd_amount"]
-    risk_level, risk_score = scored["level"], scored["score"]
-
-    tx_id = f"TX-2026-{random.randint(1000, 9999)}"
-    tx_data = {
-        "transaction_id": tx_id, "sender": sender, "receiver": receiver, "sender_country": sender_country,
-        "receiver_country": receiver_country, "amount": conversion["original_amount"],
-        "currency": conversion["source_currency"], "source_currency": conversion["source_currency"],
-        "target_currency": conversion["target_currency"], "exchange_rate": conversion["exchange_rate"],
-        "converted_amount": conversion["converted_amount"], "exchange_rate_provider": conversion["provider"],
-        "rate_timestamp": conversion["last_updated"], "normalized_usd_amount": normalized_usd, "notes": notes,
-    }
-    sc_result = current_app.extensions["contract"].evaluate_settlement(
-        kyc_status=kyc_record["status"], tx_data=tx_data, risk_level=risk_level, risk_score=risk_score
-    )
-    conn.execute(
-        """INSERT INTO transactions (
-            transaction_id, user_id, sender, receiver, sender_country, receiver_country,
-            currency, amount, source_currency, target_currency, exchange_rate, converted_amount,
-            exchange_rate_provider, rate_timestamp, normalized_usd_amount,
-            frequency, previous_transactions, suspicious_transactions,
-            account_age, corridor_risk, risk_level, risk_score, decision, blockchain_hash,
-            smart_contract_status, block_number, notes, timestamp,
-            amount_to_age_ratio, p_low, p_med, p_high, scoring_engine, top_factors, feature_source
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                  ?, ?, ?, ?, ?, ?, ?)""",
-        (tx_id, user_id, sender, receiver, sender_country, receiver_country,
-         conversion["source_currency"], conversion["original_amount"], conversion["source_currency"],
-         conversion["target_currency"], conversion["exchange_rate"], conversion["converted_amount"],
-         conversion["provider"], conversion["last_updated"], normalized_usd,
-         features["frequency"], features["previous_transactions"], features["suspicious_transactions"],
-         features["account_age"], features["corridor_risk"], risk_level,
-         risk_score, sc_result["decision"], sc_result["blockchain_hash"], sc_result["smart_contract_status"],
-         sc_result["block_number"], notes, utcnow_iso(),
-         features["amount_to_age_ratio"], scored["p_low"], scored["p_med"], scored["p_high"], scored["engine"],
-         json.dumps(scored["top_factors"]), feature_source),
-    )
-    return redirect(url_for("payments.result", tx_id=tx_id))
+    try:
+        outcome = settle_payment(
+            conn, user_id=user_id, kyc_status=kyc_record["status"], data=data, conversion=conversion,
+            features=features, scored=scored, feature_source=feature_source,
+            idempotency_key=(request.form.get("idempotency_key") or "").strip()[:64] or None,
+        )
+    except DuplicateSubmission as dup:
+        flash("This form was already submitted; showing the original payment.", "info")
+        if dup.tx_id == "IN_PROGRESS":
+            return redirect(url_for("payments.transactions"))
+        return redirect(url_for("payments.result", tx_id=dup.tx_id))
+    return redirect(url_for("payments.result", tx_id=outcome["tx_id"]))
 
 
 @bp.route("/result/<tx_id>")
@@ -168,9 +142,14 @@ def process_payment():
 def result(tx_id):
     tx = dict(get_visible_tx(tx_id))
     tx["top_factors_list"] = json.loads(tx.get("top_factors") or "[]")
+    tx["policy_reasons_list"] = json.loads(tx.get("policy_reasons") or "[]")
+    reviews = get_db().execute(
+        "SELECT r.*, u.name AS admin_name FROM hold_reviews r JOIN users u ON u.id = r.admin_id "
+        "WHERE r.tx_id = ? ORDER BY r.id", (tx_id,)).fetchall()
+    contract = current_app.extensions["contract"]
     return render_template(
-        "result.html", tx=tx, contract_address=current_app.extensions["contract"].CONTRACT_ADDRESS,
-        supported_currencies=SUPPORTED_CURRENCIES,
+        "result.html", tx=tx, reviews=[dict(r) for r in reviews], contract_address=contract.CONTRACT_ADDRESS,
+        contract_label=contract.CONTRACT_LABEL, supported_currencies=SUPPORTED_CURRENCIES,
     )
 
 
@@ -181,7 +160,7 @@ def transactions():
     search_query = request.args.get("q", "").strip()
     where, scope_params = tenant_scope()
     sql, params = "SELECT * FROM transactions WHERE 1=1" + where, list(scope_params)
-    if status_filter in ["APPROVED", "HOLD", "BLOCKED"]:
+    if status_filter in ["APPROVED", "HOLD", "BLOCKED", "REJECTED"]:  # L3
         sql += " AND decision = ?"
         params.append(status_filter)
     if search_query:
@@ -206,6 +185,7 @@ def dashboard():
         "approved_txs": count("decision = 'APPROVED'"),
         "held_txs": count("decision = 'HOLD'"),
         "blocked_txs": count("decision = 'BLOCKED'"),
+        "rejected_txs": count("decision = 'REJECTED'"),
         "low_risk_count": count("risk_level = 'LOW'"),
         "med_risk_count": count("risk_level = 'MEDIUM'"),
         "high_risk_count": count("risk_level = 'HIGH'"),
@@ -223,20 +203,23 @@ def dashboard():
 @bp.route("/blockchain")
 @login_required
 def blockchain_explorer():
-    chain = current_app.extensions["blockchain"]
-    is_valid, validation_msg = chain.is_chain_valid()
-    blocks = [b.to_dict() for b in chain.chain]
+    conn = get_db()
+    ledger = current_app.extensions["ledger"]
+    check = ledger.verify(conn)
+    blocks = [b.to_dict() for b in ledger.blocks(conn)]
     where, params = tenant_scope()
-    if where:  # SMEs see block hashes for every block but transaction details only for their own payments
-        own = {r[0] for r in get_db().execute(f"SELECT transaction_id FROM transactions WHERE 1=1{where}", params)}
+    if where:  # SMEs see every block hash but transaction details only for their own payments
+        own = {r[0] for r in conn.execute(f"SELECT transaction_id FROM transactions WHERE 1=1{where}", params)}
         for b in blocks:
             b["transactions"] = [
                 t if (t.get("transaction_id") in own or b["index"] == 0)
                 else {"transaction_id": "(another SME)", "sender": "—", "receiver": "—", "amount": 0.0,
-                      "currency": "", "redacted": True}
+                      "source_currency": "", "redacted": True}
                 for t in b["transactions"]
             ]
+    contract = current_app.extensions["contract"]
     return render_template(
-        "blockchain.html", chain=blocks, is_valid=is_valid,
-        validation_msg=validation_msg, contract_address=current_app.extensions["contract"].CONTRACT_ADDRESS,
+        "blockchain.html", chain=blocks, is_valid=check["valid"], validation_msg=check["message"],
+        audit_records=check["audit_records"], difficulty=ledger.difficulty,
+        contract_address=contract.CONTRACT_ADDRESS, contract_label=contract.CONTRACT_LABEL,
     )

@@ -1,5 +1,5 @@
 """Compliance administration. Every route here requires an admin account (C1)."""
-from flask import Blueprint, current_app, flash, redirect, request, url_for
+from flask import Blueprint, flash, redirect, request, url_for
 
 from ..db import get_db
 from ..security.decorators import admin_required
@@ -7,33 +7,37 @@ from ..security.decorators import admin_required
 bp = Blueprint("admin", __name__)
 
 
+MIN_REASON_LEN = 20
+
+
 @bp.route("/resolve_hold/<tx_id>", methods=["POST"])
 @admin_required
 def resolve_hold(tx_id):
-    action = request.form.get("action", "approve")
-    conn = get_db()
-    tx = conn.execute("SELECT * FROM transactions WHERE transaction_id = ?", (tx_id,)).fetchone()
-    if not tx or tx["decision"] != "HOLD":
-        flash("Invalid transaction or transaction is not in HOLD state.", "warning")
-        return redirect(url_for("payments.transactions"))
+    from flask import session
 
-    if action == "approve":
-        rel = current_app.extensions["contract"].release_hold(dict(tx))
-        conn.execute(
-            """UPDATE transactions SET decision = 'APPROVED', smart_contract_status = 'EXECUTED_SETTLED_POST_AUDIT',
-                   blockchain_hash = ?, block_number = ? WHERE transaction_id = ?""",
-            (rel["tx_hash"], rel["block_number"], tx_id),
-        )
-        flash(f"Transaction {tx_id} approved after secondary compliance review. "
-              f"Mined to Block #{rel['block_number']}.", "success")
+    from ..services.settlement import SettlementError, resolve_hold as do_resolve
+
+    action = request.form.get("action", "")
+    reason = (request.form.get("reason") or "").strip()
+    back = request.form.get("next") or url_for("payments.result", tx_id=tx_id)
+    if not back.startswith("/") or back.startswith("//"):
+        back = url_for("payments.result", tx_id=tx_id)
+    if action not in ("approve", "reject"):
+        flash("Choose Approve or Reject.", "warning")
+        return redirect(back)
+    if len(reason) < MIN_REASON_LEN:  # M9: every officer decision carries a reason
+        flash(f"Write a reason of at least {MIN_REASON_LEN} characters in your own words.", "warning")
+        return redirect(back)
+    try:
+        out = do_resolve(get_db(), tx_id=tx_id, admin_id=session["user_id"], action=action, reason=reason[:2000])
+    except SettlementError as e:
+        flash(str(e), "warning")
+        return redirect(back)
+    if out["decision"] == "APPROVED":
+        flash(f"{tx_id} released after compliance review and recorded in block #{out['block']}.", "success")
     else:
-        conn.execute(
-            """UPDATE transactions SET decision = 'BLOCKED', smart_contract_status = 'REJECTED_AUDIT_FAILED',
-                   blockchain_hash = 'REJECTED_BY_COMPLIANCE' WHERE transaction_id = ?""",
-            (tx_id,),
-        )
-        flash(f"Transaction {tx_id} rejected and permanently blocked by compliance officer.", "danger")
-    return redirect(url_for("payments.transactions"))
+        flash(f"{tx_id} rejected by compliance. Nothing was recorded on the ledger.", "info")
+    return redirect(back)
 
 
 # ----------------- KYC review queue (C5) -----------------
