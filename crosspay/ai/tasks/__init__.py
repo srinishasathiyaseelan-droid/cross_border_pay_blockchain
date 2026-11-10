@@ -42,7 +42,7 @@ def queue_explanation(conn, tx_id: str) -> str:
 
 
 BACKFILL_LIMIT = 10
-BACKFILL_SPACING_S = 20.0  # free-tier providers allow only a few large prompts a minute; never starve live traffic
+BACKFILL_SPACING_S = 60.0  # one large prompt a minute leaves the free tier's tokens/minute for live traffic  # free-tier providers allow only a few large prompts a minute; never starve live traffic
 
 
 def _spaced(fn, delay: float):
@@ -302,7 +302,8 @@ SELFTEST_INVOICE = ("COMMERCIAL INVOICE No. 4471\nSeller: Selftest Components Gm
                     "Description: CNC spindle parts, 40 units\nTotal: 18,500.00 USD\nDate: 2026-01-01")
 
 
-SELFTEST_SPACING_S = 2.0
+SELFTEST_SPACING_S = 4.0
+SELFTEST_DEADLINE_S = 80.0  # stay well inside gunicorn's 120 s request timeout
 
 
 def self_test(conn, user_id: int, delay: float = None) -> list:
@@ -323,7 +324,11 @@ def self_test(conn, user_id: int, delay: float = None) -> list:
     import time
 
     out = []
+    started = time.monotonic()
     for i, (task, ctx) in enumerate(ctxs):
+        if time.monotonic() - started > SELFTEST_DEADLINE_S:
+            out.append((task, "SKIPPED", "time limit reached; run the self-test again in a minute"))
+            continue
         if i and delay > 0:
             time.sleep(delay)  # sequential and spaced: free-tier providers rate-limit bursts
         try:
