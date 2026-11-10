@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}AI operations{% endblock %}
+{% block content %}
+<div class="page-head">
+    <div>
+        <h1 class="page-title">AI operations</h1>
+        <p class="page-sub">The LLM layer is advisory. It never decides APPROVE, HOLD or BLOCK, and the app works with it off.</p>
+    </div>
+    <form method="POST" action="{{ url_for('admin.ai_ops') }}" class="kill-switch">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="kill_switch" value="{{ 'off' if kill_switch else 'on' }}">
+        <button type="submit" class="btn {{ 'btn-success' if kill_switch else 'btn-danger' }}">
+            {{ 'Turn AI back on' if kill_switch else 'Kill switch: turn all AI off' }}
+        </button>
+    </form>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">LLM_ENABLED</div><div class="stat-value">{{ 'on' if llm_enabled else 'off' }}</div><div class="stat-sub">startup setting</div></div>
+    <div class="stat-card"><div class="stat-label">Kill switch</div><div class="stat-value">{{ 'ON' if kill_switch else 'off' }}</div><div class="stat-sub">runtime override</div></div>
+    <div class="stat-card"><div class="stat-label">Calls today</div><div class="stat-value">{{ calls_today }}</div><div class="stat-sub">UTC day</div></div>
+    <div class="stat-card"><div class="stat-label">Spend today</div><div class="stat-value">${{ '%.4f'|format(spend) }}</div><div class="stat-sub">of ${{ budget }} budget (estimated)</div></div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Providers (fallback order)</h3></div>
+        <div class="table-responsive">
+        <table class="custom-table">
+            <thead><tr><th>Provider</th><th>Model</th><th>Configured</th><th>Circuit</th><th>Failures</th></tr></thead>
+            <tbody>
+            {% for name, st in providers.items() %}
+            <tr><td><strong>{{ name }}</strong></td><td class="font-mono">{{ st.model or '—' }}</td>
+                <td>{{ 'yes' if st.configured else 'no key' }}</td>
+                <td><span class="badge {{ 'badge-high' if st.open else 'badge-low' }}">{{ 'open (skipped 60 s)' if st.open else 'closed' }}</span></td>
+                <td>{{ st.failures }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Guard rejections (all time)</h3></div>
+        <table class="custom-table">
+            <thead><tr><th>Guard outcome</th><th>Count</th></tr></thead>
+            <tbody>
+            {% for code, n in by_guard %}<tr><td class="font-mono">{{ code }}</td><td>{{ n }}</td></tr>
+            {% else %}<tr><td colspan="2" class="empty-row">No rejections recorded.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Calls today by task and status</h3></div>
+        <table class="custom-table">
+            <thead><tr><th>Task</th><th>Status</th><th>Count</th></tr></thead>
+            <tbody>
+            {% for task, status, n in by_status %}<tr><td>{{ task }}</td><td class="font-mono">{{ status }}</td><td>{{ n }}</td></tr>
+            {% else %}<tr><td colspan="3" class="empty-row">No calls today.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">Officer agreement with AI drafts</h3></div>
+        <p class="muted-sm">Similarity between the officer's reason and the copilot draft. Values near 1 suggest automation bias.</p>
+        <table class="custom-table">
+            <thead><tr><th>Officer</th><th>Reviews</th><th>Mean similarity</th></tr></thead>
+            <tbody>
+            {% for name, n, avg in agreement %}<tr><td>{{ name }}</td><td>{{ n }}</td><td class="font-mono">{{ avg }}</td></tr>
+            {% else %}<tr><td colspan="3" class="empty-row">No copilot-assisted reviews yet.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h3 class="card-title">Feature flags</h3></div>
+    <div class="chip-row">{% for name, on in flags.items() %}<span class="badge {{ 'badge-low' if on else 'badge-neutral' }}">{{ name }}: {{ 'on' if on else 'off' }}</span>{% endfor %}</div>
+</div>
+{% endblock %}

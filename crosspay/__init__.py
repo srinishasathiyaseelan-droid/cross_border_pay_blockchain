@@ -73,6 +73,22 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     app.extensions["scorer"] = Scorer(bundle, reason)
     app.extensions["metrics"] = _load_metrics(app)
 
+    # Advisory LLM layer (P5). The router is built even when LLM_ENABLED=0; nothing calls out unless enabled.
+    from .ai import log as ailog
+    from .ai.jobs import JobRunner
+    from .ai.providers import build as build_providers
+    from .ai.router import Router
+    from .security.limiter import limiter
+
+    app.extensions["ai_router"] = Router(build_providers(app.config["LLM_PROVIDERS"]), timeout=app.config["LLM_TIMEOUT"])
+    app.extensions["ai_jobs"] = JobRunner(app)
+    limiter.init_app(app)
+    conn = dbmod.connect(app.config["DB_PATH"])
+    try:
+        ailog.purge(conn, int(app.config["LLM_LOG_RETENTION_DAYS"]), force=True)
+    finally:
+        conn.close()
+
     from .blueprints import admin, api, auth, kyc, payments
 
     for bp in (auth.bp, kyc.bp, payments.bp, admin.bp, api.bp):

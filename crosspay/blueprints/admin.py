@@ -92,3 +92,41 @@ def kyc_decide(kyc_id):
     )
     flash(f"KYC #{kyc_id} set to {status}.", "success" if status == "VERIFIED" else "info")
     return redirect(url_for("admin.kyc_queue"))
+
+
+# ----------------- AI operations page (P5) -----------------
+@bp.route("/admin/ai", methods=["GET", "POST"])
+@admin_required
+def ai_ops():
+    from datetime import datetime, timezone
+
+    from flask import current_app, render_template
+
+    from ..ai import budget
+    from ..ai import log as ailog
+
+    conn = get_db()
+    if request.method == "POST":
+        on = request.form.get("kill_switch") == "on"
+        budget.set_kill_switch(conn, on)
+        flash("AI kill switch is ON: every AI call is off." if on else "AI kill switch is OFF.", "info")
+        return redirect(url_for("admin.ai_ops"))
+    ailog.purge(conn, int(current_app.config["LLM_LOG_RETENTION_DAYS"]))
+    day = datetime.now(timezone.utc).date().isoformat() + "T00:00:00Z"
+    by_status = conn.execute("SELECT task, status, COUNT(*) FROM llm_calls WHERE created_at >= ? GROUP BY task, status "
+                             "ORDER BY task, status", (day,)).fetchall()
+    by_guard = conn.execute("SELECT guard_outcome, COUNT(*) FROM llm_calls WHERE guard_outcome IS NOT NULL AND "
+                            "guard_outcome != 'OK' GROUP BY guard_outcome ORDER BY COUNT(*) DESC").fetchall()
+    agreement = conn.execute(
+        "SELECT u.name, COUNT(r.id), ROUND(AVG(r.ai_agreement), 3) FROM hold_reviews r JOIN users u ON u.id = r.admin_id "
+        "WHERE r.ai_agreement IS NOT NULL GROUP BY u.name").fetchall()
+    kill = conn.execute("SELECT value FROM ai_settings WHERE key = 'kill_switch'").fetchone()
+    return render_template(
+        "admin_ai.html",
+        llm_enabled=current_app.config.get("LLM_ENABLED"), kill_switch=bool(kill and kill[0] == "1"),
+        providers=current_app.extensions["ai_router"].circuit_state(),
+        calls_today=sum(r[2] for r in by_status), by_status=[tuple(r) for r in by_status],
+        by_guard=[tuple(r) for r in by_guard], agreement=[tuple(r) for r in agreement],
+        spend=round(ailog.spend_today(conn), 4), budget=current_app.config.get("LLM_DAILY_BUDGET_USD"),
+        flags=current_app.config.get("AI_FLAGS", {}),
+    )

@@ -134,6 +134,66 @@ SCHEMA += [
     )""",
 ]
 
+SCHEMA += [
+    # P5: advisory LLM layer
+    """
+    CREATE TABLE IF NOT EXISTS llm_calls (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task TEXT NOT NULL,
+        prompt_version TEXT,
+        provider TEXT,
+        model TEXT,
+        tx_id TEXT,
+        user_id INTEGER,
+        input_hash TEXT,
+        redacted_input TEXT,
+        status TEXT NOT NULL,
+        guard_outcome TEXT,
+        output_json TEXT,
+        latency_ms INTEGER,
+        input_tokens INTEGER DEFAULT 0,
+        output_tokens INTEGER DEFAULT 0,
+        cost_usd REAL DEFAULT 0,
+        created_at TEXT NOT NULL
+    )""",
+    "CREATE INDEX IF NOT EXISTS ix_llm_calls_created ON llm_calls (created_at)",
+    """
+    CREATE TABLE IF NOT EXISTS ai_cache (
+        task TEXT NOT NULL,
+        prompt_version TEXT NOT NULL,
+        input_hash TEXT NOT NULL,
+        output_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (task, prompt_version, input_hash)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS ai_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task TEXT NOT NULL,
+        tx_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        result_json TEXT,
+        error_code TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE (task, tx_id)
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS ai_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS risk_explanations (
+        tx_id TEXT PRIMARY KEY,
+        output_json TEXT NOT NULL,
+        provider TEXT,
+        model TEXT,
+        prompt_version TEXT,
+        created_at TEXT NOT NULL
+    )""",
+]
+
 # Additive migrations: (table, column, definition). Applied when the column is missing.
 COLUMNS = [
     # P2: honest risk pipeline
@@ -152,6 +212,12 @@ COLUMNS = [
     ("transactions", "policy_reasons", "TEXT"),
     ("transactions", "decided_at", "TEXT"),
     ("transactions", "idempotency_key", "TEXT"),
+    # P5/P6: advisory signals stored next to the payment (never inputs to the model)
+    ("transactions", "purpose_category", "TEXT"),
+    ("transactions", "purpose_risk", "REAL"),
+    ("transactions", "purpose_flags", "TEXT"),
+    ("transactions", "ai_escalations", "TEXT"),
+    ("transactions", "input_guard_flags", "TEXT"),
 ]
 
 

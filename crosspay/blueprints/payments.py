@@ -123,17 +123,37 @@ def process_payment():
         flash(f"Exchange rate service unavailable, nothing was stored: {e}", "danger")
         return redirect(url_for("payments.payment"))
 
+    # P6.2 purpose tagger: advisory and escalate-only (G1). It never enters the model; its only effect on the
+    # decision is the PURPOSE_RED_FLAG code, which the policy engine can use to move APPROVED to HOLD.
+    from ..ai import tasks as ai_tasks
+
+    corridor = f"{data['sender_country']} to {data['receiver_country']}"
+    purpose = ai_tasks.classify_purpose(conn, data["notes"], corridor, conversion["normalized_usd_amount"], user_id)
+    pres = purpose["result"] or {}
+    extra = {
+        "purpose_category": pres.get("category"), "purpose_risk": pres.get("purpose_risk"),
+        "purpose_flags": json.dumps(pres.get("red_flags", [])) if pres else None,
+        "ai_escalations": json.dumps(purpose["escalations"]), "input_guard_flags": json.dumps(purpose["input_flags"]),
+    }
     try:
         outcome = settle_payment(
             conn, user_id=user_id, kyc_status=kyc_record["status"], data=data, conversion=conversion,
             features=features, scored=scored, feature_source=feature_source,
             idempotency_key=(request.form.get("idempotency_key") or "").strip()[:64] or None,
+            ai_escalations=purpose["escalations"], extra_columns=extra,
         )
     except DuplicateSubmission as dup:
         flash("This form was already submitted; showing the original payment.", "info")
         if dup.tx_id == "IN_PROGRESS":
             return redirect(url_for("payments.transactions"))
         return redirect(url_for("payments.result", tx_id=dup.tx_id))
+
+    jobs = current_app.extensions["ai_jobs"]
+    if purpose["status"] == "UNAVAILABLE" and data["notes"]:  # timed out: retry for the record only
+        jobs.submit(conn, "purpose", outcome["tx_id"], ai_tasks.purpose_retry_job(
+            outcome["tx_id"], data["notes"], corridor, conversion["normalized_usd_amount"]))
+    if current_app.config.get("LLM_ENABLED"):
+        ai_tasks.queue_explanation(conn, outcome["tx_id"])  # P6.1, background
     return redirect(url_for("payments.result", tx_id=outcome["tx_id"]))
 
 

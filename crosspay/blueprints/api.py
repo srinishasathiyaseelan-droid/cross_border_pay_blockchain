@@ -97,3 +97,24 @@ def risk_preview():
     return jsonify({"success": True, "level": scored["level"], "score": scored["score"], "engine": scored["engine"],
                     "decision": decision, "feature_source": source, "features": features,
                     "top_factors": scored["top_factors"]})
+
+
+# ----------------- Advisory AI (P5) -----------------
+AI_POLL_TASKS = {"explain", "purpose"}
+
+
+@bp.route("/ai/<task>/<tx_id>")
+@login_required
+def ai_poll(task, tx_id):
+    """UI polling for background AI jobs. Tenant-scoped through the same lookup as the receipt."""
+    from ..ai import jobs
+    from ..db import get_db
+    from .payments import get_visible_tx
+
+    if task not in AI_POLL_TASKS:
+        abort(404)
+    get_visible_tx(tx_id)  # 404 for another tenant's transaction
+    job = jobs.get(get_db(), task, tx_id)
+    if job is None:
+        return jsonify({"status": "NONE"})
+    return jsonify({"status": job["status"], "result": job["result"] if job["status"] == "DONE" else None})

@@ -180,3 +180,48 @@ dashboard; a swapped pickle is never unpickled; top factors present and the deco
 scenarios still give LOW→APPROVED, MEDIUM→HOLD, HIGH→BLOCKED; no 98.67/98.66 left in docs, templates or code.
 
 **How verified:** `pytest -q` → 109 passed.
+
+## P5 — AI foundation (advisory LLM layer)
+
+Everything below is advisory. `policy.engine.evaluate()` takes no LLM argument; the only path from AI into a
+decision is the escalate-only `ai_escalations` hook added in P3.
+
+- **Providers** `crosspay/ai/providers/` (ported from Netvrio): `base.py` (`complete()` → raw text + usage,
+  `complete_json()` → schema-validated model), `openai_compat.py` (Groq, NVIDIA NIM), `cloudflare.py`, `fake.py`
+  (`FakeLLMClient`, scripted, used by every test). Keys and model names come only from env. Live check on
+  2026-11-10: Groq `openai/gpt-oss-120b` answered in 0.8 s; NVIDIA `openai/gpt-oss-20b` timed out at 25 s;
+  the supplied Cloudflare token returned HTTP 401 "Authentication error". Fallback order `groq,nvidia,cloudflare`.
+- **Router** `crosspay/ai/router.py` (ported from Netvrio, Aegis error classifier in `crosspay/ai/errors.py`):
+  priority fallback, per-call timeout, one retry on a schema failure, circuit breaker (3 failures → skip 60 s), stores
+  error codes only, never raises.
+- **Schemas** `crosspay/ai/schemas.py`: one response model per task, `extra="forbid"`, no verdict field anywhere
+  (G11); FORBIDDEN_KEYS extended with CrossPay PII and threshold names.
+- **DLP** `crosspay/security/dlp.py` (ported from Netvrio + EIN, PAN/GSTIN, IBAN, SWIFT, email, phone, provider key
+  shapes); a hit on the request blocks the call (`BLOCKED_DLP`), any DLP exception fails closed.
+- **Evidence** `crosspay/ai/evidence.py`: deterministic `ev_<hash6>_<n>` items from features, top factors, corridor,
+  90-day median, history, FX snapshot and policy reasons; no thresholds.
+- **Guard** `crosspay/ai/guard.py` (Netvrio citation check made null-safe + Aegis parser/sanitiser): first-JSON
+  extraction, citation check, number/ID faithfulness, decision-word check, URL/Markdown-image/HTML stripping,
+  tripwire, output DLP redaction.
+- **Pipeline** `crosspay/ai/pipeline.py::run_task()` is the single entry point (kill switch → budget → input guard →
+  forbidden keys → DLP → cache → router → output guard → log → cache). Prompts in `crosspay/ai/prompts/*.md` with
+  version tags; user text is wrapped in `<user_data>`.
+- **Tables** `llm_calls` (redacted input + hash only), `ai_cache`, `ai_jobs`, `ai_settings`, `risk_explanations`;
+  transaction columns for purpose results, `ai_escalations` and `input_guard_flags`.
+- **Budget / kill switch** `crosspay/ai/budget.py`: `LLM_DAILY_BUDGET_USD` (estimated cost per provider, configurable),
+  runtime kill switch on `/admin/ai`.
+- **Background jobs** `crosspay/ai/jobs.py`: `ThreadPoolExecutor(max_workers=2)` + `ai_jobs`, queue cap 50
+  (`QUEUE_FULL`); `GET /api/ai/<task>/<tx_id>` for polling (tenant-scoped).
+- **/admin/ai**: provider circuit state, calls today, rejections by guard code, spend vs budget, kill switch, flags,
+  officer agreement with AI drafts.
+- The purpose tagger is already called on payment submit (it is needed for the injection acceptance test); its UI
+  and the other features land in P6.
+
+**Tests added:** `tests/ai/test_ai_foundation_p5.py` (23): LLM_ENABLED=0 → no outbound call and no `llm_calls` row;
+kill switch; DLP blocks EIN, email, card, IBAN before any call and the log holds only redacted text; forbidden keys;
+invented evidence ID / number / decision claim → `REJECTED_GUARD`; valid output logged and cached; Markdown image and
+URL stripped; first-JSON extractor; null-safe guard; injection in the notes of a HIGH payment → input guard skips the
+call, decision stays BLOCKED; router timeout → fallback, all fail → None + meta, schema retry, circuit breaker,
+no raw exception text; budget exhausted → UNAVAILABLE; /admin/ai access; no verdict field in any schema.
+
+**How verified:** `pytest -q` → 132 passed.

@@ -94,3 +94,15 @@ def db(app):
     conn = connect(app.config["DB_PATH"])
     yield conn
     conn.close()
+
+
+@pytest.fixture
+def fake_llm(app):
+    """Turns the AI layer on with a scripted fake provider (no network)."""
+    from crosspay.ai.providers import FakeLLMClient
+    from crosspay.ai.router import Router
+
+    fake = FakeLLMClient()
+    app.config["LLM_ENABLED"] = True
+    app.extensions["ai_router"] = Router([fake], timeout=1.0)
+    return fake
