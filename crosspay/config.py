@@ -43,6 +43,7 @@ class BaseConfig:
 
     DEMO_SME_PASSWORD = os.getenv("DEMO_SME_PASSWORD", "")
     DEMO_ADMIN_PASSWORD = os.getenv("DEMO_ADMIN_PASSWORD", "")
+    KYC_ENCRYPTION_KEY = os.getenv("KYC_ENCRYPTION_KEY", "")  # optional; security/pii.py derives one from SECRET_KEY
 
     PASSWORD_HASH_METHOD = "scrypt"
     WTF_CSRF_ENABLED = True

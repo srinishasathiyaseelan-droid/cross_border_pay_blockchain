@@ -101,6 +101,12 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     csrf.exempt(api.bp)
     csrf.exempt(ai_features.bp)
 
+    @app.get("/healthz")
+    def healthz():
+        """Liveness probe for Render (healthCheckPath). No auth, no secrets, just a DB round trip."""
+        dbmod.get_db().execute("SELECT 1").fetchone()
+        return {"status": "ok"}
+
     @app.context_processor
     def inject_global_data():
         from .services.currency import COUNTRY_TO_DEFAULT_CURRENCY, SUPPORTED_CURRENCIES

@@ -1,35 +1,94 @@
-# Optional Render deployment (adapted from Netvrio's render.yaml). Secrets are set in the Render dashboard, never here.
+# Render Blueprint for CrossPay (adapted from Netvrio's render.yaml).
+# Secrets are NEVER written here: entries with `sync: false` are prompted for in the Render dashboard on first
+# deploy, and `generateValue: true` lets Render create a random value once.
+#
+# One gunicorn worker on purpose: the live decision feed (SSE bus), the AI job queue and the rate limiter are
+# in-process. Threads give concurrency; each open live-feed tab holds one thread.
 services:
   - type: web
     name: crosspay
     runtime: python
-    plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --workers 2 --threads 4 --bind 0.0.0.0:$PORT "crosspay:create_app('prod')"
+    plan: starter            # needs a paid plan for the persistent disk below (SQLite DB, audit chain, uploads)
+    region: singapore
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn --workers 1 --threads 16 --timeout 120 --bind 0.0.0.0:$PORT "crosspay:create_app('prod')"
+    healthCheckPath: /healthz
+    autoDeploy: true
     disk:
       name: crosspay-data
       mountPath: /var/data
       sizeGB: 1
     envVars:
+      # --- Runtime ---------------------------------------------------------
+      - key: PYTHON_VERSION
+        value: 3.12.10
       - key: CROSSPAY_ENV
         value: prod
+      - key: FLASK_DEBUG
+        value: "0"
       - key: DEMO_MODE
-        value: "1"
+        value: "1"                 # quick logins + demo scenarios for the viva; set 0 for a closed deployment
+      # --- Secrets (generated once by Render) --------------------------------
+      - key: SECRET_KEY
+        generateValue: true
+      - key: LEDGER_SIGNING_KEY
+        generateValue: true
+      - key: DEMO_SME_PASSWORD
+        sync: false
+      - key: DEMO_ADMIN_PASSWORD
+        sync: false
+      # --- Storage on the persistent disk ------------------------------------
       - key: DB_PATH
         value: /var/data/crosspay.db
       - key: LEDGER_PATH
         value: /var/data/blockchain_ledger.json
       - key: UPLOAD_DIR
         value: /var/data/uploads
+      # --- Policy -----------------------------------------------------------
+      - key: REVIEW_AT
+        value: "40"
+      - key: BLOCK_AT
+        value: "80"
+      - key: POW_DIFFICULTY
+        value: "3"
+      - key: INVOICE_REQUIRED_ABOVE_USD
+        value: "50000"
+      # --- Exchange rates ---------------------------------------------------
+      - key: EXCHANGE_RATE_API_KEY
+        sync: false                # optional; open.er-api.com works without a key
+      - key: EXCHANGE_RATE_CACHE_TTL
+        value: "3600"
+      - key: EXCHANGE_RATE_TIMEOUT
+        value: "8"
+      - key: EXCHANGE_RATE_MAX_STALE_HOURS
+        value: "24"
+      # --- Advisory LLM layer (never decides APPROVE/HOLD/BLOCK) ---------------
       - key: LLM_ENABLED
         value: "1"
+      - key: LLM_PROVIDERS
+        value: groq,nvidia,cloudflare
+      - key: LLM_TIMEOUT
+        value: "15"
       - key: LLM_DAILY_BUDGET_USD
         value: "0.50"
-      - key: SECRET_KEY
-        sync: false
-      - key: LEDGER_SIGNING_KEY
-        sync: false
+      - key: LLM_LOG_RETENTION_DAYS
+        value: "30"
+      - key: AI_RATE_LIMIT
+        value: 30 per hour
       - key: GROQ_API_KEY
         sync: false
       - key: GROQ_MODEL
         value: openai/gpt-oss-120b
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_MODEL
+        value: openai/gpt-oss-20b
+      - key: CLOUDFLARE_ACCOUNT_ID
+        sync: false
+      - key: CLOUDFLARE_API_TOKEN
+        sync: false
+      - key: CLOUDFLARE_MODEL
+        value: "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      # --- Rate limiting ----------------------------------------------------
+      - key: RATELIMIT_STORAGE_URI
+        value: memory://
