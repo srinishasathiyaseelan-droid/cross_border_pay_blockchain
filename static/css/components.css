@@ -132,10 +132,13 @@ main.container { flex: 1; padding-top: var(--space-8); padding-bottom: var(--spa
 .nav-link[aria-current="page"] { color: var(--text); }
 .nav-link[aria-current="page"]::after { content: ""; position: absolute; left: var(--space-3); right: var(--space-3); bottom: 6px;
   height: 2px; border-radius: 2px; background: var(--brand); }
-.nav-actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; }
+.nav-actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; min-width: 0; }
+.nav-actions > * { flex: none; }
+.nav-actions > .user-chip { flex: 0 1 auto; min-width: 0; }
+.user-chip > svg, .user-chip .role { flex: none; }
 .user-chip { display: inline-flex; align-items: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-3);
   border: 1px solid var(--border); border-radius: var(--radius-full); font-size: var(--text-xs); color: var(--text-2); max-width: 260px; }
-.user-chip strong { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-chip strong { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .role { font-weight: var(--weight-bold); color: var(--brand); }
 .role.is-admin { color: var(--ai); }
 .theme-toggle .when-dark { display: none; }
@@ -156,6 +159,12 @@ main.container { flex: 1; padding-top: var(--space-8); padding-bottom: var(--spa
 .scrim { position: fixed; inset: 0; z-index: 55; background: var(--overlay); opacity: 0; visibility: hidden;
   transition: opacity var(--dur-base) var(--ease-standard), visibility 0s linear var(--dur-base); }
 .scrim.is-open { opacity: 1; visibility: visible; transition: opacity var(--dur-base) var(--ease-standard), visibility 0s; }
+/* desktop bar: the officer menu has 6 links + user chip inside a 1200 px container */
+@media (min-width: 1081px) {
+  .nav-container { gap: var(--space-3); }
+  .nav-link { padding: 0 var(--space-2); }
+  .nav-link[aria-current="page"]::after { left: var(--space-2); right: var(--space-2); }
+}
 @media (max-width: 1080px) {
   .nav-links { display: none; }
   .nav-open { display: inline-grid; }

@@ -327,3 +327,28 @@ P6.8 (optional KYC document and sanctions assistant) is not built.
   metrics, architecture, env vars, demo mode, AI limits and security notes.
 - Lint: 13 ruff findings fixed (unused imports/variables).
 - Not done: opening a PR (the user asked for local commits only).
+
+## UI redesign — "Signed Ledger" (branch `ui-redesign`)
+
+Process and evidence: `DESIGN.md`, `design-system/crosspay/MASTER.md`, `design-work/01`–`08` (audit, references,
+three directions with scores, tokens, components, motion table, before/after screenshots, QA report).
+
+- **Direction A "Signed Ledger"** (picked at checkpoint 1): paper-and-ink light theme plus a "night ledger" dark theme,
+  verdigris brand, Plus Jakarta Sans + JetBrains Mono (tabular figures). Signatures: statement receipt with a
+  perforated edge and decision stamp, a drawn KYC → settlement pipeline, pressable 3 px-edge buttons and embossed icon
+  tiles (the "3D" request, kept restrained).
+- **CSS split into layers**: `static/css/tokens.css` (colour, type, spacing, radius, elevation, motion; light/dark;
+  reduced motion), `components.css` (buttons, fields, cards, KPIs, badges, nav + mobile sheet, toasts, dialog, dropdown,
+  tooltip, tables, pipeline, receipt, gauge, AI advisory, chat), `pages.css`. `style.css` removed.
+- **Motion**: Anime.js 4.0.2 vendored (MIT, `THIRD_PARTY_NOTICES.md`) + `static/js/motion.js`: staggered reveal,
+  pipeline draw, one-time KPI tickers, receipt print-in and stamp, ledger links. Transform/opacity only; CLS 0.
+  Removed the cube loop, particle canvas, cursor glow and pointer tilt.
+- **All 15 templates rewritten** on the new components; `/ui-kit` gallery (every variant and state, light and dark).
+  Toasts (auto-dismiss paused on hover/focus; errors stay), sortable tables, focus-trapped mobile menu.
+- **Accessibility**: every text token ≥ 4.5:1 in both themes (old muted text was 4.3:1), skip link, `aria-current`,
+  `aria-sort`, `aria-live` on AI panels, targets ≥ 24 px (primary controls 44 px on phones).
+- **QA fixes**: no horizontal scroll at 320 / 768 / 1440 px (sheet overflow, upload field, ledger hash grid, landing
+  list indent, officer navbar at 1081–1279 px), ticker safety stop, inline styles 77 → 11 (all data-driven or kit demos).
+- **Tests**: `tests/test_ui_redesign.py` (23). Full suite 242 passed.
+- **Not done**: Lighthouse run, independent screenshot review (agent hit a usage limit), screen-reader pass, 768 px
+  "after" photos. See `design-work/08-qa-report.md`.
