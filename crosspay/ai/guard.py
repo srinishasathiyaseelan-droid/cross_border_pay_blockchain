@@ -29,11 +29,63 @@ _TRIPWIRE = re.compile(
     r"rm\s+-rf|drop\s+table|os\.system|subprocess|__import__|eval\s*\(|exec\s*\(", re.IGNORECASE)
 _NUMBER = re.compile(r"(?<![A-Za-z_])[-+]?\d[\d,]*(?:\.\d+)?\s*[kKmM]?(?![\w])")
 _IDS = re.compile(r"\bTX-[0-9A-Za-z-]{4,40}\b|\bev_[0-9a-z]+_\d+\b")
-DECISION_WORDS = {
-    "APPROVED": re.compile(r"\b(approv\w*|releas\w*|authori[sz]\w*|cleared|settled|green[- ]?light\w*)\b", re.IGNORECASE),
-    "BLOCKED": re.compile(r"\bblock(ed|ing|s)?\b", re.IGNORECASE),
-    "REJECTED": re.compile(r"\breject\w*\b", re.IGNORECASE),
+# Outcome verbs per decision family. A bare mention ("not yet settled", "two prior blocked payments") is neutral;
+# only a CLAIM or RECOMMENDATION built around one of these verbs is rejected (see decision_claims()).
+DECISION_VERBS = {
+    "APPROVED": r"(?:approv\w*|releas\w*|authori[sz]\w*|clear(?:ed|s|ing)?|settl\w*)",
+    "BLOCKED": r"(?:block(?:ed|ing|s)?)",
+    "REJECTED": r"(?:reject\w*|declin\w*)",
 }
+# Base forms only, so nouns at the start of a sentence ("Settlement is pending") are not read as orders.
+IMPERATIVES = {
+    DECISION_VERBS["APPROVED"]: "approve|release|authori[sz]e|clear|settle|green-?light",
+    DECISION_VERBS["BLOCKED"]: "block",
+    DECISION_VERBS["REJECTED"]: "reject|decline",
+}
+_SUBJECT = r"(?:payment|transaction|transfer|funds|it|this|case)"
+_AUX = r"(?:is|was|are|were|has\s+been|have\s+been|had\s+been|will\s+be|would\s+be|gets|got|being|be)"
+_ADV = r"(?:\s+(?:now|already|fully|then|therefore|safely|immediately|automatically|likely|probably|definitely))?"
+
+
+def _claim_patterns(verb: str) -> list:
+    """Shapes that state or recommend an outcome, case-insensitive unless noted."""
+    i = re.IGNORECASE
+    return [
+        # "should be approved", "will be blocked", "can be released", "must reject", "to release the funds"
+        re.compile(rf"\b(?:should|must|ought\s+to|can|could|may|might|will|would|shall|to|let'?s)\s+(?:not\s+)?"
+                   rf"(?:now\s+|safely\s+|simply\s+|just\s+)?(?:be\s+)?{verb}\b", i),
+        # "recommend we release", "I suggest approving", "advise blocking", "in favour of release"
+        re.compile(rf"\b(?:recommend\w*|suggest\w*|advis\w*|propos\w*|favou?r\w*|endorse\w*|urge\w*)\b"
+                   rf"(?:\s+\S+){{0,4}}?\s+{verb}\b", i),
+        # "this payment is approved", "the transfer has been released", "it is now cleared"
+        # (a negated subject such as "No funds have been released" is a neutral statement of fact)
+        re.compile(rf"(?<!\bno\s)(?<!\bnot\s)\b{_SUBJECT}\s+{_AUX}{_ADV}\s+{verb}\b", i),
+        # "I approve", "we would release", "officer will reject"
+        re.compile(rf"\b(?:i|we|you|officer|officers|compliance)\s+(?:would\s+|will\s+|can\s+|should\s+)?{verb}\b", i),
+        # imperative at the start of a sentence: "Approve, risk is low." / "Release the payment."
+        re.compile(rf"(?:^|[.!?;:\n]\s*)(?:{IMPERATIVES[verb]})\b", i | re.MULTILINE),
+    ]
+
+
+# Verdict labels written in capitals ("APPROVE, risk is low", "Status: BLOCKED") are claims even without a verb frame.
+VERDICT_LABELS = {
+    "APPROVED": re.compile(r"\b(?:APPROVE|APPROVED|RELEASE|RELEASED|AUTHORISED|AUTHORIZED|CLEARED|SETTLED)\b"
+                           r"|(?i:\bgreen[- ]?(?:light\w*|lit)\b)"),
+    "BLOCKED": re.compile(r"\b(?:BLOCK|BLOCKED)\b"),
+    "REJECTED": re.compile(r"\b(?:REJECT|REJECTED|DECLINE|DECLINED)\b"),
+}
+DECISION_CLAIMS = {d: _claim_patterns(v) + [VERDICT_LABELS[d]] for d, v in DECISION_VERBS.items()}
+
+
+def decision_claims(text: str, stored_decision: str) -> list:
+    """Decisions (other than the stored one) that the text claims or recommends."""
+    found = []
+    for decision, patterns in DECISION_CLAIMS.items():
+        if decision == stored_decision:
+            continue
+        if any(p.search(text or "") for p in patterns):
+            found.append(decision)
+    return found
 
 
 def extract_first_json_object(text: str) -> Optional[str]:
@@ -183,9 +235,11 @@ def check(model_obj, *, valid_evidence_ids: Iterable[str] = (), context_text: st
 
     # 5. no claim of a decision that is not the stored one (LLM07, G11)
     if decision_words and stored_decision:
-        for decision, rx in DECISION_WORDS.items():
-            if decision != stored_decision and rx.search(all_text):
+        try:
+            if decision_claims(all_text, stored_decision):
                 return None, "REJECTED_GUARD:DECISION_CLAIM", events
+        except Exception:  # noqa: BLE001 — fail closed
+            return None, "REJECTED_GUARD:DECISION_CLAIM", events
 
     # 6. DLP on the output: redact before storing or showing (G8)
     try:
