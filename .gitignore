@@ -26,3 +26,11 @@ Thumbs.db
 
 # Local tool config
 .claude/
+
+# Secret files and backups (never commit)
+.env.*
+!.env.example
+*env*.txt
+*.bak
+*.pem
+*.key
