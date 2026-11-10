@@ -273,3 +273,12 @@ no raw exception text; budget exhausted → UNAVAILABLE; /admin/ai access; no ve
 
 **Not done yet:** dedicated P6 tests (`tests/ai/test_ai_features_p6.py`), P6.8 (optional), P7 (CI, docs, README).
 **How verified:** `pytest -q -m "not live_redteam"` → 178 passed; manual run in the browser.
+
+## UI polish — offline assets and layout fixes (branch `ui/polish-offline-assets`)
+
+- Chart.js 4.4.6 and the Plus Jakarta Sans / JetBrains Mono fonts are now served from `static/` instead of a CDN
+  and Google Fonts. The dashboard charts were blank offline before this change. Licences are in `THIRD_PARTY_NOTICES.md`.
+- Fixed cards staggering vertically inside grids, horizontal overflow on phones and tablets, the admin AI tables
+  overflowing their cards, and the review page columns squeezing at mid widths.
+- Key-value tables (payment result, review facts) stack label above value on phones, so labels no longer wrap one letter per line.
+- No behaviour change: `pytest` still gives 178 passed, 1 skipped.

@@ -7,6 +7,12 @@
  *   and a CSS 3D block chain on the landing page. All motion is disabled under prefers-reduced-motion.
  */
 
+/* Fonts are self-hosted (SIL OFL 1.1, see THIRD_PARTY_NOTICES.md) so the UI renders the same offline. */
+@font-face { font-family: "Plus Jakarta Sans"; font-style: normal; font-display: swap; font-weight: 200 800;
+  src: url("../fonts/plus-jakarta-sans-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-style: normal; font-display: swap; font-weight: 100 800;
+  src: url("../fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2"); }
+
 :root {
   color-scheme: dark;
   --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
@@ -579,6 +585,38 @@ details.ai-collapse[open] > summary .icon-chev { transform: rotate(180deg); }
   .demo-logins { grid-template-columns: 1fr; }
   .cube { --s: 56px; }
   .cube-chain { gap: 22px; }
+}
+
+/* ------------------------------------------------------------------ layout fixes (Nov 2026 UI pass) */
+/* Cards placed side by side in a grid must not inherit the stacked-card top margin (it staggered the rows). */
+:is(.grid-2, .grid-3, .flow-grid, .feature-list, .stats-grid, .metric-grid) > * { margin-top: 0 !important; }
+.review-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); align-items: start; }
+.nav-brand { flex: none; white-space: nowrap; }
+.stat-card > div { min-width: 0; }
+.stat-sub, .result-kicker { overflow-wrap: anywhere; }
+.custom-table.kv td + td { overflow-wrap: anywhere; }
+.custom-table.kv td .font-mono, .custom-table.kv td code { word-break: break-all; }
+@media (max-width: 1280px) { .nav-brand small { display: none; } .nav-link { padding: 8px 9px; } }
+@media (max-width: 900px) {
+  .grid-2, .grid-3, .flow-grid, .feature-list { grid-template-columns: minmax(0, 1fr); }
+  .hero-stage { overflow: hidden; }
+  .cube { --s: 60px; }
+  .cube-chain { gap: 24px; }
+  .review-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .nav-container { gap: 8px; }
+  .nav-actions { gap: 6px; }
+  .nav-user { padding: 6px 8px; }
+  .custom-table.kv, .custom-table.kv tbody, .custom-table.kv tr, .custom-table.kv td { display: block; width: 100%; }
+  .custom-table.kv td:first-child { width: 100%; padding-bottom: 2px; border-bottom: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .custom-table.kv td:last-child { padding-top: 2px; }
+  .form-actions .btn { width: 100%; white-space: normal; }
+}
+@media (max-width: 420px) {
+  .nav-user { display: none; }
+  .cube { --s: 48px; }
+  .cube-chain { gap: 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
