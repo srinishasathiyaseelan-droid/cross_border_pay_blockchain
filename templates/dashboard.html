@@ -38,6 +38,11 @@
             <p class="card-sub">{{ 'Every settlement and officer review, as it happens.' if is_admin else 'Your own payments and their reviews, as they happen.' }}
             {% if is_admin and demo_mode %} Simulated traffic is a dry run: it is scored by the real model and policy engine but never stored or mined.{% endif %}</p>
         </div>
+        {% if is_admin %}
+        <div class="btn-row live-controls">
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.live_console') }}">{{ icon('activity') }}Open live console</a>
+        </div>
+        {% endif %}
         {% if is_admin and demo_mode %}
         <div class="btn-row live-controls">
             <label class="live-rate">Rate <select id="sim-rate" class="select" aria-label="Simulated events per second">

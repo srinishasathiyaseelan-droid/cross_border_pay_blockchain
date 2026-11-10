@@ -256,19 +256,45 @@
     }
 
     /* ---------- AI advisory polling (rendered as plain text only) ---------- */
+    function pollAIPanel(panel) {
+        const url = panel.dataset.aiPoll;
+        let tries = 0;
+        const done = () => {
+            panel.classList.add('is-unavailable');
+            panel.classList.remove('is-loading');
+            const btn = panel.querySelector('[data-ai-explain]');
+            if (btn) btn.disabled = false;
+        };
+        const tick = () => {
+            fetch(url, { credentials: 'same-origin' }).then((r) => r.json()).then((d) => {
+                if (d.status === 'DONE' && d.result) {
+                    renderAI(panel, d.result);
+                    const btn = panel.querySelector('[data-ai-explain]');
+                    if (btn) btn.disabled = false;
+                    return;
+                }
+                if (d.status === 'PENDING' && tries++ < 20) { setTimeout(tick, 1500); return; }
+                done();
+            }).catch(done);
+        };
+        tick();
+    }
+
     function initAIPanels() {
-        document.querySelectorAll('[data-ai-poll]').forEach((panel) => {
-            const url = panel.dataset.aiPoll;
-            let tries = 0;
-            const tick = () => {
-                fetch(url, { credentials: 'same-origin' }).then((r) => r.json()).then((d) => {
-                    if (d.status === 'DONE' && d.result) { renderAI(panel, d.result); return; }
-                    if (d.status === 'PENDING' && tries++ < 20) { setTimeout(tick, 1500); return; }
-                    panel.classList.add('is-unavailable');
-                    panel.classList.remove('is-loading');
-                }).catch(() => { panel.classList.add('is-unavailable'); panel.classList.remove('is-loading'); });
-            };
-            tick();
+        document.querySelectorAll('[data-ai-poll]').forEach(pollAIPanel);
+        /* "Explain with AI": queue a fresh advisory explanation, then poll again. */
+        document.querySelectorAll('[data-ai-explain]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const panel = btn.closest('[data-ai-poll]');
+                if (!panel) return;
+                btn.disabled = true;
+                panel.classList.remove('is-unavailable', 'is-ready');
+                panel.classList.add('is-loading');
+                jsonPost(btn.dataset.aiExplain, {}).then(({ ok }) => {
+                    if (ok) { pollAIPanel(panel); return; }
+                    panel.classList.add('is-unavailable'); panel.classList.remove('is-loading'); btn.disabled = false;
+                }).catch(() => { panel.classList.add('is-unavailable'); panel.classList.remove('is-loading'); btn.disabled = false; });
+            });
         });
     }
 

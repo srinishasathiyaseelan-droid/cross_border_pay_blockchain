@@ -72,6 +72,9 @@ class BaseConfig:
         for name in ("AI_EXPLAIN", "AI_PURPOSE", "AI_COPILOT", "AI_INVOICE", "AI_NLQ", "AI_ASSIST", "AI_REPORTS")
     }
     AI_RUN_SYNC = _flag("AI_RUN_SYNC", "0")  # tests run background jobs inline
+    AI_BACKFILL = _flag("AI_BACKFILL", "1")  # at startup, queue AI explanations for recent payments that have none
+    # Escalate-only policy rule: an SME with at least this many payments in the last hour goes to HOLD (0 = off).
+    VELOCITY_BURST_1H = _int("VELOCITY_BURST_1H", 5)
     # Input-guard BLOCK may escalate a payment to HOLD only because the measured FPR on the benign holdout was
     # <= 2% (model/evaluation/guardrail_holdout.json). Set to 0 to make it evidence-only.
     INPUT_GUARD_ESCALATES = _flag("INPUT_GUARD_ESCALATES", "1")
@@ -102,6 +105,7 @@ class TestConfig(BaseConfig):
     DEMO_MODE = True
     LLM_ENABLED = False
     AI_RUN_SYNC = True
+    AI_BACKFILL = False
     POW_DIFFICULTY = 2
     DEMO_SME_PASSWORD = "sme-demo-password-test"
     DEMO_ADMIN_PASSWORD = "admin-demo-password-test"

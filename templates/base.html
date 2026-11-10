@@ -37,6 +37,7 @@
         <li><a href="{{ url_for('payments.transactions') }}" class="nav-link" {% if request.endpoint == 'payments.transactions' %}aria-current="page"{% endif %}>{{ icon('list') }}Transactions</a></li>
         <li><a href="{{ url_for('payments.blockchain_explorer') }}" class="nav-link" {% if request.endpoint == 'payments.blockchain_explorer' %}aria-current="page"{% endif %}>{{ icon('link') }}Ledger</a></li>
         {% if is_admin %}
+        <li><a href="{{ url_for('admin.live_console') }}" class="nav-link" {% if request.endpoint == 'admin.live_console' %}aria-current="page"{% endif %}>{{ icon('activity') }}Live ops</a></li>
         <li><a href="{{ url_for('admin.kyc_queue') }}" class="nav-link" {% if request.endpoint == 'admin.kyc_queue' %}aria-current="page"{% endif %}>{{ icon('id-card') }}KYC queue</a></li>
         <li><a href="{{ url_for('admin.reports') }}" class="nav-link" {% if request.endpoint == 'admin.reports' %}aria-current="page"{% endif %}>{{ icon('file-text') }}Reports</a></li>
         <li><a href="{{ url_for('admin.ai_ops') }}" class="nav-link" {% if request.endpoint == 'admin.ai_ops' %}aria-current="page"{% endif %}>{{ icon('sparkles') }}AI ops</a></li>

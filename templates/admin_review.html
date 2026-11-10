@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import icon, tile, decision_badge, risk_badge, kyc_badge, money, ai_label %}
+{% from "_macros.html" import icon, tile, decision_badge, risk_badge, kyc_badge, money, ai_label, ai_explain %}
 {% block title %}Review {{ tx.transaction_id }}{% endblock %}
 
 {% block content %}
@@ -66,6 +66,8 @@
             </form>
         </section>
         {% endif %}
+
+        {{ ai_explain(tx, ai_on, ai_flags) }}
 
         <details class="advisory collapse" {% if copilot and request.args.get('open') %}open{% endif %} data-reveal>
             <summary><span class="section-title">{{ tile('sparkles', 'ai', 'sm') }}AI copilot</span>

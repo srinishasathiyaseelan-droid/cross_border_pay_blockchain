@@ -94,6 +94,34 @@ def kyc_decide(kyc_id):
     return redirect(url_for("admin.kyc_queue"))
 
 
+# ----------------- Live operations console -----------------
+@bp.route("/admin/live")
+@admin_required
+def live_console():
+    """Officer console: KPIs, the HOLD queue (with the stored AI one-liner, advisory) and the live event table."""
+    import json
+
+    from flask import current_app, render_template
+
+    from ..realtime import REASON_LABELS
+
+    rows = get_db().execute(
+        """SELECT t.transaction_id, t.normalized_usd_amount, t.amount, t.source_currency, t.currency, t.sender_country,
+                  t.receiver_country, t.risk_score, t.risk_level, t.policy_reasons, t.timestamp, e.output_json
+           FROM transactions t LEFT JOIN risk_explanations e ON e.tx_id = t.transaction_id
+           WHERE t.decision = 'HOLD' ORDER BY t.id DESC LIMIT 25""").fetchall()
+    queue = []
+    for r in rows:
+        reasons = json.loads(r["policy_reasons"] or "[]")
+        try:
+            summary = json.loads(r["output_json"]).get("summary") if r["output_json"] else None
+        except (TypeError, ValueError):
+            summary = None
+        queue.append({**dict(r), "why": REASON_LABELS.get(reasons[-1], reasons[-1]) if reasons else "On hold",
+                      "ai_summary": summary})
+    return render_template("admin_live.html", queue=queue, demo=bool(current_app.config.get("DEMO_MODE")))
+
+
 # ----------------- AI operations page (P5) -----------------
 @bp.route("/admin/ai", methods=["GET", "POST"])
 @admin_required
@@ -106,7 +134,14 @@ def ai_ops():
     from ..ai import log as ailog
 
     conn = get_db()
-    if request.method == "POST":
+    selftest = None
+    if request.method == "POST" and request.form.get("action") == "selftest":
+        from flask import session
+
+        from ..ai import tasks as ai_tasks
+
+        selftest = ai_tasks.self_test(conn, session["user_id"])
+    elif request.method == "POST":
         on = request.form.get("kill_switch") == "on"
         budget.set_kill_switch(conn, on)
         flash("AI kill switch is ON: every AI call is off." if on else "AI kill switch is OFF.", "info")
@@ -128,7 +163,7 @@ def ai_ops():
         calls_today=sum(r[2] for r in by_status), by_status=[tuple(r) for r in by_status],
         by_guard=[tuple(r) for r in by_guard], agreement=[tuple(r) for r in agreement],
         spend=round(ailog.spend_today(conn), 4), budget=current_app.config.get("LLM_DAILY_BUDGET_USD"),
-        flags=current_app.config.get("AI_FLAGS", {}),
+        flags=current_app.config.get("AI_FLAGS", {}), selftest=selftest,
     )
 
 

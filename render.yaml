@@ -53,6 +53,8 @@ services:
         value: "3"
       - key: INVOICE_REQUIRED_ABOVE_USD
         value: "50000"
+      - key: VELOCITY_BURST_1H
+        value: "5"
       # --- Exchange rates ---------------------------------------------------
       - key: EXCHANGE_RATE_API_KEY
         sync: false                # optional; open.er-api.com works without a key
@@ -73,6 +75,8 @@ services:
         value: "0.50"
       - key: LLM_LOG_RETENTION_DAYS
         value: "30"
+      - key: AI_BACKFILL
+        value: "1"
       - key: AI_RATE_LIMIT
         value: 30 per hour
       - key: GROQ_API_KEY

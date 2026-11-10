@@ -29,12 +29,63 @@ def explain_job(tx_id: str):
                          "created_at) VALUES (?, ?, ?, ?, ?, ?)",
                          (tx_id, json.dumps(res.data), res.meta.get("provider"), res.meta.get("model"),
                           res.meta.get("prompt_version"), utcnow_iso()))
+            from ...realtime import ai_event, publish_safely  # live console one-liner (advisory)
+
+            publish_safely(current_app._get_current_object(),
+                           ai_event(tx_id, row["user_id"], res.data.get("summary", "")))
         return res
     return fn
 
 
 def queue_explanation(conn, tx_id: str) -> str:
     return current_app.extensions["ai_jobs"].submit(conn, "explain", tx_id, explain_job(tx_id))
+
+
+BACKFILL_LIMIT = 10
+BACKFILL_SPACING_S = 12.0  # free-tier providers allow only a few large prompts a minute; never starve live traffic
+
+
+def _spaced(fn, delay: float):
+    """Background backfill jobs wait before calling out, so a restart never bursts the provider's rate limit."""
+    import time
+
+    def inner(conn):
+        if delay > 0:
+            time.sleep(delay)
+        return fn(conn)
+    return inner
+
+
+def backfill(app, conn, limit: int = BACKFILL_LIMIT) -> dict:
+    """Queue explanations (and record-only purpose tags) for recent payments that have none, so pages show AI text
+    for payments made before the AI layer was on. Called once at startup; skipped when AI is off or over budget.
+    Never touches a decision: explain is advisory and purpose_retry_job only fills the purpose columns."""
+    from ..budget import ai_enabled, over_budget
+
+    out = {"explain": 0, "purpose": 0}
+    with app.app_context():
+        if not ai_enabled(conn) or over_budget(conn):
+            return out
+        # A separate single-worker runner, so spaced backfill jobs never delay explanations for new payments.
+        runner = app.extensions.get("ai_backfill_jobs") or app.extensions["ai_jobs"]
+        flags = app.config.get("AI_FLAGS", {})
+        delay = 0.0 if app.config.get("AI_RUN_SYNC") else BACKFILL_SPACING_S
+        rows = conn.execute(
+            "SELECT transaction_id, notes, sender_country, receiver_country, normalized_usd_amount, purpose_category "
+            "FROM transactions WHERE decision != 'PENDING_SETTLEMENT' ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        for r in rows:
+            tx_id = r["transaction_id"]
+            if flags.get("AI_EXPLAIN", True) and not conn.execute(
+                    "SELECT 1 FROM ai_jobs WHERE task = 'explain' AND tx_id = ?", (tx_id,)).fetchone():
+                runner.submit(conn, "explain", tx_id, _spaced(explain_job(tx_id), delay))
+                out["explain"] += 1
+            if (flags.get("AI_PURPOSE", True) and (r["notes"] or "").strip() and not r["purpose_category"]
+                    and not conn.execute("SELECT 1 FROM ai_jobs WHERE task = 'purpose' AND tx_id = ?", (tx_id,)).fetchone()):
+                corridor = f"{r['sender_country']} to {r['receiver_country']}"
+                runner.submit(conn, "purpose", tx_id, _spaced(purpose_retry_job(
+                    tx_id, r["notes"], corridor, float(r["normalized_usd_amount"] or 0)), delay))
+                out["purpose"] += 1
+    return out
 
 
 # ---- P6.2 purpose tagger (escalate-only, G1) ----------------------------------------------------------------
@@ -225,3 +276,44 @@ def weekly_report(conn, user_id: int) -> GuardedResult:
 
 def sar_draft(conn, tx: dict, user_id: int) -> GuardedResult:
     return run_task("report", context.sar_narrative(conn, tx), user_id, conn)
+
+
+# ---- AI self-test (/admin/ai) -------------------------------------------------------------------------------
+# A fixed synthetic case, never stored as a payment: each feature runs once through the full pipeline (input guard,
+# DLP, router, output guard, llm_calls log) so an officer can see in one click which features return real output.
+SELFTEST_TX = {
+    "transaction_id": "TX-SELFTEST-0001", "user_id": 0, "decision": "HOLD", "risk_level": "MEDIUM", "risk_score": 52.4,
+    "p_low": 0.21, "p_med": 0.55, "p_high": 0.24, "scoring_engine": "model", "sender": "Selftest Exports Ltd",
+    "receiver": "Selftest Components GmbH", "sender_country": "India", "receiver_country": "Germany",
+    "amount": 18500.0, "currency": "USD", "source_currency": "USD", "target_currency": "EUR",
+    "exchange_rate": 0.92, "converted_amount": 17020.0, "exchange_rate_provider": "selftest",
+    "rate_timestamp": "2026-01-01T00:00:00Z", "normalized_usd_amount": 18500.0, "corridor_risk": 0.22,
+    "frequency": 6, "previous_transactions": 14, "suspicious_transactions": 1, "account_age": 9,
+    "top_factors": json.dumps([{"feature": "frequency", "label": "Payments in the last 30 days", "value": 6,
+                                "contribution": 8.5}]),
+    "policy_reasons": json.dumps(["RISK_SCORE_AT_OR_ABOVE_REVIEW_AT"]), "notes": "Invoice 4471 for machine parts",
+    "timestamp": "2026-01-01T00:00:00Z", "feature_source": "selftest",
+}
+SELFTEST_INVOICE = ("COMMERCIAL INVOICE No. 4471\nSeller: Selftest Components GmbH\nBuyer: Selftest Exports Ltd\n"
+                    "Description: CNC spindle parts, 40 units\nTotal: 18,500.00 USD\nDate: 2026-01-01")
+
+
+def self_test(conn, user_id: int) -> list:
+    """-> [(task, status)] with status OK, UNAVAILABLE, DISABLED, BLOCKED_INPUT or REJECTED_GUARD:<code>."""
+    tx = dict(SELFTEST_TX)
+    ctxs = [
+        ("explain", context.explain(conn, tx)),
+        ("purpose", context.purpose(tx["notes"], "India to Germany", tx["normalized_usd_amount"])),
+        ("copilot", context.copilot(conn, tx)),
+        ("invoice", context.invoice(SELFTEST_INVOICE)),
+        ("nl_filter", context.nl_filter("held payments to Germany over 10000 dollars")),
+        ("assistant", context.assistant(conn, tx, "Which documents would help the review of this payment?")),
+        ("report", context.weekly_report(conn)),
+    ]
+    out = []
+    for task, ctx in ctxs:
+        try:
+            out.append((task, run_task(task, ctx, user_id, conn).status))
+        except Exception:  # noqa: BLE001 — a self-test never raises to the page
+            out.append((task, "ERROR"))
+    return out

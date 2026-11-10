@@ -8,13 +8,15 @@ record, no block.
 """
 import json
 import logging
+import time
 
-from flask import current_app
+from flask import current_app, g
 
 from ..db import utcnow_iso
 from ..realtime import publish_safely, settlement_event
 from ..ledger.chain import NOT_RECORDED, settlement_record, tx_hash
 from ..security import idempotency
+from .features import velocity_1h
 from ..util import new_tx_id
 
 log = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ def _finish(conn):
 def settle_payment(conn, *, user_id, kyc_status, data, conversion, features, scored, feature_source,
                    idempotency_key=None, overrides=(), ai_escalations=(), extra_columns=None) -> dict:
     ledger, audit, contract = _ext("ledger"), _ext("audit"), _ext("contract")
+    started = getattr(g, "pipeline_started", None) or time.perf_counter()
     conn.execute("BEGIN IMMEDIATE")
     try:
         if idempotency_key:
@@ -74,6 +77,11 @@ def settle_payment(conn, *, user_id, kyc_status, data, conversion, features, sco
         cols = ",".join(row)
         conn.execute(f"INSERT INTO transactions ({cols}) VALUES ({','.join('?' * len(row))})", list(row.values()))
 
+        # Escalate-only velocity rule, counted inside the same transaction (includes the row just inserted).
+        burst_at = int(current_app.config.get("VELOCITY_BURST_1H") or 0)
+        overrides = list(overrides)
+        if burst_at > 0 and velocity_1h(conn, user_id) >= burst_at:
+            overrides.append("VELOCITY_BURST")
         decision = contract.decide(kyc_status, scored["level"], scored["score"], overrides=overrides,
                                    ai_escalations=ai_escalations)
         record = settlement_record(row, decision.decision, now)
@@ -106,8 +114,11 @@ def settle_payment(conn, *, user_id, kyc_status, data, conversion, features, sco
             conn.execute("ROLLBACK")
         raise
     _finish(conn)
+    latency_ms = round((time.perf_counter() - started) * 1000, 1)
     publish_safely(current_app._get_current_object(),
-                   settlement_event("decision", row, decision.decision, block.index if block else None))
+                   settlement_event("decision", row, decision.decision, block.index if block else None,
+                                    reasons=decision.reason_codes, policy_id=decision.policy_id, label=label,
+                                    kyc_status=kyc_status, latency_ms=latency_ms))
     return {"tx_id": tx_id, "decision": decision.decision, "block": block.index if block else None}
 
 
@@ -158,7 +169,9 @@ def resolve_hold(conn, *, tx_id, admin_id, action, reason, copilot_memo=None, ai
         raise
     _finish(conn)
     publish_safely(current_app._get_current_object(),
-                   settlement_event("review", row, new_decision, block.index if block else None))
+                   settlement_event("review", row, new_decision, block.index if block else None,
+                                    reasons=[f"OFFICER_{action.upper()}"], policy_id="officer_review",
+                                    label=label, kyc_status=kyc_status))
     return {"tx_id": tx_id, "decision": new_decision, "block": block.index if block else None}
 
 

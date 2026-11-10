@@ -111,6 +111,55 @@
   .live-meta { grid-area: meta; white-space: normal; } .live-risk { grid-area: risk; justify-self: end; } .live-tags { grid-area: tags; justify-content: flex-start; }
   .live-tags:empty { display: none; }
 }
+.live-ai { grid-column: 1 / -1; display: flex; gap: var(--space-1); align-items: flex-start; color: var(--ai); }
+.live-ai .icon { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+
+/* ------------------------------------------------------------------ live operations console (/admin/live) */
+.ops-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); padding-block: var(--space-3); }
+.ops-controls { margin-left: auto; align-items: center; }
+.ops-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(0, 2.4fr); gap: var(--space-6); align-items: start; }
+.ops-queue { list-style: none; margin: 0; padding: 0; max-height: 640px; overflow-y: auto; display: grid; gap: var(--space-2); }
+.ops-queue-link { display: grid; gap: 2px; padding: var(--space-3); border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface-2); color: var(--text); text-decoration: none; transition: border-color var(--dur-fast), background var(--dur-fast); }
+.ops-queue-link:hover { border-color: var(--warning); background: var(--surface-1); }
+.ops-queue-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ops-queue-item.is-new { animation: live-in var(--dur-page) var(--ease-standard); }
+.ops-amount { font: var(--weight-bold) var(--text-md) var(--font-mono); font-variant-numeric: tabular-nums; }
+.ops-why { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
+.ops-ai { display: flex; gap: var(--space-1); align-items: flex-start; margin-top: var(--space-1); font-size: var(--text-xs); color: var(--text-2); }
+.ops-ai .icon { width: 14px; height: 14px; flex: none; margin-top: 1px; color: var(--ai); }
+.ops-ai-label { color: var(--ai); font-weight: var(--weight-bold); white-space: nowrap; }
+.ops-empty { padding: var(--space-6) var(--space-2); text-align: center; color: var(--text-muted); }
+.ops-table-wrap { max-height: 640px; overflow-y: auto; }
+.ops-table thead th { position: sticky; top: 0; background: var(--surface-1); z-index: 1; }
+.ops-row { cursor: pointer; }
+.ops-row:focus-visible td { background: var(--surface-2); outline: none; }
+.ops-row:focus-visible td:first-child { box-shadow: inset 3px 0 0 var(--focus); }
+.ops-row.is-new td { animation: live-in var(--dur-page) var(--ease-standard); }
+.ops-row.is-sim td { color: var(--text-2); }
+.ops-why-cell { min-width: 160px; }
+.ops-why-cell .ops-why { display: block; }
+.ops-ai-inline { display: block; font-size: var(--text-xs); color: var(--ai); margin-top: 2px; }
+.ops-orig { display: block; }
+.ops-corridor { min-width: 120px; }
+.ops-corridor .ops-tag { display: table; margin: 2px 0 0; }
+.ops-tag { margin-left: var(--space-1); }
+.ops-table td:first-child { white-space: nowrap; }
+.ops-trace { width: min(620px, calc(100vw - 32px)); }
+.ops-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); counter-reset: step; }
+.ops-step { position: relative; padding: var(--space-3) var(--space-4) var(--space-3) var(--space-8); border: 1px solid var(--border);
+  border-radius: var(--radius-md); background: var(--surface-2); counter-increment: step; font-size: var(--text-sm); }
+.ops-step::before { content: counter(step); position: absolute; left: var(--space-3); top: var(--space-3); width: 20px; height: 20px;
+  border-radius: 50%; display: grid; place-items: center; font: var(--weight-bold) var(--text-xs) var(--font-mono);
+  background: var(--surface-3); color: var(--text-2); }
+.ops-step.is-ok::before { background: var(--success-soft); color: var(--success); }
+.ops-step.is-warn::before { background: var(--warning-soft); color: var(--warning); }
+.ops-step.is-bad::before { background: var(--danger-soft); color: var(--danger); }
+.ops-step.is-ai { border-color: var(--ai-border); }
+.ops-step.is-ai::before { background: var(--ai-soft); color: var(--ai); }
+.ops-step-lines { margin: var(--space-1) 0 0; padding-left: var(--space-4); color: var(--text-2); overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .ops-grid { grid-template-columns: minmax(0, 1fr); } .ops-queue { max-height: 360px; } }
+@media (max-width: 640px) { .ops-controls { margin-left: 0; } }
 
 /* ------------------------------------------------------------------ ledger explorer */
 .chain { display: grid; grid-template-columns: minmax(0, 1fr); list-style: none; margin: var(--space-6) 0 0; padding: 0; }

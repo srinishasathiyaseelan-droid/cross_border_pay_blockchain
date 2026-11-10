@@ -32,7 +32,23 @@
     function setState(state, text) { status.dataset.state = state; label.textContent = text; }
     const fmt = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
+    const aiByTx = new Map();
+    function aiNote(text) {
+        const n = el('span', 'live-ai xsmall');
+        n.appendChild(svg('sparkles'));
+        n.appendChild(document.createTextNode('AI · advisory: ' + text));
+        return n;
+    }
+    function onAI(ev) {
+        if (!ev.tx_id || !ev.summary) return;
+        aiByTx.set(ev.tx_id, ev.summary);
+        list.querySelectorAll('.live-row').forEach((li) => {
+            if (li.dataset.tx === ev.tx_id && li.dataset.decision === 'HOLD' && !li.querySelector('.live-ai')) li.appendChild(aiNote(ev.summary));
+        });
+    }
+
     function render(ev, animate) {
+        if (ev.type === 'ai') { onAI(ev); return; }
         if (seen.has(ev.seq)) return;
         seen.add(ev.seq);
         const empty = list.querySelector('.live-empty');
@@ -54,6 +70,8 @@
         if (ev.block) tags.appendChild(el('span', 'badge badge-neutral', 'block #' + ev.block));
         if (ev.simulated) tags.appendChild(el('span', 'badge badge-ai', 'SIMULATED'));
         li.append(time, id, meta, risk, dec, tags);
+        li.dataset.tx = ev.tx_id; li.dataset.decision = ev.decision;
+        if (ev.decision === 'HOLD' && aiByTx.has(ev.tx_id)) li.appendChild(aiNote(aiByTx.get(ev.tx_id)));
         list.prepend(li);
         while (list.children.length > MAX_ROWS) list.lastElementChild.remove();
         counts[ev.decision] = (counts[ev.decision] || 0) + 1;
@@ -94,6 +112,7 @@
     ['decision', 'review'].forEach((t) => source.addEventListener(t, (m) => {
         try { render(JSON.parse(m.data), true); } catch (e) { /* ignore malformed */ }
     }));
+    source.addEventListener('ai', (m) => { try { onAI(JSON.parse(m.data)); } catch (e) { /* ignore malformed */ } });
     window.addEventListener('pagehide', () => source.close());
 
     const simUrl = root.dataset.sim;

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "_macros.html" import icon, tile, risk_badge, money %}
+{% block title %}Live operations{% endblock %}
+{% block content %}
+{# Officer console. Every server value reaches the DOM through autoescape or textContent (live_ops.js), never as HTML. #}
+<div class="page-head" data-reveal>
+    <div>
+        <h1 class="page-title">{{ tile('activity', 'brand') }}Live operations</h1>
+        <p class="page-sub">Decisions as they happen. The policy engine and officers decide; AI lines are advisory.</p>
+    </div>
+</div>
+
+<section class="card ops-strip" id="live-ops" data-events="{{ url_for('api.live_events') }}" data-snapshot="{{ url_for('api.live_snapshot') }}"
+         data-stats="{{ url_for('api.live_stats') }}" data-sim="{{ url_for('api.live_simulator') if demo else '' }}"
+         data-tx-url="{{ url_for('payments.result', tx_id='__TX__') }}" data-review-url="{{ url_for('admin.review', tx_id='__TX__') }}"
+         aria-label="Stream status" data-reveal>
+    <span class="live-status" data-state="connecting" role="status"><span class="live-dot"></span><span class="live-label">Connecting…</span></span>
+    <span class="small text-2 ops-rate" aria-live="off">0.0 events/s over the last 10 s</span>
+    <div class="btn-row ops-controls">
+        <button type="button" class="btn btn-secondary btn-sm" id="ops-pause" aria-pressed="false">{{ icon('pause') }}<span>Pause stream</span></button>
+        {% if demo %}
+        <label class="live-rate">Rate <select id="sim-rate" class="select" aria-label="Simulated events per second">
+            <option value="0.5">0.5/s</option><option value="1" selected>1/s</option><option value="3">3/s</option><option value="6">6/s</option></select></label>
+        <button type="button" class="btn btn-secondary btn-sm" id="sim-toggle" aria-pressed="false">{{ icon('zap') }}<span>Start simulated traffic</span></button>
+        {% endif %}
+    </div>
+</section>
+
+<section class="kpis mt-4" aria-label="Key figures" data-reveal>
+    <div class="kpi">{{ tile('pause', 'warning') }}<div><div class="kpi-label">On hold</div><div class="kpi-value" data-kpi="hold">–</div><div class="kpi-sub" data-kpi-sim="HOLD">waiting for an officer</div></div></div>
+    <div class="kpi">{{ tile('ban', 'danger') }}<div><div class="kpi-label">Blocked</div><div class="kpi-value" data-kpi="blocked">–</div><div class="kpi-sub" data-kpi-sim="BLOCKED">by the policy engine</div></div></div>
+    <div class="kpi">{{ tile('x', 'neutral') }}<div><div class="kpi-label">Rejected</div><div class="kpi-value" data-kpi="rejected">–</div><div class="kpi-sub" data-kpi-sim="REJECTED">KYC gate or officer</div></div></div>
+    <div class="kpi">{{ tile('check', 'success') }}<div><div class="kpi-label">Approval rate</div><div class="kpi-value" data-kpi="approval_rate">–</div><div class="kpi-sub" data-kpi-sub="decided">of decided payments</div></div></div>
+    <div class="kpi">{{ tile('clock', 'info') }}<div><div class="kpi-label">Pipeline p95</div><div class="kpi-value text-lg" data-kpi="p95_ms">–</div><div class="kpi-sub" data-kpi-sub="p95">measured on the server</div></div></div>
+</section>
+<p class="xsmall muted mt-2">Counts are real payments in the database. Simulated traffic is a dry run and is shown separately.</p>
+
+<div class="ops-grid mt-6">
+    <section class="card" aria-labelledby="h-queue" data-reveal>
+        <h2 class="card-title" id="h-queue">{{ tile('pause', 'warning', 'sm') }}Needs a decision <span class="badge badge-hold num" id="queue-count">{{ queue|length }}</span></h2>
+        <p class="card-sub">Policy placed these on hold. Your choice on the review page is written to the signed audit chain.</p>
+        <ul class="ops-queue mt-3" id="ops-queue">
+            {% for q in queue %}
+            <li class="ops-queue-item" data-tx="{{ q.transaction_id }}">
+                <a class="ops-queue-link" href="{{ url_for('admin.review', tx_id=q.transaction_id) }}">
+                    <span class="ops-amount num">{{ "${:,.2f}".format(q.normalized_usd_amount or 0) }}</span>
+                    <span class="ops-why">{{ q.why }}</span>
+                    <span class="xsmall muted">{{ money(q.amount, q.source_currency or q.currency) }} · {{ q.sender_country }} → {{ q.receiver_country }}</span>
+                    {% if q.ai_summary %}<span class="ops-ai">{{ icon('sparkles') }}<span class="ops-ai-label">AI · advisory</span> <span>{{ q.ai_summary }}</span></span>{% endif %}
+                </a>
+            </li>
+            {% else %}
+            <li class="ops-empty small">Nothing is waiting for a decision.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="card" aria-labelledby="h-stream" data-reveal>
+        <div class="cluster between">
+            <h2 class="card-title" id="h-stream">{{ tile('list', 'brand', 'sm') }}Event stream</h2>
+            <span class="xsmall muted" id="ops-total">0 events in this session</span>
+        </div>
+        <p class="card-sub">Hovering holds the list still. Enter or click opens the decision trace.</p>
+        <div class="segmented mt-3" role="tablist" aria-label="Filter events" id="ops-filters">
+            {% for key, label in [('ALL', 'All'), ('APPROVED', 'Approved'), ('HOLD', 'Hold'), ('BLOCKED', 'Blocked'), ('REJECTED', 'Rejected'), ('DUPLICATE', 'Ingress'), ('SIM', 'Simulated')] %}
+            <button type="button" role="tab" data-filter="{{ key }}" aria-selected="{{ 'true' if key == 'ALL' else 'false' }}">{{ label }}</button>
+            {% endfor %}
+        </div>
+        <div class="table-wrap mt-3 ops-table-wrap">
+            <table class="table ops-table">
+                <thead><tr><th scope="col">Verdict</th><th scope="col">Why</th><th scope="col" class="num">Amount</th><th scope="col">Risk</th><th scope="col">Corridor</th><th scope="col">Time</th></tr></thead>
+                <tbody id="ops-rows"><tr class="ops-empty-row"><td colspan="6" class="table-empty">Waiting for decisions.{% if demo %} Start simulated traffic or submit a payment.{% endif %}</td></tr></tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<dialog class="dialog ops-trace" id="ops-trace" aria-labelledby="trace-title">
+    <div class="cluster between"><h2 class="card-title" id="trace-title">{{ tile('layers', 'brand', 'sm') }}<span>Decision trace</span></h2>
+        <button type="button" class="icon-btn" data-close-trace aria-label="Close">{{ icon('x') }}</button></div>
+    <p class="small text-2 mt-1" id="trace-sub"></p>
+    <ol class="ops-steps mt-4" id="trace-steps"></ol>
+    <div class="btn-row mt-4" id="trace-actions"></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live_ops.js') }}" defer></script>
+{% endblock %}
