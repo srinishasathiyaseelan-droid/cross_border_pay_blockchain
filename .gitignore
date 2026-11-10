@@ -23,3 +23,6 @@ node_modules
 .gitignore.backup
 Thumbs.db
 .DS_Store
+
+# Local tool config
+.claude/

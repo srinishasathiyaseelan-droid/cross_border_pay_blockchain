@@ -1,164 +1,69 @@
 {% extends "base.html" %}
-
-{% block title %}Transaction Settlement History{% endblock %}
+{% from "_macros.html" import icon, tile, decision_badge, risk_badge, money %}
+{% block title %}Transactions{% endblock %}
 
 {% block content %}
-<div class="card" style="margin-bottom: 24px;">
-    <div class="card-header">
-        <div>
-            <h2 class="card-title">
-                <span>📋</span> SME Cross-Border Settlement History
-            </h2>
-            <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 4px;">
-                Complete traceable audit log of ML risk evaluations, smart contract triggers, and blockchain settlements.
-            </p>
-        </div>
-        <a href="{{ url_for('payments.payment') }}" class="btn btn-primary btn-sm">
-            + New Payment Request
-        </a>
+<div class="page-head">
+    <div>
+        <h1 class="page-title">{{ tile('list', 'blue') }}{{ 'All SME payments' if is_admin else 'Your payments' }}</h1>
+        <p class="page-sub">Every decision, its risk score, and whether it was recorded on the ledger.</p>
     </div>
+    {% if not is_admin %}<a href="{{ url_for('payments.payment') }}" class="btn btn-primary">{{ icon('plus') }}New payment</a>{% endif %}
+</div>
 
-    <!-- Filter & Search Controls -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="{{ url_for('payments.transactions', status='ALL') }}" class="btn btn-sm {% if status_filter == 'ALL' %}btn-primary{% else %}btn-secondary{% endif %}">
-                All Transactions
-            </a>
-            <a href="{{ url_for('payments.transactions', status='APPROVED') }}" class="btn btn-sm {% if status_filter == 'APPROVED' %}btn-primary{% else %}btn-secondary{% endif %}">
-                🟢 Approved
-            </a>
-            <a href="{{ url_for('payments.transactions', status='HOLD') }}" class="btn btn-sm {% if status_filter == 'HOLD' %}btn-primary{% else %}btn-secondary{% endif %}">
-                🟡 On Hold
-            </a>
-            <a href="{{ url_for('payments.transactions', status='BLOCKED') }}" class="btn btn-sm {% if status_filter == 'BLOCKED' %}btn-primary{% else %}btn-secondary{% endif %}">
-                🔴 Blocked
-            </a>
-            <a href="{{ url_for('payments.transactions', status='REJECTED') }}" class="btn btn-sm {% if status_filter == 'REJECTED' %}btn-primary{% else %}btn-secondary{% endif %}">
-                Rejected
-            </a>
+<div class="card">
+    {% if ai_on and ai_flags.get('AI_NLQ', True) %}
+    <form id="nlq-form" class="nlq-form" role="search">
+        {{ tile('sparkles', 'violet', 'sm') }}
+        <input id="nlq-input" class="form-control" maxlength="300" placeholder="Ask in plain words, e.g. held payments to India over $20k this month" aria-label="Natural-language filter">
+        <button type="submit" class="btn btn-ai btn-sm">{{ icon('filter') }}Filter</button>
+    </form>
+    <div id="nlq-error" class="alert alert-warning" hidden style="margin-bottom:12px"></div>
+    <p class="muted-sm" style="margin:-6px 0 14px">AI turns your words into the filter chips below (never into SQL). Check the chips; the results are always limited to what you are allowed to see.</p>
+    {% endif %}
+    <div class="toolbar">
+        <div class="segmented" role="group" aria-label="Filter by decision">
+            {% for key, label, ic in [('ALL', 'All', 'layers'), ('APPROVED', 'Approved', 'check'), ('HOLD', 'On hold', 'pause'), ('BLOCKED', 'Blocked', 'ban'), ('REJECTED', 'Rejected', 'x')] %}
+            <a href="{{ url_for('payments.transactions', status=key, q=query or None) }}" class="btn btn-sm {{ 'btn-primary' if status_filter == key else 'btn-secondary' }}">{{ icon(ic) }}{{ label }}</a>
+            {% endfor %}
         </div>
-
-        <form method="GET" action="{{ url_for('payments.transactions') }}" style="display: flex; gap: 8px;">
+        <form method="GET" action="{{ url_for('payments.transactions') }}" class="search-form" role="search">
             <input type="hidden" name="status" value="{{ status_filter }}">
-            <input type="text" name="q" value="{{ query }}" placeholder="Search TX ID, Sender, Receiver..." class="form-control" style="width: 240px; padding: 6px 12px; font-size: 0.84rem;">
-            <button type="submit" class="btn btn-secondary btn-sm">Search</button>
-            {% if query %}
-                <a href="{{ url_for('payments.transactions', status=status_filter) }}" class="btn btn-outline btn-sm">Clear</a>
-            {% endif %}
+            <input type="search" name="q" value="{{ query }}" placeholder="TX ID, sender or receiver" class="form-control" aria-label="Search transactions">
+            <button type="submit" class="btn btn-secondary btn-sm">{{ icon('search') }}Search</button>
+            {% if query %}<a href="{{ url_for('payments.transactions', status=status_filter) }}" class="btn btn-ghost btn-sm">Clear</a>{% endif %}
         </form>
     </div>
+    {% if filter_chips %}<div class="filter-chips">{% for k, v in filter_chips %}<span class="badge badge-ai">{{ icon('filter') }}{{ k }}: {{ v }}</span>{% endfor %}</div>{% endif %}
 
-    <!-- Transactions Table matching Section 9 -->
     <div class="table-responsive">
         <table class="custom-table">
             <thead>
-                <tr>
-                    <th>Transaction ID</th>
-                    <th>Timestamp</th>
-                    <th>Sender SME</th>
-                    <th>Beneficiary SME</th>
-                    <th>Amount & Currency</th>
-                    <th>Risk Level</th>
-                    <th>Decision</th>
-                    <th>Blockchain Status</th>
-                    <th style="text-align: right;">Action</th>
-                </tr>
+                <tr><th>Transaction</th><th>Parties</th><th>Amount</th><th>Risk</th><th>Decision</th><th>Ledger</th><th style="text-align:right">Action</th></tr>
             </thead>
             <tbody>
-                {% if transactions %}
-                    {% for tx in transactions %}
-                        <tr>
-                            <td>
-                                <strong class="font-mono" style="color: #60a5fa;">{{ tx.transaction_id }}</strong>
-                            </td>
-                            <td style="font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">
-                                {{ tx.timestamp }}
-                            </td>
-                            <td>
-                                <div><strong>{{ tx.sender }}</strong></div>
-                                <div style="font-size: 0.74rem; color: var(--text-dim);">{{ tx.sender_country }}</div>
-                            </td>
-                            <td>
-                                <div><strong>{{ tx.receiver }}</strong></div>
-                                <div style="font-size: 0.74rem; color: var(--text-dim);">{{ tx.receiver_country }}</div>
-                            </td>
-                            <td>
-                                <div style="font-weight: 700; font-size: 0.95rem;">
-                                    {{ "{:,.2f}".format(tx.amount) }}
-                                    <span class="badge badge-neutral" style="font-size: 0.68rem; padding: 1px 5px;">{{ tx.source_currency or tx.currency }}</span>
-                                </div>
-                                {% if tx.target_currency and tx.target_currency != (tx.source_currency or tx.currency) %}
-                                    <div style="font-size: 0.78rem; color: #34d399; margin-top: 2px; font-weight: 600;">
-                                        → {% if tx.target_currency == 'JPY' %}{{ "{:,.0f}".format(tx.converted_amount or tx.amount) }}{% else %}{{ "{:,.2f}".format(tx.converted_amount or tx.amount) }}{% endif %} {{ tx.target_currency }}
-                                    </div>
-                                    <div style="font-size: 0.68rem; color: var(--text-dim); font-family: var(--font-mono);">
-                                        1 {{ tx.source_currency or tx.currency }} = {{ "{:.4f}".format(tx.exchange_rate or 1.0) }} {{ tx.target_currency }}
-                                    </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if tx.risk_level == 'LOW' %}
-                                    <span class="badge badge-low">
-                                        <span class="dot dot-low"></span> LOW ({{ tx.risk_score }}%)
-                                    </span>
-                                {% elif tx.risk_level == 'MEDIUM' %}
-                                    <span class="badge badge-med">
-                                        <span class="dot dot-med"></span> MEDIUM ({{ tx.risk_score }}%)
-                                    </span>
-                                {% else %}
-                                    <span class="badge badge-high">
-                                        <span class="dot dot-high"></span> HIGH ({{ tx.risk_score }}%)
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if tx.decision == 'APPROVED' %}
-                                    <span class="badge badge-approved">APPROVED</span>
-                                {% elif tx.decision == 'HOLD' %}
-                                    <span class="badge badge-hold">HOLD</span>
-                                {% elif tx.decision == 'REJECTED' %}
-                                    <span class="badge badge-rejected">REJECTED</span>
-                                {% else %}
-                                    <span class="badge badge-blocked">BLOCKED</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if tx.decision == 'APPROVED' %}
-                                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <span class="badge badge-low" style="font-size: 0.7rem; width: fit-content;">
-                                            ⛓️ RECORDED (Block #{{ tx.block_number or 1 }})
-                                        </span>
-                                        <span class="font-mono" style="font-size: 0.68rem; color: var(--text-dim); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                            {{ tx.blockchain_hash }}
-                                        </span>
-                                    </div>
-                                {% elif tx.decision == 'HOLD' %}
-                                    <span class="badge badge-med" style="font-size: 0.7rem;">
-                                        ⏳ PENDING AUDIT
-                                    </span>
-                                {% else %}
-                                    <span class="badge badge-high" style="font-size: 0.7rem;">
-                                        🚫 NOT RECORDED
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">
-                                    View Receipt
-                                </a>
-                                {% if tx.decision == 'HOLD' and is_admin %}
-                                    <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-warning btn-sm">Review</a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
-                            No transactions found matching your filter criteria.
-                        </td>
-                    </tr>
-                {% endif %}
+            {% for tx in transactions %}
+                <tr>
+                    <td><span class="tx-id">{{ tx.transaction_id }}</span><div class="muted-sm font-mono">{{ tx.timestamp }}</div></td>
+                    <td><strong>{{ tx.receiver }}</strong><div class="muted-sm">{{ tx.sender }} · {{ tx.sender_country }} → {{ tx.receiver_country }}</div></td>
+                    <td><strong>{{ money(tx.amount, tx.source_currency or tx.currency) }}</strong>
+                        {% if tx.target_currency and tx.target_currency != (tx.source_currency or tx.currency) %}
+                        <div class="muted-sm">→ {{ money(tx.converted_amount, tx.target_currency) }}</div>{% endif %}</td>
+                    <td>{{ risk_badge(tx.risk_level, tx.risk_score) }}</td>
+                    <td>{{ decision_badge(tx.decision) }}</td>
+                    <td>{% if tx.decision == 'APPROVED' %}<span class="badge badge-approved">{{ icon('cube') }}Block #{{ tx.block_number }}</span>
+                        {% elif tx.decision == 'HOLD' %}<span class="badge badge-hold">{{ icon('clock') }}Pending review</span>
+                        {% else %}<span class="badge badge-neutral">{{ icon('ban') }}Not recorded</span>{% endif %}</td>
+                    <td style="text-align:right;white-space:nowrap">
+                        <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-outline btn-sm">{{ icon('eye') }}Receipt</a>
+                        {% if tx.decision == 'HOLD' and is_admin %}
+                        <a href="{{ url_for('payments.result', tx_id=tx.transaction_id) }}" class="btn btn-warning btn-sm">{{ icon('scale') }}Review</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="empty-row">No payments match this filter.</td></tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>

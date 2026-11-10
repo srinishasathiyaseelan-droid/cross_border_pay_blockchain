@@ -1,287 +1,157 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon, tile, pipeline %}
+{% block title %}Send a payment{% endblock %}
 
-{% block title %}Initiate Cross-Border Payment{% endblock %}
+{% block content %}
+<div style="max-width:1000px;margin:0 auto">
+    {{ pipeline([('KYC verified', 'id-card'), ('Payment', 'send'), ('Risk model', 'cpu'), ('Policy', 'scale'), ('Settlement', 'link')], 2) }}
+
+    {% if not is_verified %}
+    <div class="card kyc-gate">
+        {{ tile('lock', 'red', 'lg') }}
+        <h2 class="page-title" style="justify-content:center">KYC verification required</h2>
+        <p class="muted" style="max-width:560px;margin:10px auto 20px">Only SMEs verified by a compliance officer can submit
+            cross-border payments. Your status is <strong>{{ kyc.status if kyc else 'not submitted' }}</strong>.</p>
+        <a href="{{ url_for('kyc.kyc') }}" class="btn btn-primary">{{ icon('id-card') }}Go to KYC</a>
+    </div>
+    {% else %}
+
+    {% if demo_mode %}
+    <div class="demo-bar">
+        <div class="label">{{ icon('zap') }}Demo scenarios: fixed server-side behaviour vectors, badged DEMO VECTOR on the receipt</div>
+        <div class="btn-row">
+            <button type="button" data-scenario="low" class="btn btn-success btn-sm">{{ icon('check') }}Low risk</button>
+            <button type="button" data-scenario="medium" class="btn btn-warning btn-sm">{{ icon('pause') }}Medium risk</button>
+            <button type="button" data-scenario="high" class="btn btn-danger btn-sm">{{ icon('ban') }}High risk</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card glow">
+        <div class="card-header">
+            <div>
+                <h1 class="card-title" style="font-size:1.25rem">{{ tile('send', 'teal') }}Cross-border settlement request</h1>
+                <p class="card-sub">Sender: <strong>{{ kyc.business_name }}</strong> {{ icon('shield') }} KYC verified</p>
+            </div>
+            <div id="risk-preview" class="risk-preview" data-level="unknown" aria-live="polite">
+                <div class="stat-label">{{ icon('cpu') }} Model preview · nothing saved</div>
+                <div><span class="rp-level" id="live-risk-level">—</span> · score <strong id="live-risk-score">—</strong> → <strong id="live-decision">—</strong></div>
+                <div class="meter"><i id="live-risk-meter"></i></div>
+                <div class="muted-sm" id="live-risk-detail">Enter an amount and corridor.</div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form" data-once>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="scenario" name="scenario" value="">
+            <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+            <div id="scenario-chip" class="scenario-chip" hidden>{{ icon('zap') }}<span id="scenario-chip-label"></span>
+                <button type="button" id="scenario-clear">clear</button></div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="sender">Sender (your verified business)</label>
+                    <input type="text" id="sender" class="form-control" value="{{ kyc.business_name }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="receiver">Beneficiary business</label>
+                    <input type="text" id="receiver" name="receiver" class="form-control" minlength="2" maxlength="120"
+                           placeholder="e.g. EuroTech Industrial GmbH" required>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="fieldset">
+                    <div class="fieldset-title">{{ icon('upload') }}Sender</div>
+                    <div class="form-group">
+                        <label class="form-label" for="sender_country">Country</label>
+                        <select id="sender_country" name="sender_country" class="form-control">
+                            {% for c in ['United States', 'United Kingdom', 'Germany', 'France', 'Singapore', 'Japan', 'India', 'United Arab Emirates', 'Australia', 'Canada'] %}
+                            <option value="{{ c }}" {% if c == kyc.country %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label class="form-label" for="sender_currency">Currency (source)</label>
+                        <select id="sender_currency" name="sender_currency" class="form-control">
+                            {% for code, c in supported_currencies.items() %}
+                            <option value="{{ code }}" {% if code == country_currencies.get(kyc.country, 'USD') %}selected{% endif %}>{{ code }} · {{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="fieldset">
+                    <div class="fieldset-title">{{ icon('bank') }}Beneficiary</div>
+                    <div class="form-group">
+                        <label class="form-label" for="receiver_country">Country</label>
+                        <select id="receiver_country" name="receiver_country" class="form-control">
+                            {% for c in countries %}
+                            <option value="{{ c }}" {% if c == 'Germany' %}selected{% endif %}>{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label class="form-label" for="receiver_currency">Currency (target)</label>
+                        <select id="receiver_currency" name="receiver_currency" class="form-control">
+                            {% for code, c in supported_currencies.items() %}
+                            <option value="{{ code }}" {% if code == 'EUR' %}selected{% endif %}>{{ code }} · {{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fx-panel">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label class="form-label" for="amount">Amount (<span id="source-currency-label">USD</span>)</label>
+                        <div class="input-prefix"><span id="amount-currency-symbol">$</span>
+                            <input type="number" step="0.01" min="0.01" id="amount" name="amount" class="form-control" placeholder="4500.00" required></div>
+                    </div>
+                    <button type="button" id="btn-convert-currency" class="btn btn-secondary">{{ icon('refresh') }}Convert</button>
+                </div>
+                <div id="conversion-loading-indicator" class="ai-loading" hidden><div class="skeleton" style="width:160px"></div>Fetching live rate…</div>
+                <div id="conversion-error-box" class="alert alert-danger" style="margin-top:12px" hidden>{{ icon('alert') }}<span id="conversion-error-text">Rate unavailable.</span></div>
+                <div id="conversion-details-content" class="fx-grid">
+                    <div><div class="k">Exchange rate</div><div class="v font-mono" id="display-exchange-rate">—</div></div>
+                    <div><div class="k">Beneficiary receives</div><div class="v big" id="display-converted-amount">—</div><div class="muted-sm" id="display-target-currency-code"></div></div>
+                    <div><div class="k">USD reference (for the model)</div><div class="v font-mono" id="display-usd-amount">—</div></div>
+                    <div><div class="k">Provider</div><div class="v" id="display-rate-provider" style="font-size:0.92rem">—</div><div class="muted-sm font-mono" id="display-rate-timestamp"></div></div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">{{ icon('info') }}<span>Risk features (payments in the last 30 days, history, prior holds, account age)
+                are computed by the server from your account. They are not form fields.</span></div>
+
+            {% if ai_on and ai_flags.get('AI_INVOICE', True) %}
+            <div class="fieldset" style="margin-bottom:16px">
+                <div class="fieldset-title">{{ icon('file-check') }}Invoice (optional · PDF up to 5 MB and 10 pages)</div>
+                <div class="btn-row">
+                    <input type="file" id="invoice-file" accept="application/pdf" class="form-control" style="max-width:360px" aria-label="Invoice PDF">
+                    <button type="button" id="btn-read-invoice" class="btn btn-ai btn-sm">{{ icon('sparkles') }}Read invoice</button>
+                </div>
+                <input type="hidden" name="invoice_token" id="invoice_token" value="">
+                <div id="invoice-result" style="margin-top:12px" aria-live="polite"></div>
+                <div class="form-hint">The AI reader pre-fills the form for you to confirm. A separate exact text check compares the invoice with the form; a mismatch can only send the payment to a reviewer.</div>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label" for="notes">Purpose of payment</label>
+                <input type="text" id="notes" name="notes" class="form-control" maxlength="500" placeholder="e.g. Invoice 4471, HS 8471 laptops, 30-day terms">
+                <div class="form-hint">If AI is on, a purpose tagger reads this note. It can only send a payment to a human reviewer, never approve one.</div>
+            </div>
+
+            <div class="form-actions">
+                <span class="muted-sm">{{ icon('lock') }} Decided by a deterministic policy · signed into the HMAC audit chain</span>
+                <button type="submit" id="btn-submit-payment" class="btn btn-primary btn-lg">{{ icon('send') }}Submit for risk check and settlement</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
 
 {% block scripts %}
 <script>window.CROSSPAY_COUNTRY_CURRENCY = {{ country_currencies|tojson }};</script>
-{% endblock %}
-
-{% block content %}
-<div style="max-width: 960px; margin: 20px auto;">
-    <!-- Top Pipeline -->
-    <div class="workflow-pipeline" style="margin-bottom: 24px;">
-        <div class="workflow-step complete">
-            <span class="step-num">✓</span>
-            <span>SME KYC Verified</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step active">
-            <span class="step-num">3</span>
-            <span>Payment Request</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">4</span>
-            <span>Random Forest ML</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">5</span>
-            <span>Decision (Approve/Hold/Block)</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">6</span>
-            <span>Smart Contract Settlement</span>
-        </div>
-    </div>
-
-    {% if not is_verified %}
-        <!-- Gatekeeper Warning: KYC Not Verified -->
-        <div class="card" style="border: 2px solid var(--color-high); text-align: center; padding: 40px 24px;">
-            <div style="font-size: 3rem; margin-bottom: 12px;">🚫</div>
-            <h2 style="font-size: 1.6rem; font-weight: 800; color: #f87171; margin-bottom: 8px;">
-                KYC Verification Required
-            </h2>
-            <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 20px auto;">
-                In accordance with cross-border anti-money laundering (AML) regulations and Smart Contract protocol rules, 
-                only <strong>KYC-VERIFIED</strong> SMEs can submit cross-border payment settlements.
-            </p>
-            <div style="display: flex; gap: 12px; justify-content: center;">
-                <a href="{{ url_for('kyc.kyc') }}" class="btn btn-primary" style="padding: 11px 24px;">
-                    Complete KYC Verification Now →
-                </a>
-            </div>
-        </div>
-    {% else %}
-        {% if demo_mode %}
-        <div class="demo-preset-bar">
-            <div class="preset-title">Demo scenarios (DEMO_MODE): fixed server-side behaviour vectors</div>
-            <div class="preset-buttons">
-                <button type="button" data-scenario="low" class="btn btn-success btn-sm">Scenario 1: Low risk</button>
-                <button type="button" data-scenario="medium" class="btn btn-warning btn-sm">Scenario 2: Medium risk</button>
-                <button type="button" data-scenario="high" class="btn btn-danger btn-sm">Scenario 3: High risk</button>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Payment Submission Card -->
-        <div class="card payment-form-card">
-            <div class="card-header">
-                <div>
-                    <h3 class="card-title">
-                        <span>💸</span> Cross-Border Settlement Request
-                    </h3>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
-                        Sender: <strong>{{ kyc.business_name if kyc else 'Verified SME' }}</strong> (KYC Verified ✓)
-                    </p>
-                </div>
-                <div id="risk-preview" class="risk-preview" data-level="unknown">
-                    <div class="muted-sm">Model preview (nothing is saved)</div>
-                    <div><strong id="live-risk-level">—</strong> · score <span id="live-risk-score">—</span> · <span id="live-decision">—</span></div>
-                    <div class="muted-sm" id="live-risk-detail"></div>
-                </div>
-            </div>
-
-            <form method="POST" action="{{ url_for('payments.process_payment') }}" id="payment-form" data-once>
-                <input type="hidden" id="scenario" name="scenario" value="">
-                <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
-                <div id="scenario-chip" class="scenario-chip" hidden><span id="scenario-chip-label"></span> <button type="button" id="scenario-clear">clear</button></div>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <!-- SME Entities Grid -->
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label class="form-label" for="sender">Originating SME (Sender)</label>
-                        <input type="text" id="sender" class="form-control" value="{{ kyc.business_name if kyc else '' }}" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="receiver">Beneficiary SME (Receiver)</label>
-                        <input type="text" id="receiver" name="receiver" class="form-control" 
-                               value="" placeholder="e.g. EuroTech Industrial GmbH" minlength="2" maxlength="120" required>
-                    </div>
-                </div>
-
-                <!-- Countries & Currencies Grid matching Section 2 -->
-                <div class="form-grid">
-                    <!-- Sender Side -->
-                    <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
-                        <div style="font-size: 0.78rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <span>📤</span> Sender Geographic & Currency Profile
-                        </div>
-                        <div class="form-group" style="margin-bottom: 10px;">
-                            <label class="form-label" for="sender_country">Sender Country</label>
-                            <select id="sender_country" name="sender_country" class="form-control">
-                                <option value="United States" selected>United States 🇺🇸</option>
-                                <option value="United Kingdom">United Kingdom 🇬🇧</option>
-                                <option value="Germany">Germany 🇩🇪</option>
-                                <option value="Singapore">Singapore 🇸🇬</option>
-                                <option value="Japan">Japan 🇯🇵</option>
-                                <option value="India">India 🇮🇳</option>
-                                <option value="United Arab Emirates">United Arab Emirates 🇦🇪</option>
-                                <option value="Australia">Australia 🇦🇺</option>
-                                <option value="Canada">Canada 🇨🇦</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="sender_currency">Sender Currency (Source)</label>
-                            <select id="sender_currency" name="sender_currency" class="form-control">
-                                <option value="USD" selected>USD ($) - US Dollar</option>
-                                <option value="EUR">EUR (€) - Euro</option>
-                                <option value="GBP">GBP (£) - British Pound</option>
-                                <option value="INR">INR (₹) - Indian Rupee</option>
-                                <option value="SGD">SGD (S$) - Singapore Dollar</option>
-                                <option value="AED">AED (AED) - UAE Dirham</option>
-                                <option value="AUD">AUD (A$) - Australian Dollar</option>
-                                <option value="CAD">CAD (C$) - Canadian Dollar</option>
-                                <option value="JPY">JPY (¥) - Japanese Yen</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Beneficiary Side -->
-                    <div style="background: rgba(30, 41, 59, 0.4); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
-                        <div style="font-size: 0.78rem; font-weight: 700; color: #a7f3d0; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <span>📥</span> Beneficiary Geographic & Settlement Profile
-                        </div>
-                        <div class="form-group" style="margin-bottom: 10px;">
-                            <label class="form-label" for="receiver_country">Beneficiary Country</label>
-                            <select id="receiver_country" name="receiver_country" class="form-control">
-                                <option value="Germany" selected>Germany 🇩🇪 (Low Corridor Risk)</option>
-                                <option value="United Kingdom">United Kingdom 🇬🇧 (Low Corridor Risk)</option>
-                                <option value="Singapore">Singapore 🇸🇬 (Low Corridor Risk)</option>
-                                <option value="Japan">Japan 🇯🇵 (Low Corridor Risk)</option>
-                                <option value="Brazil">Brazil 🇧🇷 (Medium Corridor Risk)</option>
-                                <option value="India">India 🇮🇳 (Medium Corridor Risk)</option>
-                                <option value="United Arab Emirates">United Arab Emirates 🇦🇪 (Medium Corridor Risk)</option>
-                                <option value="Australia">Australia 🇦🇺 (Low Corridor Risk)</option>
-                                <option value="Canada">Canada 🇨🇦 (Low Corridor Risk)</option>
-                                <option value="Nigeria">Nigeria 🇳🇬 (High Corridor Risk)</option>
-                                <option value="Russia">Russia 🇷🇺 (High Corridor Risk)</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="receiver_currency">Receiver Currency (Target)</label>
-                            <select id="receiver_currency" name="receiver_currency" class="form-control">
-                                <option value="EUR" selected>EUR (€) - Euro</option>
-                                <option value="USD">USD ($) - US Dollar</option>
-                                <option value="GBP">GBP (£) - British Pound</option>
-                                <option value="INR">INR (₹) - Indian Rupee</option>
-                                <option value="SGD">SGD (S$) - Singapore Dollar</option>
-                                <option value="AED">AED (AED) - UAE Dirham</option>
-                                <option value="AUD">AUD (A$) - Australian Dollar</option>
-                                <option value="CAD">CAD (C$) - Canadian Dollar</option>
-                                <option value="JPY">JPY (¥) - Japanese Yen</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Transaction Amount & Live Currency Conversion Panel -->
-                <div style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-                        <div style="font-size: 0.84rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
-                            <span>💱</span> Real-Time Cross-Border Currency Conversion Engine
-                        </div>
-                        <span class="badge badge-neutral" style="font-size: 0.72rem; letter-spacing: 0.03em;">
-                            Live Exchange-Rate API Integration
-                        </span>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; margin-bottom: 16px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label class="form-label" for="amount">
-                                Transaction Amount (<span id="source-currency-label">USD $</span>)
-                            </label>
-                            <div style="position: relative;">
-                                <span id="amount-currency-symbol" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-dim); font-size: 1rem;">$</span>
-                                <input type="number" step="0.01" id="amount" name="amount" class="form-control" 
-                                       value="4500.00" placeholder="e.g. 4500.00" style="padding-left: 32px; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.02em;" required>
-                            </div>
-                            <div class="form-hint">Financial calculations computed using Python's Decimal precision.</div>
-                        </div>
-
-                        <div>
-                            <button type="button" id="btn-convert-currency" class="btn btn-secondary" style="padding: 10px 20px; font-weight: 600; white-space: nowrap; height: 46px; display: inline-flex; align-items: center; gap: 8px; border-color: rgba(99, 102, 241, 0.4);">
-                                <span id="convert-btn-icon">🔄</span>
-                                <span id="convert-btn-text">Convert Currency</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Displayed Exchange Rate & Converted Amount Review Box -->
-                    <div id="conversion-result-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 16px; position: relative;">
-                        <!-- Loading Overlay -->
-                        <div id="conversion-loading-indicator" style="display: none; align-items: center; justify-content: center; gap: 10px; padding: 12px; color: #93c5fd; font-size: 0.88rem;">
-                            <span class="spinner-pulse"></span>
-                            <span>Fetching live exchange rate from API...</span>
-                        </div>
-
-                        <!-- Error Message Banner -->
-                        <div id="conversion-error-box" class="alert alert-danger" style="display: none; margin-bottom: 0; font-size: 0.84rem; padding: 10px 14px;">
-                            <span id="conversion-error-text">Unable to retrieve exchange rates.</span>
-                        </div>
-
-                        <!-- Success Conversion Details Grid -->
-                        <div id="conversion-details-content" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                            <div>
-                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Real-Time Exchange Rate</div>
-                                <div id="display-exchange-rate" style="font-size: 1.05rem; font-weight: 700; color: #60a5fa; margin-top: 4px; font-family: var(--font-mono);">
-                                    1 USD = 0.892784 EUR
-                                </div>
-                                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                                    Formula: Converted Amount = Amount × Rate
-                                </div>
-                            </div>
-
-                            <div>
-                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Beneficiary Converted Amount</div>
-                                <div id="display-converted-amount" style="font-size: 1.35rem; font-weight: 800; color: #34d399; margin-top: 2px;">
-                                    €4,017.53
-                                </div>
-                                <div style="font-size: 0.72rem; color: #a7f3d0;" id="display-target-currency-code">
-                                    EUR (Target Settlement Currency)
-                                </div>
-                            </div>
-
-                            <div>
-                                <div style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Rate Provider & Update Time</div>
-                                <div id="display-rate-provider" style="font-size: 0.85rem; font-weight: 600; color: var(--text-light); margin-top: 4px;">
-                                    ExchangeRate-API
-                                </div>
-                                <div id="display-rate-timestamp" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px; font-family: var(--font-mono);">
-                                    Last Updated: Fetching...
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Hidden Form Inputs for snapshot confirmation -->
-                        <input type="hidden" id="confirmed_exchange_rate" name="confirmed_exchange_rate" value="">
-                        <input type="hidden" id="confirmed_converted_amount" name="confirmed_converted_amount" value="">
-                        <input type="hidden" id="confirmed_rate_provider" name="confirmed_rate_provider" value="">
-                        <input type="hidden" id="confirmed_rate_timestamp" name="confirmed_rate_timestamp" value="">
-                    </div>
-                </div>
-
-                <div class="alert alert-info">Risk features (payment frequency, history, prior holds, account age) are computed
-                    by the server from your account history. They are not form fields.</div>
-
-                <div class="form-group">
-                    <label class="form-label" for="notes">Trade Context / Settlement Note</label>
-                    <input type="text" id="notes" name="notes" class="form-control" 
-                           value="" maxlength="500" placeholder="e.g. Invoice 4471 - HS 8471 laptops, 30-day terms">
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
-                    <div style="font-size: 0.8rem; color: var(--text-dim);">
-                        🔒 Protected by Smart Contract Guard & Cryptographic SHA-256 Ledger
-                    </div>
-                    <button type="submit" id="btn-submit-payment" class="btn btn-primary" style="padding: 12px 32px; font-size: 0.95rem;">
-                        <span id="submit-btn-text">Submit for ML Risk Analysis & Settlement →</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    {% endif %}
-</div>
 {% endblock %}

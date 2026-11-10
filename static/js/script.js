@@ -283,6 +283,61 @@
         log.scrollTop = log.scrollHeight;
     }
 
+    /* ---------- Invoice reader (P6.4): shows extracted fields as text; the user confirms before prefilling ---------- */
+    function initInvoice() {
+        const btn = $('btn-read-invoice');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            const file = $('invoice-file').files[0];
+            const out = $('invoice-result');
+            out.textContent = '';
+            if (!file) { out.textContent = 'Choose a PDF first.'; return; }
+            const fd = new FormData();
+            fd.append('invoice', file);
+            btn.classList.add('is-busy');
+            fetch('/api/ai/invoice', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then((r) => r.json()).then((d) => {
+                    btn.classList.remove('is-busy');
+                    if (!d.success) { out.textContent = d.error || 'Could not read the invoice.'; return; }
+                    $('invoice_token').value = d.token;
+                    const f = d.fields || {};
+                    const ver = d.verification || {};
+                    const box = document.createElement('div');
+                    box.className = 'ai-advisory';
+                    const head = document.createElement('div');
+                    head.className = 'ai-label';
+                    head.textContent = 'AI-generated · advisory · may be wrong';
+                    box.appendChild(head);
+                    const ul = document.createElement('ul');
+                    ul.className = 'ai-list';
+                    [['Invoice no.', f.invoice_no], ['Seller (beneficiary)', f.seller], ['Currency', f.currency, ver.currency],
+                     ['Total', f.total_amount, ver.total_amount], ['Terms', f.payment_terms]].forEach(([k, v, check]) => {
+                        const li = document.createElement('li');
+                        li.textContent = k + ': ' + (v === null || v === undefined ? 'not found' : v) + (check ? ' (' + check + ')' : '');
+                        ul.appendChild(li);
+                    });
+                    box.appendChild(ul);
+                    if (d.status !== 'OK') {
+                        const p = document.createElement('p'); p.className = 'ai-note';
+                        p.textContent = 'AI extraction unavailable (' + d.status + '); the exact text check still runs on submit.';
+                        box.appendChild(p);
+                    } else {
+                        const use = document.createElement('button');
+                        use.type = 'button'; use.className = 'btn btn-secondary btn-sm'; use.style.marginTop = '10px';
+                        use.textContent = 'Use these values in the form';
+                        use.addEventListener('click', () => {
+                            if (f.total_amount) $('amount').value = f.total_amount;
+                            if (f.currency && $('sender_currency').querySelector('option[value="' + f.currency + '"]')) $('sender_currency').value = f.currency;
+                            if (f.seller) $('receiver').value = f.seller;
+                            performConversion();
+                        });
+                        box.appendChild(use);
+                    }
+                    out.appendChild(box);
+                }).catch(() => { btn.classList.remove('is-busy'); out.textContent = 'Upload failed.'; });
+        });
+    }
+
     /* ---------- Natural-language filter ---------- */
     function initNLFilter() {
         const form = $('nlq-form');
@@ -301,7 +356,71 @@
         });
     }
 
+    /* ---------- 3D surfaces: cursor glow on cards, gentle tilt, hero particles ---------- */
+    const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function initGlow() {
+        document.querySelectorAll('.card.glow').forEach((card) => {
+            card.addEventListener('pointermove', (e) => {
+                const r = card.getBoundingClientRect();
+                card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+                card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+            });
+        });
+        if (reduceMotion()) return;
+        document.querySelectorAll('.flow-card, .stat-card').forEach((el) => {
+            el.classList.add('tilt');
+            el.addEventListener('pointermove', (e) => {
+                const r = el.getBoundingClientRect();
+                const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+                el.style.transform = `perspective(700px) rotateX(${(-y * 5).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg)`;
+            });
+            el.addEventListener('pointerleave', () => { el.style.transform = ''; });
+        });
+    }
+
+    function initParticles() {
+        const canvas = $('hero-particles');
+        if (!canvas || reduceMotion()) return;
+        const ctx = canvas.getContext('2d');
+        let w = 0, h = 0, dots = [], raf = 0;
+        const resize = () => {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            w = canvas.clientWidth; h = canvas.clientHeight;
+            canvas.width = w * dpr; canvas.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            dots = Array.from({ length: Math.round((w * h) / 9000) }, () => ({
+                x: Math.random() * w, y: Math.random() * h, z: Math.random() * 0.8 + 0.2,
+                vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25
+            }));
+        };
+        const tick = () => {
+            ctx.clearRect(0, 0, w, h);
+            const tone = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#1fc3a0';
+            for (const d of dots) {
+                d.x = (d.x + d.vx * d.z + w) % w; d.y = (d.y + d.vy * d.z + h) % h;
+                ctx.globalAlpha = 0.25 + d.z * 0.5;
+                ctx.fillStyle = tone;
+                ctx.beginPath(); ctx.arc(d.x, d.y, d.z * 2.1, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.globalAlpha = 0.08;
+            ctx.strokeStyle = tone;
+            for (let i = 0; i < dots.length; i++) for (let j = i + 1; j < dots.length; j++) {
+                const a = dots[i], b = dots[j], dx = a.x - b.x, dy = a.y - b.y;
+                if (dx * dx + dy * dy < 4200) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+            }
+            ctx.globalAlpha = 1;
+            raf = requestAnimationFrame(tick);
+        };
+        resize();
+        window.addEventListener('resize', () => { cancelAnimationFrame(raf); resize(); tick(); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) cancelAnimationFrame(raf); else tick(); });
+        tick();
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+        initGlow();
+        initParticles();
         initTheme();
         initFlashes();
         initNav();
@@ -313,5 +432,6 @@
         initAIPanels();
         initAssistant();
         initNLFilter();
+        initInvoice();
     });
 })();

@@ -130,3 +130,154 @@ def ai_ops():
         spend=round(ailog.spend_today(conn), 4), budget=current_app.config.get("LLM_DAILY_BUDGET_USD"),
         flags=current_app.config.get("AI_FLAGS", {}),
     )
+
+
+# ----------------- P6.3 HOLD review with AI copilot -----------------
+@bp.route("/admin/review/<tx_id>", methods=["GET", "POST"])
+@admin_required
+def review(tx_id):
+    import json
+
+    from flask import current_app, render_template, session
+
+    from ..ai import tasks as ai_tasks
+    from ..ai.budget import ai_enabled
+    from ..db import utcnow_iso
+    from ..services.settlement import SettlementError, resolve_hold as do_resolve
+
+    conn = get_db()
+    row = conn.execute("SELECT * FROM transactions WHERE transaction_id = ?", (tx_id,)).fetchone()
+    if row is None:
+        from flask import abort
+
+        abort(404)
+    tx = dict(row)
+    draft_row = conn.execute("SELECT result_json FROM ai_jobs WHERE task = 'copilot' AND tx_id = ? AND status = 'DONE'",
+                             (tx_id,)).fetchone()
+    copilot = json.loads(draft_row[0]) if draft_row and draft_row[0] else None
+
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "generate":  # explicit officer request; the panel never auto-selects a decision
+            res = ai_tasks.copilot(conn, tx, session["user_id"])
+            now = utcnow_iso()
+            conn.execute("INSERT INTO ai_jobs (task, tx_id, status, result_json, error_code, created_at, updated_at) "
+                         "VALUES ('copilot', ?, ?, ?, ?, ?, ?) ON CONFLICT(task, tx_id) DO UPDATE SET status = "
+                         "excluded.status, result_json = excluded.result_json, error_code = excluded.error_code, "
+                         "updated_at = excluded.updated_at",
+                         (tx_id, "DONE" if res.ok else "FAILED", json.dumps(res.data) if res.ok else None,
+                          None if res.ok else res.status, now, now))
+            if not res.ok:
+                flash(f"The copilot could not produce a safe draft ({res.status}). Review the facts directly.", "warning")
+            return redirect(url_for("admin.review", tx_id=tx_id))
+        if action not in ("approve", "reject"):
+            flash("Choose Release or Reject.", "warning")
+            return redirect(url_for("admin.review", tx_id=tx_id))
+        reason = (request.form.get("reason") or "").strip()
+        memo = (request.form.get("memo") or "").strip()[:4000]
+        ai_draft = copilot.get("draft_memo") if copilot else None
+        problem = ai_tasks.officer_reason_problem(reason, ai_draft)  # G3: own words, >= 20 chars, < 80% similar
+        if problem:
+            flash(problem, "warning")
+            return redirect(url_for("admin.review", tx_id=tx_id))
+        try:
+            out = do_resolve(conn, tx_id=tx_id, admin_id=session["user_id"], action=action, reason=reason[:2000],
+                             copilot_memo=memo or None, ai_draft=ai_draft,
+                             ai_agreement=ai_tasks.ai_agreement(memo or reason, ai_draft))
+        except SettlementError as e:
+            flash(str(e), "warning")
+            return redirect(url_for("admin.review", tx_id=tx_id))
+        flash(f"{tx_id}: {'released and recorded in block #' + str(out['block']) if out['decision'] == 'APPROVED' else 'rejected'}.",
+              "success" if out["decision"] == "APPROVED" else "info")
+        return redirect(url_for("payments.result", tx_id=tx_id))
+
+    from ..ai import evidence as ev
+
+    hist = conn.execute("SELECT transaction_id, timestamp, receiver_country, normalized_usd_amount, risk_level, decision "
+                        "FROM transactions WHERE user_id = ? AND transaction_id != ? ORDER BY id DESC LIMIT 8",
+                        (tx["user_id"], tx_id)).fetchall()
+    kyc = conn.execute("SELECT status, country, business_name FROM kyc WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+                       (tx["user_id"],)).fetchone()
+    reviews = conn.execute("SELECT r.*, u.name AS admin_name FROM hold_reviews r JOIN users u ON u.id = r.admin_id "
+                           "WHERE r.tx_id = ? ORDER BY r.id", (tx_id,)).fetchall()
+    tx["top_factors_list"] = json.loads(tx.get("top_factors") or "[]")
+    tx["policy_reasons_list"] = json.loads(tx.get("policy_reasons") or "[]")
+    return render_template("admin_review.html", tx=tx, history=[dict(h) for h in hist], kyc=dict(kyc) if kyc else None,
+                           reviews=[dict(r) for r in reviews], copilot=copilot, evidence=ev.build(conn, tx),
+                           ai_on=ai_enabled(conn) and current_app.config["AI_FLAGS"].get("AI_COPILOT", True),
+                           input_flags=json.loads(tx.get("input_guard_flags") or "[]"))
+
+
+# ----------------- P6.7 compliance report drafts -----------------
+@bp.route("/admin/reports", methods=["GET", "POST"])
+@admin_required
+def reports():
+    import json
+
+    from flask import current_app, render_template, session
+
+    from ..ai import tasks as ai_tasks
+    from ..ai.budget import ai_enabled
+    from ..db import utcnow_iso
+
+    conn = get_db()
+    if request.method == "POST":
+        kind = request.form.get("kind")
+        if kind == "sign":
+            rid = request.form.get("report_id", type=int)
+            conn.execute("UPDATE report_drafts SET status = 'SIGNED', signed_by = ?, signed_at = ? WHERE id = ? AND "
+                         "status = 'DRAFT'", (session["user_id"], utcnow_iso(), rid))
+            flash("Report signed off. It is no longer a draft.", "success")
+            return redirect(url_for("admin.reports"))
+        if kind == "weekly":
+            res, tx_id = ai_tasks.weekly_report(conn, session["user_id"]), None
+        elif kind == "sar":
+            tx_id = request.form.get("tx_id", "")
+            row = conn.execute("SELECT * FROM transactions WHERE transaction_id = ? AND decision = 'BLOCKED'",
+                               (tx_id,)).fetchone()
+            if row is None:
+                flash("Choose a BLOCKED transaction.", "warning")
+                return redirect(url_for("admin.reports"))
+            res = ai_tasks.sar_draft(conn, dict(row), session["user_id"])
+        else:
+            flash("Unknown report type.", "warning")
+            return redirect(url_for("admin.reports"))
+        if not res.ok:
+            flash(f"No draft produced ({res.status}). Nothing unverified is shown.", "warning")
+            return redirect(url_for("admin.reports"))
+        conn.execute("INSERT INTO report_drafts (kind, tx_id, title, body, key_points, status, created_by, created_at) "
+                     "VALUES (?, ?, ?, ?, ?, 'DRAFT', ?, ?)", (kind, tx_id, res.data["title"], res.data["body"],
+                                                                json.dumps(res.data["key_points"]), session["user_id"],
+                                                                utcnow_iso()))
+        flash("Draft created. Review every sentence before signing.", "info")
+        return redirect(url_for("admin.reports"))
+    drafts = conn.execute("SELECT d.*, u.name AS signer FROM report_drafts d LEFT JOIN users u ON u.id = d.signed_by "
+                          "ORDER BY d.id DESC LIMIT 20").fetchall()
+    blocked = conn.execute("SELECT transaction_id, receiver, receiver_country, normalized_usd_amount FROM transactions "
+                           "WHERE decision = 'BLOCKED' ORDER BY id DESC LIMIT 30").fetchall()
+    items = []
+    for d in drafts:
+        x = dict(d)
+        x["key_points_list"] = json.loads(x.get("key_points") or "[]")
+        items.append(x)
+    return render_template("admin_reports.html", drafts=items, blocked=[dict(b) for b in blocked],
+                           ai_on=ai_enabled(conn) and current_app.config["AI_FLAGS"].get("AI_REPORTS", True))
+
+
+@bp.route("/admin/reports/<int:report_id>.md")
+@admin_required
+def report_markdown(report_id):
+    import json
+
+    from flask import Response
+
+    r = get_db().execute("SELECT * FROM report_drafts WHERE id = ?", (report_id,)).fetchone()
+    if r is None:
+        from flask import abort
+
+        abort(404)
+    status = "SIGNED" if r["status"] == "SIGNED" else "DRAFT - not reviewed"
+    md = (f"# {r['title']}\n\n**Status:** {status}  \n**Generated:** {r['created_at']} (AI-generated, advisory)\n\n"
+          f"{r['body']}\n\n" + "\n".join(f"- {p}" for p in json.loads(r["key_points"] or "[]")) + "\n")
+    return Response(md, mimetype="text/markdown",
+                    headers={"Content-Disposition": f"attachment; filename=crosspay-report-{report_id}.md"})

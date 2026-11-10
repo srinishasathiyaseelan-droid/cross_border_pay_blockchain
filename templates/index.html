@@ -1,221 +1,79 @@
 {% extends "base.html" %}
-
+{% from "_macros.html" import icon, tile %}
 {% block title %}Overview{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div style="text-align: center; padding: 40px 0 32px 0;">
-    <div
-        style="display: inline-flex; align-items: center; gap: 8px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-full); padding: 6px 16px; margin-bottom: 20px;">
-        <span class="dot dot-low"></span>
-        <span
-            style="font-size: 0.82rem; font-weight: 700; color: #60a5fa; letter-spacing: 0.05em; text-transform: uppercase;">PPT
-            Proposed Architecture Implemented</span>
+<section class="hero">
+    <div>
+        <span class="hero-kicker">{{ icon('shield') }}Hardened prototype · Nov 2026</span>
+        <h1>Cross-border payments that <em>explain their risk</em> before they settle.</h1>
+        <p class="lead">An SME submits a payment. CrossPay converts it at a live rate, scores it with a Random Forest built
+            from the SME's own history, and a deterministic policy approves it onto a signed ledger, holds it for a
+            compliance officer, or blocks it. An optional AI layer explains the decision, but never makes it.</p>
+        <div class="btn-row">
+            {% if current_user %}
+                <a href="{{ url_for('payments.payment') if not is_admin else url_for('payments.transactions') }}" class="btn btn-primary btn-lg">{{ icon('send') }}{{ 'Send a payment' if not is_admin else 'Review payments' }}</a>
+                <a href="{{ url_for('payments.dashboard') }}" class="btn btn-secondary btn-lg">{{ icon('chart') }}Dashboard</a>
+            {% elif demo_mode %}
+                <a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-primary btn-lg">{{ icon('zap') }}Try as demo SME</a>
+                <a href="{{ url_for('auth.quick_login', role='admin') }}" class="btn btn-ai btn-lg">{{ icon('shield') }}Compliance officer</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Sign in</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-lg">Register an SME</a>
+            {% endif %}
+        </div>
     </div>
-    <h1
-        style="font-size: 2.8rem; font-weight: 800; letter-spacing: -0.03em; max-width: 900px; margin: 0 auto 16px auto; line-height: 1.2;">
-        Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments
-    </h1>
-    <p style="font-size: 1.15rem; color: var(--text-muted); max-width: 740px; margin: 0 auto 28px auto;">
-        An intelligent cross-border financial settlement architecture combining
-        <strong>Simulated KYC Verification</strong>, <strong>Random Forest Risk Prediction</strong>, and
-        <strong>Smart Contract Blockchain Settlement</strong> for Small and Medium Enterprises.
-    </p>
-
-    <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
-        <a href="{{ url_for('payments.payment') }}" class="btn btn-primary" style="padding: 12px 24px; font-size: 0.95rem;">
-            <span>🚀 Initiate Payment Demo</span>
-        </a>
-        <a href="{{ url_for('payments.dashboard') }}" class="btn btn-secondary" style="padding: 12px 22px; font-size: 0.95rem;">
-            <span>📊 Open Analytics Dashboard</span>
-        </a>
+    <div class="hero-stage" aria-hidden="true">
+        <canvas id="hero-particles"></canvas>
+        <div class="cube-chain">
+            <div class="cube c-low"><div class="face front">#1</div><div class="face back"></div><div class="face right"></div><div class="face left"></div><div class="face top"></div><div class="face bottom"></div></div>
+            <div class="cube c-med"><div class="face front">HOLD</div><div class="face back"></div><div class="face right"></div><div class="face left"></div><div class="face top"></div><div class="face bottom"></div></div>
+            <div class="cube c-ai"><div class="face front">#2</div><div class="face back"></div><div class="face right"></div><div class="face left"></div><div class="face top"></div><div class="face bottom"></div></div>
+        </div>
+        <div class="hero-legend">
+            <span class="badge badge-approved">{{ icon('check') }}Approved → mined</span>
+            <span class="badge badge-hold">{{ icon('pause') }}Hold → officer</span>
+            <span class="badge badge-ai">{{ icon('sparkles') }}AI explains</span>
+        </div>
     </div>
-</div>
+</section>
 
-<!-- Workflow Visualizer Bar matching PPT Section 1 -->
-<div class="card" style="margin-bottom: 36px; border-color: rgba(59, 130, 246, 0.25);">
+<section class="card glow" style="margin-bottom:22px">
     <div class="card-header">
-        <h3 class="card-title">
-            <span>🔄</span> End-to-End System Workflow
-        </h3>
-        <span class="badge badge-neutral">Autonomous Pipeline</span>
-    </div>
-
-    <div class="workflow-pipeline">
-        <div class="workflow-step complete">
-            <span class="step-num">1</span>
-            <span>SME Registration</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step complete">
-            <span class="step-num">2</span>
-            <span>KYC Verification</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step active">
-            <span class="step-num">3</span>
-            <span>Payment Request</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">4</span>
-            <span>Random Forest ML</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">5</span>
-            <span>Risk Decision Engine</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">6</span>
-            <span>Smart Contract & Chain</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">7</span>
-            <span>Secure Ledger History</span>
-        </div>
-    </div>
-
-    <!-- Visual Decision Branching Diagram -->
-    <div
-        style="background: rgba(10, 15, 29, 0.8); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px; text-align: center;">
-        <div
-            style="font-size: 0.84rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 14px;">
-            ML Risk Assessment & Autonomous Decision Routing
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
-            <div
-                style="background: var(--color-low-bg); border: 1px solid var(--color-low-border); border-radius: var(--radius-sm); padding: 14px;">
-                <div class="badge badge-low" style="margin-bottom: 6px;">🟢 LOW RISK</div>
-                <div style="font-weight: 700; font-size: 1.05rem; color: #fff;">APPROVE TRANSACTION</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Executes Smart Contract →
-                    Mined onto Blockchain Block</div>
-            </div>
-            <div
-                style="background: var(--color-med-bg); border: 1px solid var(--color-med-border); border-radius: var(--radius-sm); padding: 14px;">
-                <div class="badge badge-med" style="margin-bottom: 6px;">🟡 MEDIUM RISK</div>
-                <div style="font-weight: 700; font-size: 1.05rem; color: #fff;">HOLD IN ESCROW</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Held for Secondary
-                    Compliance Review → Block Pending</div>
-            </div>
-            <div
-                style="background: var(--color-high-bg); border: 1px solid var(--color-high-border); border-radius: var(--radius-sm); padding: 14px;">
-                <div class="badge badge-high" style="margin-bottom: 6px;">🔴 HIGH RISK</div>
-                <div style="font-weight: 700; font-size: 1.05rem; color: #fff;">BLOCK TRANSACTION</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Smart Contract Rejection →
-                    Never Recorded on Ledger</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 3 Demonstration Scenarios Section -->
-<div style="margin-bottom: 36px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;">
         <div>
-            <h2 style="font-size: 1.4rem; font-weight: 700;">Live Demonstration Scenarios</h2>
-            <p style="color: var(--text-muted); font-size: 0.88rem;">Ready-to-test scenarios for Low, Medium, and High
-                Risk validation</p>
-        </div>
-        <a href="{{ url_for('payments.payment') }}" class="btn btn-outline btn-sm">Try in Payment Form →</a>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px;">
-        <!-- Scenario 1 -->
-        <div class="card" style="border-top: 4px solid var(--color-low);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span class="badge badge-low">Scenario 1: Low Risk</span>
-                <span style="font-size: 0.8rem; color: var(--text-dim);">Expected: Approve</span>
-            </div>
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Legitimate SME Supply Order</h3>
-            <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px;">
-                Typical trade invoice: Normal amount ($4,500), low frequency (2/wk), 48 past successful transactions, 0
-                suspicious flags, mature 26-month account.
-            </p>
-            <div
-                style="font-size: 0.8rem; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 14px;">
-                <code>Random Forest → LOW RISK → APPROVED → Blockchain & Smart Contract Settlement</code>
-            </div>
-            <a href="{{ url_for('payments.payment') }}" class="btn btn-success btn-sm" style="width: 100%;">⚡ Test Scenario 1</a>
-        </div>
-
-        <!-- Scenario 2 -->
-        <div class="card" style="border-top: 4px solid var(--color-med);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span class="badge badge-med">Scenario 2: Medium Risk</span>
-                <span style="font-size: 0.8rem; color: var(--text-dim);">Expected: Hold</span>
-            </div>
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Unusual Seasonal Volume</h3>
-            <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px;">
-                Elevated invoice: $28,500, unusual velocity (7/wk), only 6 previous transactions, 1 historical
-                suspicious flag, relatively new 6-month account.
-            </p>
-            <div
-                style="font-size: 0.8rem; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 14px;">
-                <code>Random Forest → MEDIUM RISK → HOLD → Escrow & Compliance Review Pending</code>
-            </div>
-            <a href="{{ url_for('payments.payment') }}" class="btn btn-warning btn-sm" style="width: 100%;">⚠️ Test Scenario
-                2</a>
-        </div>
-
-        <!-- Scenario 3 -->
-        <div class="card" style="border-top: 4px solid var(--color-high);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span class="badge badge-high">Scenario 3: High Risk</span>
-                <span style="font-size: 0.8rem; color: var(--text-dim);">Expected: Block</span>
-            </div>
-            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Anomalous Outlier / Fraud Pattern</h3>
-            <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px;">
-                Sudden massive transfer: $145,000, high frequency spike (19/wk), 1-month-old account, 4 prior suspicious
-                flags into high-risk cross-border corridor.
-            </p>
-            <div
-                style="font-size: 0.8rem; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 14px;">
-                <code>Random Forest → HIGH RISK → BLOCK → Smart Contract Rejects Settlement</code>
-            </div>
-            <a href="{{ url_for('payments.payment') }}" class="btn btn-danger btn-sm" style="width: 100%;">🛑 Test Scenario 3</a>
+            <h2 class="card-title">{{ tile('layers', 'blue', 'sm') }}How a payment is decided</h2>
+            <p class="card-sub">The same input always gives the same decision. AI signals can only send a payment to a human.</p>
         </div>
     </div>
-</div>
-
-<!-- Technology & Academic Pillars -->
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">
-            <span>⚙️</span> Core Technology Stack & Academic Implementation
-        </h3>
-        <span class="badge badge-neutral">Architecture Specs</span>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
-        <div>
-            <h4 style="color: #60a5fa; font-size: 0.95rem; margin-bottom: 6px;">1. Simulated KYC Module</h4>
-            <p style="font-size: 0.84rem; color: var(--text-muted);">
-                Validates SME identity, government corporate ID, and jurisdiction before enabling payment capabilities.
-            </p>
+    <div class="flow-grid">
+        <div class="flow-card card card-flat">
+            {{ tile('check', 'teal') }}
+            <h3>Low risk: approve</h3>
+            <p class="muted-sm">Score below the review threshold. The settlement record is hashed, mined into a PoW block and signed into the HMAC audit chain in one database transaction.</p>
+            <code>model → policy → block + audit record → commit</code>
         </div>
-        <div>
-            <h4 style="color: #a78bfa; font-size: 0.95rem; margin-bottom: 6px;">2. Random Forest ML Model</h4>
-            <p style="font-size: 0.84rem; color: var(--text-muted);">
-                Trained with Scikit-learn (fixed random_state=42) with a time-split test accuracy of <strong>{{ '%.1f'|format(metrics.test.accuracy * 100) if metrics and metrics.test else 'n/a' }}%</strong> on synthetic data, predicting
-                Low, Medium, or High risk.
-            </p>
+        <div class="flow-card card card-flat">
+            {{ tile('pause', 'amber') }}
+            <h3>Medium risk: hold</h3>
+            <p class="muted-sm">A compliance officer reviews the evidence (with an optional AI copilot), writes a reason in their own words, and releases or rejects.</p>
+            <code>policy → HOLD → officer decision → audit record</code>
         </div>
-        <div>
-            <h4 style="color: #34d399; font-size: 0.95rem; margin-bottom: 6px;">3. Smart Contract Engine</h4>
-            <p style="font-size: 0.84rem; color: var(--text-muted);">
-                Written in Solidity (<span class="font-mono">smart_contract.sol</span>) and simulated locally. Enforces
-                risk-based rules autonomously.
-            </p>
-        </div>
-        <div>
-            <h4 style="color: #38bdf8; font-size: 0.95rem; margin-bottom: 6px;">4. Cryptographic Blockchain</h4>
-            <p style="font-size: 0.84rem; color: var(--text-muted);">
-                SHA-256 block hashing with Proof-of-Work nonces providing tamper-resistant settlement records.
-            </p>
+        <div class="flow-card card card-flat">
+            {{ tile('ban', 'red') }}
+            <h3>High risk: block</h3>
+            <p class="muted-sm">Score above the block threshold, or the model's class is HIGH. Nothing is mined; the decision is still signed into the audit chain.</p>
+            <code>policy → BLOCKED → audit record only</code>
         </div>
     </div>
-</div>
+</section>
+
+<section class="card">
+    <div class="card-header"><h2 class="card-title">{{ tile('cpu', 'violet', 'sm') }}What is inside</h2></div>
+    <div class="feature-list">
+        <div class="feature-item">{{ tile('id-card', 'blue') }}<div><h4>KYC with a human in the loop</h4><p class="muted-sm">Submissions wait for a compliance officer. Government IDs are encrypted at rest and shown masked.</p></div></div>
+        <div class="feature-item">{{ tile('cpu', 'teal') }}<div><h4>Honest Random Forest</h4><p class="muted-sm">Seven features computed by the server from the SME's history. Time-split test accuracy {{ '%.1f'|format(metrics.test.accuracy * 100) if metrics and metrics.test else 'n/a' }}% on synthetic data, with the top factors shown for every payment.</p></div></div>
+        <div class="feature-item">{{ tile('link', 'amber') }}<div><h4>Signed, verifiable ledger</h4><p class="muted-sm">HMAC-SHA256 audit chain with a fork guard; the PoW explorer is rebuilt from it, and any edited row is detected.</p></div></div>
+        <div class="feature-item">{{ tile('sparkles', 'violet') }}<div><h4>Guarded AI, advisory only</h4><p class="muted-sm">Explanations, a HOLD copilot, an invoice reader and an SME assistant, all behind DLP, schema, citation and number checks. The app works with AI off.</p></div></div>
+    </div>
+</section>
 {% endblock %}

@@ -153,6 +153,12 @@ def invoice_flags(invoice: dict, form: dict, amount_usd: float) -> list:
         return flags
     if abs(total - form_amount) > 0.01 * max(1.0, total):
         flags.append("INVOICE_MISMATCH")
+    ver = invoice.get("verification") or {}
+    if "conflict" in ver.values():
+        flags.append("INVOICE_MISMATCH")
+    if ver.get("total_amount") in ("unverified", "missing") and amount_usd > float(
+            current_app.config.get("INVOICE_REQUIRED_ABOVE_USD", 50000)):
+        flags.append("INVOICE_UNVERIFIED")
     cur = det.get("currency")
     if cur and cur != (form.get("sender_currency") or "").upper():
         flags.append("INVOICE_MISMATCH")

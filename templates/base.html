@@ -1,100 +1,104 @@
+{% from "_macros.html" import icon, tile, kyc_badge %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CrossPay{% endblock %} | Risk-Adaptive Smart Contract Settlement for SMEs</title>
-    <!-- Modern Fonts -->
+    <title>{% block title %}CrossPay{% endblock %} · CrossPay</title>
+    <meta name="description" content="CrossPay: risk-adaptive cross-border settlement for SMEs (academic prototype).">
+    <script>
+      (function () { try { var t = localStorage.getItem('crosspay-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {} })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- Chart.js for Interactive Visualizations -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Custom Stylesheet -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f9f82'/%3E%3Cpath d='M16 6l8 4.6v9L16 24l-8-4.4v-9z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Top Navigation -->
+    {% include "_icons.html" %}
+    <a class="sr-only" href="#main">Skip to content</a>
     <header class="navbar">
         <div class="container nav-container">
-            <a href="{{ url_for('auth.index') }}" class="nav-brand">
-                <span style="font-size: 1.4rem;">🌐</span>
-                <span>CrossPay</span>
-                <span class="brand-badge">SME Settlement</span>
+            <a href="{{ url_for('auth.index') }}" class="nav-brand" aria-label="CrossPay home">
+                {{ tile('globe', 'teal', 'sm') }}
+                <span>CrossPay<small>SME settlement</small></span>
             </a>
 
-            <ul class="nav-links">
-                <li><a href="{{ url_for('auth.index') }}" class="nav-link {% if request.endpoint == 'auth.index' %}active{% endif %}">Home</a></li>
-                <li><a href="{{ url_for('payments.dashboard') }}" class="nav-link {% if request.endpoint == 'payments.dashboard' %}active{% endif %}">Dashboard</a></li>
-                <li><a href="{{ url_for('kyc.kyc') }}" class="nav-link {% if request.endpoint == 'kyc.kyc' %}active{% endif %}">
-                    KYC Verification
-                    {% if current_kyc %}
-                        {% if current_kyc.status == 'VERIFIED' %}
-                            <span class="badge badge-verified" style="font-size:0.65rem; padding:2px 6px;">Verified</span>
-                        {% elif current_kyc.status == 'PENDING' %}
-                            <span class="badge badge-pending" style="font-size:0.65rem; padding:2px 6px;">Pending</span>
-                        {% else %}
-                            <span class="badge badge-rejected" style="font-size:0.65rem; padding:2px 6px;">Rejected</span>
-                        {% endif %}
-                    {% endif %}
-                </a></li>
-                <li><a href="{{ url_for('payments.payment') }}" class="nav-link {% if request.endpoint == 'payments.payment' %}active{% endif %}">Send Payment</a></li>
-                <li><a href="{{ url_for('payments.transactions') }}" class="nav-link {% if request.endpoint == 'payments.transactions' %}active{% endif %}">Transactions</a></li>
-                {% if is_admin %}<li><a href="{{ url_for('admin.kyc_queue') }}" class="nav-link {% if request.endpoint == 'admin.kyc_queue' %}active{% endif %}">KYC Queue</a></li>{% endif %}
-                <li><a href="{{ url_for('payments.blockchain_explorer') }}" class="nav-link {% if request.endpoint == 'payments.blockchain_explorer' %}active{% endif %}">Blockchain Ledger</a></li>
+            <ul class="nav-links" id="nav-links">
+                {% set ep = request.endpoint %}
+                {% if current_user %}
+                <li><a href="{{ url_for('payments.dashboard') }}" class="nav-link {% if ep == 'payments.dashboard' %}active{% endif %}">{{ icon('chart') }}Dashboard</a></li>
+                {% if not is_admin %}
+                <li><a href="{{ url_for('kyc.kyc') }}" class="nav-link {% if ep == 'kyc.kyc' %}active{% endif %}">{{ icon('id-card') }}KYC
+                    {% if current_kyc %}{% if current_kyc.status == 'VERIFIED' %}<span class="dot dot-low" title="Verified"></span>{% elif current_kyc.status == 'PENDING' %}<span class="dot dot-med" title="Pending"></span>{% else %}<span class="dot dot-high" title="Rejected"></span>{% endif %}{% endif %}</a></li>
+                <li><a href="{{ url_for('payments.payment') }}" class="nav-link {% if ep == 'payments.payment' %}active{% endif %}">{{ icon('send') }}Send payment</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('payments.transactions') }}" class="nav-link {% if ep == 'payments.transactions' %}active{% endif %}">{{ icon('list') }}Transactions</a></li>
+                <li><a href="{{ url_for('payments.blockchain_explorer') }}" class="nav-link {% if ep == 'payments.blockchain_explorer' %}active{% endif %}">{{ icon('link') }}Ledger</a></li>
+                {% if is_admin %}
+                <li><a href="{{ url_for('admin.kyc_queue') }}" class="nav-link {% if ep == 'admin.kyc_queue' %}active{% endif %}">{{ icon('id-card') }}KYC queue</a></li>
+                <li><a href="{{ url_for('admin.reports') }}" class="nav-link {% if ep == 'admin.reports' %}active{% endif %}">{{ icon('file-text') }}Reports</a></li>
+                <li><a href="{{ url_for('admin.ai_ops') }}" class="nav-link {% if ep == 'admin.ai_ops' %}active{% endif %}">{{ icon('sparkles') }}AI ops</a></li>
+                {% endif %}
+                {% else %}
+                <li><a href="{{ url_for('auth.index') }}" class="nav-link {% if ep == 'auth.index' %}active{% endif %}">{{ icon('home') }}Overview</a></li>
+                {% endif %}
             </ul>
 
             <div class="nav-actions">
+                <button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch light or dark theme" title="Switch theme">
+                    <span class="theme-icon-dark">{{ icon('sun') }}</span><span class="theme-icon-light">{{ icon('moon') }}</span>
+                </button>
                 {% if current_user %}
-                    <span style="font-size: 0.82rem; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
-                        <span class="dot dot-low"></span>
-                        <strong>{{ current_user.name }}</strong> ({{ current_user.role|upper }})
-                    </span>
-                    <form method="POST" action="{{ url_for('auth.logout') }}" style="display:inline;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-outline btn-sm">Sign Out</button></form>
+                    <span class="nav-user">{{ icon('user') }}<strong>{{ current_user.name }}</strong>
+                        <span class="role-chip {% if is_admin %}is-admin{% endif %}">{{ 'Compliance' if is_admin else 'SME' }}</span></span>
+                    <form method="POST" action="{{ url_for('auth.logout') }}" style="margin:0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="icon-btn" aria-label="Sign out" title="Sign out">{{ icon('logout') }}</button>
+                    </form>
                 {% else %}
-                    {% if demo_mode %}<a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary btn-sm">⚡ Quick SME Demo</a>{% endif %}
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Sign In</a>
+                    {% if demo_mode %}<a href="{{ url_for('auth.quick_login', role='sme') }}" class="btn btn-secondary btn-sm">{{ icon('zap') }}Demo SME</a>{% endif %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">Sign in</a>
                 {% endif %}
+                <button type="button" class="icon-btn" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-links">{{ icon('menu') }}</button>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="container" style="flex: 1; padding-top: 24px; padding-bottom: 48px;">
-        <!-- Global Flash Messages -->
-        <div class="flash-container">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            <span>{{ message }}</span>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+    <main class="container" id="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container" role="status">
+            {% for category, message in messages %}
+            {% set ic = {'success': 'check', 'danger': 'alert', 'warning': 'alert', 'info': 'info'}.get(category, 'info') %}
+            <div class="alert alert-{{ category }}" data-autodismiss>{{ icon(ic) }}<span>{{ message }}</span>
+                <button type="button" class="alert-close" aria-label="Dismiss">{{ icon('x') }}</button></div>
+            {% endfor %}
         </div>
+        {% endif %}
+        {% endwith %}
 
         {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container footer-content">
             <div>
-                <strong>Risk-Adaptive Smart Contract Settlement for SME Cross-Border Payments</strong>
-                <p style="margin-top: 4px;">Academic Research Prototype • Machine Learning (Random Forest) + Blockchain & Smart Contract Architecture</p>
+                <strong>CrossPay</strong> · risk-adaptive cross-border settlement for SMEs · academic prototype.
+                <div>Decisions come from a deterministic policy and human officers. AI text is advisory only.</div>
             </div>
-            <div style="display: flex; gap: 16px; align-items: center;">
-                <span class="badge badge-neutral">Flask 3.1</span>
-                <span class="badge badge-neutral">Scikit-Learn 1.9</span>
-                <span class="badge badge-neutral">SHA-256 Ledger</span>
+            <div class="chip-row">
+                <span class="badge badge-neutral">Flask</span>
+                <span class="badge badge-neutral">scikit-learn RF</span>
+                <span class="badge badge-neutral">HMAC audit chain</span>
                 <span class="badge badge-neutral">SQLite</span>
+                {% if demo_mode %}<span class="badge badge-med">{{ icon('zap') }}Demo mode</span>{% endif %}
             </div>
         </div>
     </footer>
 
-    <!-- Global Application Scripts -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>

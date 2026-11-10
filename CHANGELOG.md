@@ -252,3 +252,24 @@ no raw exception text; budget exhausted → UNAVAILABLE; /admin/ai access; no ve
 - **Supply chain** `.github/CODEOWNERS` on prompts, guards and the policy engine.
 
 **How verified:** `pytest -q -m "not live_redteam"` → 178 passed; live red-team 45/45 safe.
+
+## UI redesign + P6 — AI features (partial: feature tests and P6.8 still to do)
+
+- **UI:** token-based theme (dark default, light via system or toggle), original inline SVG icon sprite (works
+  offline), glossy 3D icon tiles, pressable 3D buttons, cursor-glow cards, CSS 3D block-chain hero with a particle
+  canvas, risk gauge, Chart.js pinned to 4.4.6 and re-themed on toggle, mobile nav; motion off under
+  `prefers-reduced-motion`. Every page was rewritten (`templates/*.html`, `_macros.html`, `_icons.html`, `static/css/style.css`,
+  `static/js/script.js`).
+- **P6.1** "Why this decision" card on the receipt (polls the background job; falls back to the model's top factors).
+- **P6.2** purpose tagger on submit (escalate-only).
+- **P6.3** `/admin/review/<tx>`: facts on the left, a collapsed AI copilot on the right, the officer's own reason
+  (≥ 20 chars, < 80 % similar to the AI draft), and the agreement stored per review.
+- **P6.4** PDF invoice reader (`/api/ai/invoice`, ≤ 5 MB, magic-byte check, stored outside `static/`) with an exact
+  text cross-check; mismatches can only make the policy stricter.
+- **P6.5** natural-language filter → validated chips → parameterised, tenant-scoped query.
+- **P6.6** SME assistant chat on the receipt (own record + FAQ, refusals, 10 turns per payment per day).
+- **P6.7** `/admin/reports`: weekly summary and blocked-payment narrative, DRAFT until signed, Markdown export.
+- Live check: a demo MEDIUM payment ended HOLD; Groq purpose tagger (1.6 s) and explanation (2.1 s) passed the guards.
+
+**Not done yet:** dedicated P6 tests (`tests/ai/test_ai_features_p6.py`), P6.8 (optional), P7 (CI, docs, README).
+**How verified:** `pytest -q -m "not live_redteam"` → 178 passed; manual run in the browser.

@@ -194,6 +194,35 @@ SCHEMA += [
     )""",
 ]
 
+SCHEMA += [
+    # P6: invoice uploads and report drafts
+    """
+    CREATE TABLE IF NOT EXISTS invoice_uploads (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        path TEXT NOT NULL,
+        deterministic_json TEXT,
+        fields_json TEXT,
+        verification_json TEXT,
+        status TEXT,
+        created_at TEXT NOT NULL
+    )""",
+    """
+    CREATE TABLE IF NOT EXISTS report_drafts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        tx_id TEXT,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        key_points TEXT,
+        status TEXT NOT NULL DEFAULT 'DRAFT',
+        created_by INTEGER,
+        created_at TEXT NOT NULL,
+        signed_by INTEGER,
+        signed_at TEXT
+    )""",
+]
+
 # Additive migrations: (table, column, definition). Applied when the column is missing.
 COLUMNS = [
     # P2: honest risk pipeline
@@ -218,6 +247,8 @@ COLUMNS = [
     ("transactions", "purpose_flags", "TEXT"),
     ("transactions", "ai_escalations", "TEXT"),
     ("transactions", "input_guard_flags", "TEXT"),
+    ("transactions", "invoice_flags", "TEXT"),
+    ("transactions", "invoice_token", "TEXT"),
 ]
 
 

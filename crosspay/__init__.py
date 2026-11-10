@@ -89,12 +89,13 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     finally:
         conn.close()
 
-    from .blueprints import admin, api, auth, kyc, payments
+    from .blueprints import admin, ai_features, api, auth, kyc, payments
 
-    for bp in (auth.bp, kyc.bp, payments.bp, admin.bp, api.bp):
+    for bp in (auth.bp, kyc.bp, payments.bp, admin.bp, api.bp, ai_features.bp):
         app.register_blueprint(bp)
-    # The JSON API is exempt from token CSRF but must pass a same-origin check on unsafe methods.
+    # The JSON APIs are exempt from token CSRF but must pass a same-origin check on unsafe methods.
     csrf.exempt(api.bp)
+    csrf.exempt(ai_features.bp)
 
     @app.context_processor
     def inject_global_data():
@@ -111,9 +112,13 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
             ).fetchone()
             user = dict(row) if row else None
             kyc_info = dict(krow) if krow else None
+        from .ai.budget import ai_enabled
+
         return dict(
             current_user=user,
             current_kyc=kyc_info,
+            ai_on=bool(user) and ai_enabled(dbmod.get_db()),
+            ai_flags=app.config.get("AI_FLAGS", {}),
             is_admin=bool(user and user["role"] == "admin"),
             demo_mode=bool(app.config.get("DEMO_MODE")),
             metrics=app.extensions["metrics"],

@@ -1,0 +1,45 @@
+{# Shared UI macros. Icons come from the inline sprite in _icons.html. #}
+
+{% macro icon(name, cls="") -%}
+<svg class="icon {{ cls }}" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+{% macro tile(name, tone="teal", size="") -%}
+<span class="icon-tile tile-{{ tone }} {{ 'icon-tile-' ~ size if size else '' }}" aria-hidden="true">{{ icon(name) }}</span>
+{%- endmacro %}
+
+{% macro decision_badge(decision) -%}
+{%- set map = {'APPROVED': ('approved', 'check'), 'HOLD': ('hold', 'pause'), 'BLOCKED': ('blocked', 'ban'),
+               'REJECTED': ('rejected', 'x'), 'PENDING_SETTLEMENT': ('neutral', 'clock')} -%}
+{%- set m = map.get(decision, ('neutral', 'info')) -%}
+<span class="badge badge-{{ m[0] }}">{{ icon(m[1]) }}{{ decision }}</span>
+{%- endmacro %}
+
+{% macro risk_badge(level, score=None) -%}
+{%- set cls = {'LOW': 'low', 'MEDIUM': 'med', 'HIGH': 'high'}.get(level, 'neutral') -%}
+<span class="badge badge-{{ cls }}"><span class="dot dot-{{ cls }}"></span>{{ level }}{% if score is not none %} · {{ score }}{% endif %}</span>
+{%- endmacro %}
+
+{% macro kyc_badge(status) -%}
+{%- set cls = {'VERIFIED': 'verified', 'PENDING': 'pending'}.get(status, 'rejected') -%}
+<span class="badge badge-{{ cls }}">{{ icon({'VERIFIED': 'shield', 'PENDING': 'clock'}.get(status, 'x')) }}{{ status }}</span>
+{%- endmacro %}
+
+{% macro money(amount, currency) -%}
+{%- if amount is none -%}—{%- elif currency == 'JPY' -%}{{ "{:,.0f}".format(amount) }} {{ currency }}{%- else -%}{{ "{:,.2f}".format(amount) }} {{ currency }}{%- endif -%}
+{%- endmacro %}
+
+{% macro ai_label() -%}
+<span class="ai-label">{{ icon('sparkles') }}AI-generated · advisory · may be wrong</span>
+{%- endmacro %}
+
+{% macro pipeline(steps, current) -%}
+<ol class="pipeline" aria-label="Settlement workflow">
+  {% for label, ic in steps %}
+  <li class="pipeline-step {% if loop.index < current %}is-done{% elif loop.index == current %}is-active{% endif %}">
+    <span class="pipeline-dot">{% if loop.index < current %}{{ icon('check') }}{% else %}{{ icon(ic) }}{% endif %}</span>
+    <span class="pipeline-label">{{ label }}</span>
+  </li>
+  {% endfor %}
+</ol>
+{%- endmacro %}

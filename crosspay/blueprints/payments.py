@@ -135,12 +135,22 @@ def process_payment():
         "purpose_flags": json.dumps(pres.get("red_flags", [])) if pres else None,
         "ai_escalations": json.dumps(purpose["escalations"]), "input_guard_flags": json.dumps(purpose["input_flags"]),
     }
+    # P6.4 invoice: the deterministic diff between the uploaded invoice and this form can only make the policy
+    # stricter (INVOICE_MISMATCH -> at least HOLD; INVOICE_UNVERIFIED for large amounts -> at least HOLD).
+    from .ai_features import invoice_for
+
+    inv_token = (request.form.get("invoice_token") or "").strip()[:64]
+    invoice = invoice_for(conn, inv_token, user_id)
+    inv_flags = ai_tasks.invoice_flags(invoice, request.form, conversion["normalized_usd_amount"]) if invoice else []
+    extra.update({"invoice_flags": json.dumps(inv_flags), "invoice_token": inv_token or None})
+    overrides = [f for f in inv_flags if f == "INVOICE_MISMATCH"]
+    escalations = purpose["escalations"] + [f for f in inv_flags if f == "INVOICE_UNVERIFIED"]
     try:
         outcome = settle_payment(
             conn, user_id=user_id, kyc_status=kyc_record["status"], data=data, conversion=conversion,
             features=features, scored=scored, feature_source=feature_source,
             idempotency_key=(request.form.get("idempotency_key") or "").strip()[:64] or None,
-            ai_escalations=purpose["escalations"], extra_columns=extra,
+            overrides=overrides, ai_escalations=escalations, extra_columns=extra,
         )
     except DuplicateSubmission as dup:
         flash("This form was already submitted; showing the original payment.", "info")
@@ -186,9 +196,45 @@ def transactions():
     if search_query:
         sql += " AND (transaction_id LIKE ? OR sender LIKE ? OR receiver LIKE ?)"
         params.extend([f"%{search_query}%"] * 3)
+    # P6.5: validated filter fields (from the NL box or typed in the URL), always parameterised and tenant-scoped
+    chips = []
+    nl = {k: (request.args.get(k) or "").strip() for k in ("risk_level", "receiver_country", "currency",
+                                                           "min_amount_usd", "max_amount_usd", "date_from", "date_to",
+                                                           "text")}
+    if nl["risk_level"] in ("LOW", "MEDIUM", "HIGH"):
+        sql += " AND risk_level = ?"
+        params.append(nl["risk_level"])
+        chips.append(("risk", nl["risk_level"]))
+    if nl["receiver_country"] in ALLOWED_COUNTRIES:
+        sql += " AND receiver_country = ?"
+        params.append(nl["receiver_country"])
+        chips.append(("country", nl["receiver_country"]))
+    if nl["currency"] and nl["currency"].upper() in SUPPORTED_CURRENCIES:
+        sql += " AND (source_currency = ? OR target_currency = ?)"
+        params.extend([nl["currency"].upper()] * 2)
+        chips.append(("currency", nl["currency"].upper()))
+    for key, op, label in (("min_amount_usd", ">=", "min USD"), ("max_amount_usd", "<=", "max USD")):
+        try:
+            if nl[key]:
+                sql += f" AND normalized_usd_amount {op} ?"
+                params.append(float(nl[key]))
+                chips.append((label, nl[key]))
+        except ValueError:
+            pass
+    import re as _re
+
+    for key, op, label in (("date_from", ">=", "from"), ("date_to", "<=", "to")):
+        if _re.fullmatch(r"\d{4}-\d{2}-\d{2}", nl[key]):
+            sql += f" AND substr(timestamp, 1, 10) {op} ?"
+            params.append(nl[key])
+            chips.append((label, nl[key]))
+    if nl["text"]:
+        sql += " AND (transaction_id LIKE ? OR sender LIKE ? OR receiver LIKE ?)"
+        params.extend([f"%{nl['text'][:60]}%"] * 3)
+        chips.append(("text", nl["text"][:60]))
     rows = get_db().execute(sql + " ORDER BY id DESC", params).fetchall()
     return render_template("transactions.html", transactions=[dict(r) for r in rows], status_filter=status_filter,
-                           query=search_query)
+                           query=search_query, filter_chips=chips)
 
 
 @bp.route("/dashboard")

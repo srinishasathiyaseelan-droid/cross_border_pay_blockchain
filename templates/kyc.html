@@ -1,189 +1,99 @@
 {% extends "base.html" %}
-
-{% block title %}KYC Verification{% endblock %}
+{% from "_macros.html" import icon, tile, kyc_badge, pipeline %}
+{% block title %}KYC verification{% endblock %}
 
 {% block content %}
-<div style="max-width: 860px; margin: 20px auto;">
-    <!-- Top Breadcrumb / Pipeline -->
-    <div class="workflow-pipeline" style="margin-bottom: 24px;">
-        <div class="workflow-step complete">
-            <span class="step-num">✓</span>
-            <span>SME Onboarding</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step active">
-            <span class="step-num">2</span>
-            <span>KYC Verification</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">3</span>
-            <span>Payment Request</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">4</span>
-            <span>ML Risk Prediction</span>
-        </div>
-        <span class="workflow-arrow">→</span>
-        <div class="workflow-step">
-            <span class="step-num">5</span>
-            <span>Blockchain Settlement</span>
-        </div>
-    </div>
+<div style="max-width:900px;margin:0 auto">
+    {{ pipeline([('Register', 'building'), ('KYC review', 'id-card'), ('Payment', 'send'), ('Risk model', 'cpu'), ('Settlement', 'link')], 2) }}
 
-    <!-- KYC Status Overview Banner -->
-    <div class="card" style="margin-bottom: 24px; border-left: 5px solid {% if kyc and kyc.status == 'VERIFIED' %}var(--color-low){% elif kyc and kyc.status == 'PENDING' %}var(--color-med){% else %}var(--color-high){% endif %};">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
-            <div>
-                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
-                    SME Regulatory Compliance Status
-                </div>
-                <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
-                    {% if kyc and kyc.status == 'VERIFIED' %}
-                        <span class="badge badge-verified" style="font-size: 1rem; padding: 6px 16px;">
-                            <span class="dot dot-verified"></span> KYC VERIFIED
+    {% set st = kyc.status if kyc else 'PENDING' %}
+    <div class="card glow" style="margin-bottom:20px">
+        <div class="card-header" style="margin-bottom:0">
+            <div style="display:flex;gap:14px;align-items:center">
+                {{ tile({'VERIFIED': 'shield', 'PENDING': 'clock'}.get(st, 'x'), {'VERIFIED': 'teal', 'PENDING': 'amber'}.get(st, 'red'), 'lg') }}
+                <div>
+                    <div class="stat-label">Compliance status</div>
+                    <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap">
+                        {{ kyc_badge(st) }}
+                        <span class="muted-sm">
+                            {% if st == 'VERIFIED' %}You can submit cross-border payments.
+                            {% elif st == 'PENDING' %}A compliance officer will review your details. Payments stay disabled until then.
+                            {% else %}Your last submission was rejected. Correct the details and submit again.{% endif %}
                         </span>
-                        <span style="font-size: 0.88rem; color: #34d399;">
-                            ✓ Account authorized for cross-border blockchain smart contract settlements
-                        </span>
-                    {% elif kyc and kyc.status == 'PENDING' %}
-                        <span class="badge badge-pending" style="font-size: 1rem; padding: 6px 16px;">
-                            <span class="dot dot-pending"></span> KYC PENDING
-                        </span>
-                        <span style="font-size: 0.88rem; color: #fbbf24;">
-                            ⏳ Application under verification review. Payment initiation is restricted.
-                        </span>
-                    {% else %}
-                        <span class="badge badge-rejected" style="font-size: 1rem; padding: 6px 16px;">
-                            <span class="dot dot-rejected"></span> KYC REJECTED
-                        </span>
-                        <span style="font-size: 0.88rem; color: #f87171;">
-                            ✕ Incomplete or invalid credentials. Payment initiation blocked.
-                        </span>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
-
-            {% if kyc and kyc.status == 'VERIFIED' %}
-                <a href="{{ url_for('payments.payment') }}" class="btn btn-primary">
-                    Proceed to Payment Request →
-                </a>
-            {% endif %}
+            {% if st == 'VERIFIED' %}<a href="{{ url_for('payments.payment') }}" class="btn btn-primary">{{ icon('send') }}Send a payment</a>{% endif %}
         </div>
-
         {% if kyc and kyc.verification_notes %}
-            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); font-size: 0.82rem; color: var(--text-muted);">
-                <strong>Audit Record:</strong> {{ kyc.verification_notes }}
-                {% if kyc.verified_at %}
-                    <span style="margin-left: 12px; color: var(--text-dim);">Timestamp: {{ kyc.verified_at }}</span>
-                {% endif %}
-            </div>
+        <p class="muted-sm" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+            <strong>Audit note:</strong> {{ kyc.verification_notes }}{% if kyc.verified_at %} · {{ kyc.verified_at }}{% endif %}</p>
         {% endif %}
     </div>
 
     {% if demo_mode %}
-    <div class="card demo-card">
-        <div class="preset-title">Demo provider simulation (DEMO_MODE only)</div>
-        <p class="muted-sm">Stands in for a KYC provider called on the server. Outside demo mode a compliance officer must verify every SME.</p>
-        <div class="preset-buttons">
-            <button type="button" onclick="setSimulateMode('demo_verify')" class="btn btn-success btn-sm">Simulate provider: pass</button>
-            <button type="button" onclick="setSimulateMode('demo_reject')" class="btn btn-danger btn-sm">Simulate provider: fail</button>
+    <div class="demo-bar">
+        <div class="label">{{ icon('zap') }}Demo provider simulation (DEMO_MODE only, labelled DEMO SIMULATION)</div>
+        <div class="btn-row">
+            <button type="button" onclick="setSimulateMode('demo_verify')" class="btn btn-success btn-sm">{{ icon('check') }}Simulate pass</button>
+            <button type="button" onclick="setSimulateMode('demo_reject')" class="btn btn-danger btn-sm">{{ icon('x') }}Simulate fail</button>
         </div>
     </div>
     {% endif %}
 
-    <!-- KYC Submission / Update Form -->
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">
-                <span>📋</span> SME Business Entity & Identity Registration
-            </h3>
-            <span class="badge badge-neutral">SQLite Persistent</span>
+            <div>
+                <h2 class="card-title">{{ tile('id-card', 'blue', 'sm') }}Business identity</h2>
+                <p class="card-sub">Submitting sends your details to the compliance queue. Changing verified details needs a new review.</p>
+            </div>
         </div>
-
-        <form id="kyc-form" method="POST" action="{{ url_for('kyc.kyc') }}">
+        <form id="kyc-form" method="POST" action="{{ url_for('kyc.kyc') }}" data-once>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" id="simulate_action" name="simulate_action" value="">
-
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label" for="full_name">Authorized SME Representative Name</label>
-                    <input type="text" id="full_name" name="full_name" class="form-control" 
-                           value="{{ current_user.name if current_user else 'Sarah Jenkins' }}" required>
+                    <label class="form-label" for="business_name">Registered legal business name</label>
+                    <input type="text" id="business_name" name="business_name" class="form-control" maxlength="120"
+                           value="{{ kyc.business_name if kyc else (current_user.name if current_user else '') }}" required>
                 </div>
-
                 <div class="form-group">
-                    <label class="form-label" for="business_name">Registered Legal Business Name</label>
-                    <input type="text" id="business_name" name="business_name" class="form-control" 
-                           value="{{ kyc.business_name if kyc else (current_user.name if current_user else 'Global Logistics SME Ltd') }}" required>
-                </div>
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label" for="email">Corporate Contact Email</label>
-                    <input type="email" id="email" name="email" class="form-control" 
-                           value="{{ current_user.email if current_user else 'demo@globallogistics.com' }}" required>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="phone">Business Contact Phone</label>
-                    <input type="text" id="phone" name="phone" class="form-control" 
-                           value="+1 (555) 234-8901" required>
-                </div>
-            </div>
-
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label" for="country">Country of SME Registration</label>
-                    <select id="country" name="country" class="form-control">
-                        {% set selected_country = kyc.country if kyc else 'United States' %}
-                        <option value="United States" {% if selected_country == 'United States' %}selected{% endif %}>United States</option>
-                        <option value="United Kingdom" {% if selected_country == 'United Kingdom' %}selected{% endif %}>United Kingdom</option>
-                        <option value="Germany" {% if selected_country == 'Germany' %}selected{% endif %}>Germany</option>
-                        <option value="Singapore" {% if selected_country == 'Singapore' %}selected{% endif %}>Singapore</option>
-                        <option value="Japan" {% if selected_country == 'Japan' %}selected{% endif %}>Japan</option>
-                        <option value="Canada" {% if selected_country == 'Canada' %}selected{% endif %}>Canada</option>
-                        <option value="India" {% if selected_country == 'India' %}selected{% endif %}>India</option>
-                        <option value="Brazil" {% if selected_country == 'Brazil' %}selected{% endif %}>Brazil</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="business_type">Business Classification</label>
+                    <label class="form-label" for="business_type">Business classification</label>
+                    {% set selected_type = kyc.business_type if kyc else 'Import/Export Trade SME' %}
                     <select id="business_type" name="business_type" class="form-control">
-                        {% set selected_type = kyc.business_type if kyc else 'Import/Export Trade SME' %}
-                        <option value="Import/Export Trade SME" {% if selected_type == 'Import/Export Trade SME' %}selected{% endif %}>Import/Export Trade SME</option>
-                        <option value="Private Limited Corporation" {% if selected_type == 'Private Limited Corporation' %}selected{% endif %}>Private Limited Corporation</option>
-                        <option value="Partnership" {% if selected_type == 'Partnership' %}selected{% endif %}>Partnership</option>
-                        <option value="Sole Proprietorship" {% if selected_type == 'Sole Proprietorship' %}selected{% endif %}>Sole Proprietorship</option>
-                        <option value="Wholesale Distributor" {% if selected_type == 'Wholesale Distributor' %}selected{% endif %}>Wholesale Distributor</option>
+                        {% for t in ['Import/Export Trade SME', 'Private Limited Corporation', 'Partnership', 'Sole Proprietorship', 'Wholesale Distributor'] %}
+                        <option value="{{ t }}" {% if selected_type == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
-
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="form-label" for="government_id">Government Business ID / Tax Registration No</label>
-                    <input type="text" id="government_id" name="government_id" class="form-control" 
-                           value="" autocomplete="off"
-                           placeholder="{{ ('On file: ' ~ kyc.government_id_masked ~ ' (leave blank to keep)') if kyc and kyc.government_id_masked and kyc.government_id_masked != 'NOT_PROVIDED' else 'e.g. US-EIN-123456789' }}"
-                           {% if not (kyc and kyc.government_id_masked and kyc.government_id_masked != 'NOT_PROVIDED') %}required{% endif %}>
-                    <div class="form-hint">Stored encrypted; only the last 4 characters are ever shown.</div>
+                    <label class="form-label" for="country">Country of registration</label>
+                    {% set selected_country = kyc.country if kyc else 'United States' %}
+                    <select id="country" name="country" class="form-control">
+                        {% for c in ['United States', 'United Kingdom', 'Germany', 'Singapore', 'Japan', 'Canada', 'India', 'Brazil', 'Australia', 'France', 'United Arab Emirates'] %}
+                        <option value="{{ c }}" {% if selected_country == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
-
                 <div class="form-group">
-                    <label class="form-label" for="address">Registered Office Address</label>
-                    <input type="text" id="address" name="address" class="form-control" 
-                           value="{{ kyc.address if kyc else '124 Financial District Blvd, New York, NY 10004' }}" required>
+                    <label class="form-label" for="government_id">Government business ID / tax registration</label>
+                    {% set on_file = kyc and kyc.government_id_masked and kyc.government_id_masked != 'NOT_PROVIDED' %}
+                    <input type="text" id="government_id" name="government_id" class="form-control" value="" autocomplete="off"
+                           placeholder="{{ ('On file: ' ~ kyc.government_id_masked ~ ' (leave blank to keep)') if on_file else 'e.g. US-EIN-123456789' }}"
+                           {% if not on_file %}required{% endif %}>
+                    <div class="form-hint">{{ icon('lock') }} Stored encrypted. Only the last 4 characters are ever shown.</div>
                 </div>
             </div>
-
-            <div style="margin-top: 14px; display: flex; justify-content: flex-end; gap: 12px;">
-                <button type="submit" class="btn btn-primary" style="padding: 10px 24px;">
-                    Submit for compliance review
-                </button>
+            <div class="form-group">
+                <label class="form-label" for="address">Registered office address</label>
+                <input type="text" id="address" name="address" class="form-control" maxlength="200"
+                       value="{{ kyc.address if kyc and kyc.address != 'Pending SME submission' else '' }}" required>
+            </div>
+            <div class="form-actions">
+                <span class="muted-sm">{{ icon('shield') }} Verification is decided by a compliance officer, never automatically.</span>
+                <button type="submit" class="btn btn-primary">{{ icon('send') }}Submit for compliance review</button>
             </div>
         </form>
     </div>
