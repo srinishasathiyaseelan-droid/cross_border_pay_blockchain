@@ -282,3 +282,24 @@ no raw exception text; budget exhausted → UNAVAILABLE; /admin/ai access; no ve
   overflowing their cards, and the review page columns squeezing at mid widths.
 - Key-value tables (payment result, review facts) stack label above value on phones, so labels no longer wrap one letter per line.
 - No behaviour change: `pytest` still gives 178 passed, 1 skipped.
+
+## Live decision feed (Server-Sent Events, adapted from Netvrio)
+
+- `crosspay/realtime.py`: a thread-safe event bus, an SSE stream and a demo-only traffic simulator,
+  adapted from Netvrio's `backend/realtime/` (FastAPI/asyncio → Flask/threads).
+- Every committed settlement and officer review is published **after COMMIT**. A feed failure can never affect a
+  payment, and a payment that fails or rolls back publishes nothing.
+- `GET /api/live/events` (SSE, 15 s keep-alive) and `GET /api/live/snapshot` (last 50 events) need a login.
+  SMEs receive only their own payments; officers receive everything (H3). Events carry no names, notes or user IDs.
+- `POST /api/live/simulator` is limited to DEMO_MODE and admins, and passes the same-origin check. The simulator is a dry run:
+  synthetic behaviour vectors are scored by the real Random Forest and decided by the real policy engine. It writes
+  nothing to the database, the audit chain or the ledger, and makes no FX or AI calls. Events are labelled `SIMULATED` and never reach SMEs.
+- Dashboard: a "Live decision feed" card with a connection status, counters, a decisions/s rate and, for officers in
+  demo mode, Start/Stop and rate controls. All text is set with `textContent`.
+- Production note: SSE holds one worker thread per open dashboard. The Procfile's `gthread` workers (2 × 4) are enough
+  for a demo; a larger deployment would need more threads or an async worker.
+
+**Tests added:** `tests/test_live_feed.py` (10): tenant scoping, slow-subscriber drop, publish after commit, nothing
+published on failure, SSE framing, login required, simulator admin- and demo-only, simulator writes nothing and agrees with
+the policy engine, simulated events hidden from SMEs, dashboard card. **How verified:** `pytest -q` → 188 passed, 1 skipped;
+Playwright run with an officer (simulator at 3/s) and an SME (real MEDIUM payment → HOLD seen live by both), no console errors.

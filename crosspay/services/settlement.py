@@ -12,6 +12,7 @@ import logging
 from flask import current_app
 
 from ..db import utcnow_iso
+from ..realtime import publish_safely, settlement_event
 from ..ledger.chain import NOT_RECORDED, settlement_record, tx_hash
 from ..security import idempotency
 from ..util import new_tx_id
@@ -105,6 +106,8 @@ def settle_payment(conn, *, user_id, kyc_status, data, conversion, features, sco
             conn.execute("ROLLBACK")
         raise
     _finish(conn)
+    publish_safely(current_app._get_current_object(),
+                   settlement_event("decision", row, decision.decision, block.index if block else None))
     return {"tx_id": tx_id, "decision": decision.decision, "block": block.index if block else None}
 
 
@@ -154,6 +157,8 @@ def resolve_hold(conn, *, tx_id, admin_id, action, reason, copilot_memo=None, ai
             conn.execute("ROLLBACK")
         raise
     _finish(conn)
+    publish_safely(current_app._get_current_object(),
+                   settlement_event("review", row, new_decision, block.index if block else None))
     return {"tx_id": tx_id, "decision": new_decision, "block": block.index if block else None}
 
 

@@ -60,6 +60,10 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     app.extensions["audit"] = audit
     app.extensions["ledger"] = ledger
     app.extensions["contract"] = SmartContractEngine(app.config)
+    from .realtime import EventBus, TrafficSimulator
+
+    app.extensions["events"] = EventBus()  # live decision feed
+    app.extensions["simulator"] = TrafficSimulator(app)  # DEMO_MODE only, dry run
     conn = dbmod.connect(app.config["DB_PATH"])
     try:
         bootstrap_ledger(conn, ledger, audit)  # M3: fixtures get the same signed history as live payments

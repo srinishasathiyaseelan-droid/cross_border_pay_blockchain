@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 
 from flask import Blueprint, abort, current_app, jsonify, request
 
-from ..security.decorators import login_required
+from ..security.decorators import admin_required, demo_only, login_required
 
 from ..services.currency import (
     COUNTRY_TO_DEFAULT_CURRENCY,
@@ -118,3 +118,56 @@ def ai_poll(task, tx_id):
     if job is None:
         return jsonify({"status": "NONE"})
     return jsonify({"status": job["status"], "result": job["result"] if job["status"] == "DONE" else None})
+
+
+# ----------------- Live decision feed (Server-Sent Events) -----------------
+def _feed_scope():
+    from ..security.decorators import current_user_row
+    from ..realtime import ADMIN
+
+    row = current_user_row()
+    return ADMIN if row["role"] == "admin" else row["id"]
+
+
+@bp.route("/live/events")
+@login_required
+def live_events():
+    """One long-lived SSE connection per open dashboard. SMEs get only their own payments (H3)."""
+    from flask import Response
+
+    from ..realtime import stream
+
+    bus = current_app.extensions["events"]
+    q = bus.subscribe(_feed_scope())  # subscribe before responding, so nothing published meanwhile is lost
+    max_events = request.args.get("max", type=int) if current_app.config.get("TESTING") else None
+    return Response(stream(bus, q, max_events=max_events), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@bp.route("/live/snapshot")
+@login_required
+def live_snapshot():
+    from ..security.decorators import is_admin
+
+    sim = current_app.extensions["simulator"]
+    show_sim = is_admin() and current_app.config.get("DEMO_MODE")
+    return jsonify({"events": current_app.extensions["events"].recent(_feed_scope(), 50),
+                    "simulator": sim.status() if show_sim else None})
+
+
+@bp.route("/live/simulator", methods=["POST"])
+@demo_only
+@admin_required
+def live_simulator():
+    """DEMO_MODE + admin only. Dry run: synthetic payments are scored and decided, never stored."""
+    body = request.get_json(silent=True) or {}
+    sim = current_app.extensions["simulator"]
+    try:
+        sim.configure(body.get("rate_per_sec"), body.get("risky_ratio"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "rate_per_sec and risky_ratio must be numbers"}), 400
+    if body.get("running") is True:
+        sim.start()
+    elif body.get("running") is False:
+        sim.stop()
+    return jsonify({"success": True, **sim.status()})

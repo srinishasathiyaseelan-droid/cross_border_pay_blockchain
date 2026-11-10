@@ -38,6 +38,35 @@
     </div>
 </div>
 
+<div class="card live-card" id="live-feed" data-events="{{ url_for('api.live_events') }}" data-snapshot="{{ url_for('api.live_snapshot') }}"
+     data-sim="{{ url_for('api.live_simulator') if (is_admin and demo_mode) else '' }}" data-tx-url="{{ url_for('payments.result', tx_id='__TX__') }}">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">{{ tile('activity', 'teal', 'sm') }}Live decision feed
+                <span class="live-status" data-state="connecting" role="status"><span class="live-dot"></span><span class="live-label">Connecting…</span></span></h2>
+            <p class="card-sub">{{ 'Every settlement and officer review, as it happens.' if is_admin else 'Your own payments and their reviews, as they happen.' }}
+            {% if is_admin and demo_mode %} Simulated traffic is a dry run: it is scored by the real model and policy engine but never stored or mined.{% endif %}</p>
+        </div>
+        {% if is_admin and demo_mode %}
+        <div class="btn-row live-controls">
+            <label class="live-rate">Rate <select id="sim-rate" class="form-control form-control-sm" aria-label="Simulated events per second">
+                <option value="0.5">0.5/s</option><option value="1" selected>1/s</option><option value="3">3/s</option><option value="6">6/s</option></select></label>
+            <button type="button" class="btn btn-secondary btn-sm" id="sim-toggle" aria-pressed="false">{{ icon('zap') }}<span>Start simulated traffic</span></button>
+        </div>
+        {% endif %}
+    </div>
+    <div class="live-counters" aria-label="Decisions since this page opened">
+        <span class="badge badge-approved">{{ icon('check') }}Approved <strong data-count="APPROVED">0</strong></span>
+        <span class="badge badge-hold">{{ icon('pause') }}Hold <strong data-count="HOLD">0</strong></span>
+        <span class="badge badge-blocked">{{ icon('ban') }}Blocked <strong data-count="BLOCKED">0</strong></span>
+        <span class="badge badge-rejected">{{ icon('x') }}Rejected <strong data-count="REJECTED">0</strong></span>
+        <span class="muted-sm live-rate-out" aria-live="off"></span>
+    </div>
+    <ol class="live-list" aria-live="polite" aria-relevant="additions">
+        <li class="live-empty muted-sm">Waiting for decisions. {{ 'Start simulated traffic or submit a payment.' if (is_admin and demo_mode) else 'Submit a payment to see it here.' }}</li>
+    </ol>
+</div>
+
 <!-- Model performance: measured on a time-based synthetic hold-out (model/metrics.json) -->
 <div class="card" style="margin-bottom:20px">
     <div class="card-header">
@@ -96,6 +125,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/live.js') }}" defer></script>
 <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
 (function () {
