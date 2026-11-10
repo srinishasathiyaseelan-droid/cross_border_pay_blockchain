@@ -72,6 +72,7 @@ class BaseConfig:
         for name in ("AI_EXPLAIN", "AI_PURPOSE", "AI_COPILOT", "AI_INVOICE", "AI_NLQ", "AI_ASSIST", "AI_REPORTS")
     }
     AI_RUN_SYNC = _flag("AI_RUN_SYNC", "0")  # tests run background jobs inline
+    DEMO_DATASET = _flag("DEMO_DATASET", "1")  # DEMO_MODE only: one-time top-up of labelled demo payments
     AI_BACKFILL = _flag("AI_BACKFILL", "1")  # at startup, queue AI explanations for recent payments that have none
     # Escalate-only policy rule: an SME with at least this many payments in the last hour goes to HOLD (0 = off).
     VELOCITY_BURST_1H = _int("VELOCITY_BURST_1H", 5)
@@ -106,6 +107,7 @@ class TestConfig(BaseConfig):
     LLM_ENABLED = False
     AI_RUN_SYNC = True
     AI_BACKFILL = False
+    DEMO_DATASET = False
     POW_DIFFICULTY = 2
     DEMO_SME_PASSWORD = "sme-demo-password-test"
     DEMO_ADMIN_PASSWORD = "admin-demo-password-test"

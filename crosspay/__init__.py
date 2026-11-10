@@ -76,6 +76,26 @@ def create_app(config_name: str = None, overrides: dict = None) -> Flask:
     app.extensions["model"] = bundle
     app.extensions["scorer"] = Scorer(bundle, reason)
     app.extensions["metrics"] = _load_metrics(app)
+    if app.config.get("DEMO_MODE") and app.config.get("DEMO_DATASET"):
+        if app.config.get("TESTING"):
+            _demo_dataset(app)
+        else:  # scoring + mining ~140 payments takes a while: never delay the server binding its port
+            import threading
+
+            threading.Thread(target=_demo_dataset, args=(app,), name="crosspay-demo-seed", daemon=True).start()
+
+    @app.cli.command("seed-demo")
+    def seed_demo_command():
+        """Add the labelled demo dataset now (idempotent). Run with AI_BACKFILL=0, or the process waits for the
+        spaced AI backfill jobs before it exits."""
+        from .services.demo_data import seed
+
+        conn = dbmod.connect(app.config["DB_PATH"])
+        try:
+            print(seed(app, conn))
+            print(app.extensions["ledger"].verify(conn)["message"])
+        finally:
+            conn.close()
 
     # Advisory LLM layer (P5). The router is built even when LLM_ENABLED=0; nothing calls out unless enabled.
     from .ai import log as ailog
@@ -175,6 +195,19 @@ def _local_secret(app, name: str) -> str:
 
 
 _MODEL_CACHE = {}
+
+
+def _demo_dataset(app):
+    """One-time demo top-up (marker row in ai_settings). Never blocks or fails startup."""
+    from .services.demo_data import seed
+
+    conn = dbmod.connect(app.config["DB_PATH"])
+    try:
+        seed(app, conn)
+    except Exception:  # noqa: BLE001
+        log.exception("Demo dataset skipped")
+    finally:
+        conn.close()
 
 
 def _ai_backfill(app):
