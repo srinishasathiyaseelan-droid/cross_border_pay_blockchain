@@ -1,11 +1,13 @@
-{# Shared UI macros. Icons come from the inline sprite in _icons.html. #}
+{# Shared UI macros ("Signed Ledger"). Icons come from the inline sprite in _icons.html. Spec: design-work/05-components.md #}
 
 {% macro icon(name, cls="") -%}
 <svg class="icon {{ cls }}" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"></use></svg>
 {%- endmacro %}
 
-{% macro tile(name, tone="teal", size="") -%}
-<span class="icon-tile tile-{{ tone }} {{ 'icon-tile-' ~ size if size else '' }}" aria-hidden="true">{{ icon(name) }}</span>
+{# Embossed icon tile. Old tone names are mapped so every template speaks the same semantic language. #}
+{% macro tile(name, tone="brand", size="") -%}
+{%- set t = {'teal': 'brand', 'blue': 'info', 'violet': 'ai', 'amber': 'warning', 'red': 'danger', 'slate': 'neutral'}.get(tone, tone) -%}
+<span class="tile {{ 'tile-' ~ t if t != 'brand' else '' }} {{ 'tile-' ~ size if size else '' }}" aria-hidden="true">{{ icon(name) }}</span>
 {%- endmacro %}
 
 {% macro decision_badge(decision) -%}
@@ -17,7 +19,7 @@
 
 {% macro risk_badge(level, score=None) -%}
 {%- set cls = {'LOW': 'low', 'MEDIUM': 'med', 'HIGH': 'high'}.get(level, 'neutral') -%}
-<span class="badge badge-{{ cls }}"><span class="dot dot-{{ cls }}"></span>{{ level }}{% if score is not none %} · {{ score }}{% endif %}</span>
+<span class="badge badge-{{ cls }}"><span class="dot"></span>{{ level }}{% if score is not none %}<span class="num">&nbsp;{{ score }}</span>{% endif %}</span>
 {%- endmacro %}
 
 {% macro kyc_badge(status) -%}
@@ -26,20 +28,29 @@
 {%- endmacro %}
 
 {% macro money(amount, currency) -%}
-{%- if amount is none -%}—{%- elif currency == 'JPY' -%}{{ "{:,.0f}".format(amount) }} {{ currency }}{%- else -%}{{ "{:,.2f}".format(amount) }} {{ currency }}{%- endif -%}
+{%- if amount is none -%}—{%- elif currency == 'JPY' -%}<span class="num">{{ "{:,.0f}".format(amount) }}</span> {{ currency }}{%- else -%}<span class="num">{{ "{:,.2f}".format(amount) }}</span> {{ currency }}{%- endif -%}
 {%- endmacro %}
 
 {% macro ai_label() -%}
-<span class="ai-label">{{ icon('sparkles') }}AI-generated · advisory · may be wrong</span>
+<span class="advisory-label">{{ icon('sparkles') }}AI-generated · advisory · may be wrong</span>
 {%- endmacro %}
 
+{# Drawn stepper: the connector fills to the current step (motion.js animates --progress). #}
 {% macro pipeline(steps, current) -%}
-<ol class="pipeline" aria-label="Settlement workflow">
+{%- set n = steps|length -%}
+{%- set progress = ([current - 1, n - 1]|min) / (n - 1) if n > 1 else 0 -%}
+<ol class="pipeline" style="--steps: {{ n }}; --progress: {{ progress }}" data-progress="{{ progress }}" aria-label="Settlement steps">
+  <li class="pipeline-line" aria-hidden="true"><i></i></li>
   {% for label, ic in steps %}
-  <li class="pipeline-step {% if loop.index < current %}is-done{% elif loop.index == current %}is-active{% endif %}">
+  <li class="pipeline-step {% if loop.index < current %}is-done{% elif loop.index == current %}is-active{% endif %}"
+      {% if loop.index == current %}aria-current="step"{% endif %}>
     <span class="pipeline-dot">{% if loop.index < current %}{{ icon('check') }}{% else %}{{ icon(ic) }}{% endif %}</span>
-    <span class="pipeline-label">{{ label }}</span>
+    <span class="pipeline-label">{{ label }}{% if loop.index < current %}<span class="sr-only"> (done)</span>{% endif %}</span>
   </li>
   {% endfor %}
 </ol>
+{%- endmacro %}
+
+{% macro field_hint(id, text) -%}
+<p class="field-hint" id="{{ id }}">{{ text }}</p>
 {%- endmacro %}

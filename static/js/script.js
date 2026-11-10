@@ -42,22 +42,65 @@
         });
     }
 
-    /* ---------- Flash messages ---------- */
+    /* ---------- Toasts (server flashes): auto-dismiss after 7 s, paused while hovered or focused ---------- */
     function initFlashes() {
-        document.querySelectorAll('.alert[data-autodismiss]').forEach((el) => {
-            setTimeout(() => { el.classList.add('is-leaving'); setTimeout(() => el.remove(), 400); }, 6000);
+        document.querySelectorAll('.toast').forEach((t) => {
+            let timer = null;
+            const leave = () => { t.classList.add('is-leaving'); setTimeout(() => t.remove(), 260); };
+            const arm = () => { clearTimeout(timer); timer = setTimeout(leave, 7000); };
+            const hold = () => clearTimeout(timer);
+            t.addEventListener('mouseenter', hold); t.addEventListener('focusin', hold);
+            t.addEventListener('mouseleave', arm); t.addEventListener('focusout', arm);
+            const close = t.querySelector('.toast-close');
+            if (close) close.addEventListener('click', leave);
+            if (!t.classList.contains('toast-danger')) arm();   // errors stay until dismissed
         });
-        document.querySelectorAll('.alert .alert-close').forEach((b) => b.addEventListener('click', () => b.closest('.alert').remove()));
     }
 
-    /* ---------- Mobile nav ---------- */
+    /* ---------- Mobile navigation sheet: focus trap, Escape closes, focus returns to the opener ---------- */
     function initNav() {
-        const toggle = $('nav-toggle');
-        const links = $('nav-links');
-        if (!toggle || !links) return;
-        toggle.addEventListener('click', () => {
-            const open = links.classList.toggle('is-open');
-            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        const opener = $('nav-open'), sheet = $('nav-sheet'), scrim = $('nav-scrim');
+        if (!opener || !sheet || !scrim) return;
+        const focusables = () => Array.from(sheet.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])')).filter((n) => !n.disabled);
+        const close = () => {
+            sheet.classList.remove('is-open'); scrim.classList.remove('is-open');
+            sheet.setAttribute('aria-hidden', 'true'); opener.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('keydown', onKey); opener.focus();
+        };
+        const onKey = (e) => {
+            if (e.key === 'Escape') { close(); return; }
+            if (e.key !== 'Tab') return;
+            const f = focusables(); if (!f.length) return;
+            if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+            else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+        };
+        opener.addEventListener('click', () => {
+            sheet.classList.add('is-open'); scrim.classList.add('is-open');
+            sheet.setAttribute('aria-hidden', 'false'); opener.setAttribute('aria-expanded', 'true');
+            document.addEventListener('keydown', onKey);
+            const f = focusables(); if (f.length) f[0].focus();
+        });
+        scrim.addEventListener('click', close);
+        sheet.querySelectorAll('[data-close-sheet]').forEach((b) => b.addEventListener('click', close));
+    }
+
+    /* ---------- Sortable tables: <table class="table" data-sortable>, <th><button data-sort="col-index"> ---------- */
+    function initSortable() {
+        document.querySelectorAll('table[data-sortable]').forEach((table) => {
+            table.querySelectorAll('th button[data-sort]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const th = btn.closest('th');
+                    const idx = Number(btn.dataset.sort);
+                    const dir = th.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+                    table.querySelectorAll('th').forEach((h) => h.removeAttribute('aria-sort'));
+                    th.setAttribute('aria-sort', dir);
+                    const body = table.tBodies[0];
+                    const rows = Array.from(body.rows).filter((r) => !r.querySelector('.table-empty'));
+                    const key = (r) => { const c = r.cells[idx]; const v = c ? (c.dataset.value || c.textContent.trim()) : ''; const n = parseFloat(v); return isNaN(n) ? v.toLowerCase() : n; };
+                    rows.sort((a, b) => { const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * (dir === 'ascending' ? 1 : -1); });
+                    rows.forEach((r) => body.appendChild(r));
+                });
+            });
         });
     }
 
@@ -235,23 +278,23 @@
         if (!target) return;
         target.innerHTML = '';
         const p = document.createElement('p');
-        p.className = 'ai-summary';
+        p.className = 'advisory-summary';
         p.textContent = result.summary || '';
         target.appendChild(p);
         if (Array.isArray(result.factors) && result.factors.length) {
             const ul = document.createElement('ul');
-            ul.className = 'ai-list';
+            ul.className = 'advisory-list';
             result.factors.forEach((f) => { const li = document.createElement('li'); li.textContent = f.plain_reason + ' [' + f.evidence_id + ']'; ul.appendChild(li); });
             target.appendChild(ul);
         }
         if (Array.isArray(result.what_would_lower_risk) && result.what_would_lower_risk.length) {
-            const h = document.createElement('div'); h.className = 'ai-subhead'; h.textContent = 'What could lower the risk';
+            const h = document.createElement('div'); h.className = 'advisory-sub'; h.textContent = 'What could lower the risk';
             target.appendChild(h);
-            const ul = document.createElement('ul'); ul.className = 'ai-list';
+            const ul = document.createElement('ul'); ul.className = 'advisory-list';
             result.what_would_lower_risk.forEach((t) => { const li = document.createElement('li'); li.textContent = t; ul.appendChild(li); });
             target.appendChild(ul);
         }
-        if (result.confidence_note) { const n = document.createElement('p'); n.className = 'ai-note'; n.textContent = result.confidence_note; target.appendChild(n); }
+        if (result.confidence_note) { const n = document.createElement('p'); n.className = 'advisory-note'; n.textContent = result.confidence_note; target.appendChild(n); }
         panel.classList.add('is-ready');
     }
 
@@ -303,13 +346,13 @@
                     const f = d.fields || {};
                     const ver = d.verification || {};
                     const box = document.createElement('div');
-                    box.className = 'ai-advisory';
+                    box.className = 'advisory';
                     const head = document.createElement('div');
-                    head.className = 'ai-label';
+                    head.className = 'advisory-label';
                     head.textContent = 'AI-generated · advisory · may be wrong';
                     box.appendChild(head);
                     const ul = document.createElement('ul');
-                    ul.className = 'ai-list';
+                    ul.className = 'advisory-list';
                     [['Invoice no.', f.invoice_no], ['Seller (beneficiary)', f.seller], ['Currency', f.currency, ver.currency],
                      ['Total', f.total_amount, ver.total_amount], ['Terms', f.payment_terms]].forEach(([k, v, check]) => {
                         const li = document.createElement('li');
@@ -318,7 +361,7 @@
                     });
                     box.appendChild(ul);
                     if (d.status !== 'OK') {
-                        const p = document.createElement('p'); p.className = 'ai-note';
+                        const p = document.createElement('p'); p.className = 'advisory-note';
                         p.textContent = 'AI extraction unavailable (' + d.status + '); the exact text check still runs on submit.';
                         box.appendChild(p);
                     } else {
@@ -356,74 +399,11 @@
         });
     }
 
-    /* ---------- 3D surfaces: cursor glow on cards, gentle tilt, hero particles ---------- */
-    const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    function initGlow() {
-        document.querySelectorAll('.card.glow').forEach((card) => {
-            card.addEventListener('pointermove', (e) => {
-                const r = card.getBoundingClientRect();
-                card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-                card.style.setProperty('--my', (e.clientY - r.top) + 'px');
-            });
-        });
-        if (reduceMotion()) return;
-        document.querySelectorAll('.flow-card, .stat-card').forEach((el) => {
-            el.classList.add('tilt');
-            el.addEventListener('pointermove', (e) => {
-                const r = el.getBoundingClientRect();
-                const x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-                el.style.transform = `perspective(700px) rotateX(${(-y * 5).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg)`;
-            });
-            el.addEventListener('pointerleave', () => { el.style.transform = ''; });
-        });
-    }
-
-    function initParticles() {
-        const canvas = $('hero-particles');
-        if (!canvas || reduceMotion()) return;
-        const ctx = canvas.getContext('2d');
-        let w = 0, h = 0, dots = [], raf = 0;
-        const resize = () => {
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            w = canvas.clientWidth; h = canvas.clientHeight;
-            canvas.width = w * dpr; canvas.height = h * dpr;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            dots = Array.from({ length: Math.round((w * h) / 9000) }, () => ({
-                x: Math.random() * w, y: Math.random() * h, z: Math.random() * 0.8 + 0.2,
-                vx: (Math.random() - 0.5) * 0.25, vy: (Math.random() - 0.5) * 0.25
-            }));
-        };
-        const tick = () => {
-            ctx.clearRect(0, 0, w, h);
-            const tone = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#1fc3a0';
-            for (const d of dots) {
-                d.x = (d.x + d.vx * d.z + w) % w; d.y = (d.y + d.vy * d.z + h) % h;
-                ctx.globalAlpha = 0.25 + d.z * 0.5;
-                ctx.fillStyle = tone;
-                ctx.beginPath(); ctx.arc(d.x, d.y, d.z * 2.1, 0, Math.PI * 2); ctx.fill();
-            }
-            ctx.globalAlpha = 0.08;
-            ctx.strokeStyle = tone;
-            for (let i = 0; i < dots.length; i++) for (let j = i + 1; j < dots.length; j++) {
-                const a = dots[i], b = dots[j], dx = a.x - b.x, dy = a.y - b.y;
-                if (dx * dx + dy * dy < 4200) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-            }
-            ctx.globalAlpha = 1;
-            raf = requestAnimationFrame(tick);
-        };
-        resize();
-        window.addEventListener('resize', () => { cancelAnimationFrame(raf); resize(); tick(); });
-        document.addEventListener('visibilitychange', () => { if (document.hidden) cancelAnimationFrame(raf); else tick(); });
-        tick();
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        initGlow();
-        initParticles();
         initTheme();
         initFlashes();
         initNav();
+        initSortable();
         initCurrencyConverter();
         initScenarios();
         initRiskPreview();

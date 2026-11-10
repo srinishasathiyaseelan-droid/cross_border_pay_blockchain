@@ -5,161 +5,154 @@
 {% block content %}
 {% set d = tx.decision %}
 {% set lvl = {'LOW': 'low', 'MEDIUM': 'med', 'HIGH': 'high'}.get(tx.risk_level, 'med') %}
-<div style="max-width:1080px;margin:0 auto">
-    {{ pipeline([('KYC verified', 'id-card'), ('Payment', 'send'), ('Risk model', 'cpu'), ('Policy', 'scale'), ('Settlement', 'link')], 6 if d == 'APPROVED' else 5) }}
+{% set tone = {'APPROVED': 'success', 'HOLD': 'warning', 'BLOCKED': 'danger'}.get(d, 'neutral') %}
+{{ pipeline([('KYC verified', 'id-card'), ('Payment', 'send'), ('Risk model', 'cpu'), ('Policy', 'scale'), ('Settlement', 'link')], 5 if d == 'APPROVED' else 4) }}
 
-    <section class="result-hero result-{{ {'APPROVED': 'approved', 'HOLD': 'hold', 'BLOCKED': 'blocked'}.get(d, 'rejected') }}">
-        {{ tile({'APPROVED': 'check', 'HOLD': 'pause', 'BLOCKED': 'ban'}.get(d, 'x'), {'APPROVED': 'teal', 'HOLD': 'amber', 'BLOCKED': 'red'}.get(d, 'slate'), 'lg') }}
-        <div style="position:relative;z-index:1">
-            <div class="result-kicker">Policy decision · <span class="font-mono">{{ tx.transaction_id }}</span></div>
-            <div class="result-title">
+<article class="receipt" aria-labelledby="receipt-title">
+    <div class="receipt-head">
+        {{ tile({'APPROVED': 'check', 'HOLD': 'pause', 'BLOCKED': 'ban'}.get(d, 'x'), tone, 'lg') }}
+        <div style="min-width:0">
+            <p class="receipt-kicker">Receipt <span class="tx-id">{{ tx.transaction_id }}</span> · {{ tx.sender }} → {{ tx.receiver }} ({{ tx.receiver_country }})</p>
+            <p class="receipt-amount">{{ money(tx.amount, tx.source_currency or tx.currency) }}</p>
+            <h1 class="receipt-title" id="receipt-title">
                 {% if d == 'APPROVED' %}Approved and settled{% elif d == 'HOLD' %}On hold for compliance review{% elif d == 'BLOCKED' %}Blocked{% else %}Rejected{% endif %}
-            </div>
-            <p class="muted">
-                {% if d == 'APPROVED' %}Recorded in block #{{ tx.block_number }} of the signed ledger.
+            </h1>
+            <p class="text-2" style="margin-top:6px">
+                {% if d == 'APPROVED' %}Recorded in block #{{ tx.block_number }} of the signed ledger. The beneficiary receives {{ money(tx.converted_amount or tx.amount, tx.target_currency or tx.currency) }}.
                 {% elif d == 'HOLD' %}A compliance officer will review it. Nothing is recorded on the ledger until it is released.
                 {% elif d == 'BLOCKED' %}The policy stopped this payment. The decision is in the audit chain; nothing was mined.
                 {% else %}Rejected{% if reviews %} by a compliance officer{% endif %}. Nothing was recorded on the ledger.{% endif %}
             </p>
-            <div class="chip-row" style="margin-top:12px">
+            <div class="chips" style="margin-top:12px">
                 {{ decision_badge(d) }} {{ risk_badge(tx.risk_level) }}
-                {% if tx.feature_source == 'demo_vector' %}<span class="badge badge-med">{{ icon('zap') }}DEMO VECTOR</span>{% endif %}
-                {% if tx.rate_stale %}<span class="badge badge-med">{{ icon('clock') }}STALE FX RATE</span>{% endif %}
+                {% if tx.feature_source == 'demo_vector' %}<span class="badge badge-warning">{{ icon('zap') }}DEMO VECTOR</span>{% endif %}
+                {% if tx.rate_stale %}<span class="badge badge-warning">{{ icon('clock') }}STALE FX RATE</span>{% endif %}
             </div>
         </div>
-        <div class="gauge tone-{{ lvl }}" style="--value: {{ [tx.risk_score, 100]|min }}%">
-            <div><strong>{{ tx.risk_score }}</strong><span>risk score</span></div>
+        <div style="display:grid;justify-items:center;gap:12px">
+            <span class="stamp stamp-{{ {'APPROVED': 'approved', 'HOLD': 'hold', 'BLOCKED': 'blocked'}.get(d, 'rejected') }}">{{ d }}</span>
+            <div class="gauge tone-{{ lvl }}" style="--value: {{ [tx.risk_score, 100]|min }}" role="img" aria-label="Risk score {{ tx.risk_score }} of 100">
+                <div><strong>{{ tx.risk_score }}</strong><span>risk score</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="receipt-grid">
+        <section class="receipt-section" aria-labelledby="h-payment">
+            <h2 id="h-payment">{{ icon('file-text') }}Payment</h2>
+            <table class="kv">
+                <tr><th scope="row">Amount sent</th><td><strong>{{ money(tx.amount, tx.source_currency or tx.currency) }}</strong></td></tr>
+                <tr><th scope="row">Beneficiary receives</th><td><strong>{{ money(tx.converted_amount or tx.amount, tx.target_currency or tx.currency) }}</strong></td></tr>
+                <tr><th scope="row">Exchange rate</th><td><span class="num">1 {{ tx.source_currency or tx.currency }} = {{ "{:.6f}".format(tx.exchange_rate or 1.0) }} {{ tx.target_currency or tx.currency }}</span>
+                    <div class="xsmall muted break">{{ tx.exchange_rate_provider }} · {{ tx.rate_timestamp }}</div></td></tr>
+                <tr><th scope="row">USD value</th><td>{{ money(tx.normalized_usd_amount, 'USD') }}</td></tr>
+                <tr><th scope="row">Sender</th><td>{{ tx.sender }} ({{ tx.sender_country }})</td></tr>
+                <tr><th scope="row">Beneficiary</th><td>{{ tx.receiver }} ({{ tx.receiver_country }})</td></tr>
+                <tr><th scope="row">Purpose</th><td>{{ tx.notes or '—' }}</td></tr>
+                <tr><th scope="row">Submitted</th><td class="num xsmall">{{ tx.timestamp }}</td></tr>
+            </table>
+        </section>
+
+        <section class="receipt-section" aria-labelledby="h-model">
+            <h2 id="h-model">{{ icon('cpu') }}Model and policy</h2>
+            <table class="kv">
+                <tr><th scope="row">Scoring engine</th><td>{{ 'Random Forest model' if tx.scoring_engine == 'model' else ('Fallback rules' if tx.scoring_engine == 'fallback' else 'Seed record') }}</td></tr>
+                {% if tx.p_low is not none %}
+                <tr><th scope="row">Class probabilities</th><td><div class="stack-sm">
+                    {% for name, p, col in [('LOW', tx.p_low, 'var(--success)'), ('MEDIUM', tx.p_med, 'var(--warning)'), ('HIGH', tx.p_high, 'var(--danger)')] %}
+                    <div class="prob"><span>{{ name }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ p * 100 }}%;background:{{ col }}"></div></div><span class="num">{{ '%.3f'|format(p) }}</span></div>
+                    {% endfor %}</div></td></tr>
+                {% endif %}
+                {% if tx.top_factors_list %}
+                <tr><th scope="row">Top factors <span class="xsmall muted">(score points)</span></th><td><ul class="factor-list">{% for f in tx.top_factors_list %}<li>{{ f.label or f.feature }}: <span class="num">{{ f.value }}</span> ({{ '%+.1f'|format(f.contribution) }})</li>{% endfor %}</ul></td></tr>
+                {% endif %}
+                <tr><th scope="row">Behaviour</th><td class="small">{{ tx.frequency }} payments / 30 days · {{ tx.previous_transactions }} previous · {{ tx.suspicious_transactions }} held or blocked before · {{ tx.account_age }} months · corridor {{ tx.corridor_risk }}</td></tr>
+                {% if tx.policy_reasons_list %}<tr><th scope="row">Reason codes</th><td><div class="reason-codes">{% for r in tx.policy_reasons_list %}<span class="badge badge-outline num">{{ r }}</span>{% endfor %}</div></td></tr>{% endif %}
+            </table>
+        </section>
+    </div>
+
+    <footer class="receipt-foot small">
+        <div><span class="muted">Ledger hash</span> <span class="hash">{{ tx.blockchain_hash }}</span></div>
+        <div class="text-2"><span class="muted">Contract</span> <span class="num xsmall break">{{ contract_address }}</span> · {{ contract_label }} · state <span class="num xsmall">{{ tx.smart_contract_status }}</span></div>
+    </footer>
+</article>
+
+<div class="grid-2" style="margin-top:24px">
+    {# P6.1: AI text is rendered with textContent / autoescape only, never |safe #}
+    <section class="advisory {% if not (ai_on and ai_flags.get('AI_EXPLAIN', True)) %}is-unavailable{% else %}is-loading{% endif %}"
+             {% if ai_on and ai_flags.get('AI_EXPLAIN', True) %}data-ai-poll="{{ url_for('api.ai_poll', task='explain', tx_id=tx.transaction_id) }}"{% endif %}
+             aria-labelledby="h-why" aria-live="polite">
+        <div class="cluster between"><h2 class="section-title" id="h-why">{{ tile('sparkles', 'ai', 'sm') }}Why this decision</h2>{{ ai_label() }}</div>
+        <div class="advisory-body" data-ai-body>
+            <div class="loading"><span class="skeleton" style="width:90%"></span><span class="skeleton" style="width:70%"></span><span class="xsmall muted">Writing a plain-language explanation…</span></div>
+        </div>
+        <div class="fallback advisory-body">
+            <p class="small text-2">{% if ai_on %}The AI explanation is not available for this payment.{% else %}AI explanations are switched off.{% endif %} These are the model's own top factors:</p>
+            <ul>{% for f in tx.top_factors_list %}<li>{{ f.label or f.feature }} = {{ f.value }} ({{ 'raised' if f.contribution > 0 else 'lowered' }} the score by {{ '%.1f'|format(f.contribution|abs) }} points)</li>
+            {% else %}<li>Seed record: no factor breakdown stored.</li>{% endfor %}</ul>
         </div>
     </section>
 
-    <div class="grid-2">
-        <div class="card">
-            <div class="card-header"><h2 class="card-title">{{ tile('file-text', 'blue', 'sm') }}Payment</h2></div>
-            <table class="custom-table kv">
-                <tr><td>Amount sent</td><td><strong style="font-size:1.1rem">{{ money(tx.amount, tx.source_currency or tx.currency) }}</strong></td></tr>
-                <tr><td>Beneficiary receives</td><td><strong style="font-size:1.1rem;color:var(--low)">{{ money(tx.converted_amount or tx.amount, tx.target_currency or tx.currency) }}</strong></td></tr>
-                <tr><td>Exchange rate</td><td class="font-mono">1 {{ tx.source_currency or tx.currency }} = {{ "{:.6f}".format(tx.exchange_rate or 1.0) }} {{ tx.target_currency or tx.currency }}
-                    <div class="muted-sm">{{ tx.exchange_rate_provider }} · {{ tx.rate_timestamp }}</div></td></tr>
-                <tr><td>USD reference</td><td class="font-mono">{{ money(tx.normalized_usd_amount, 'USD') }}</td></tr>
-                <tr><td>Sender</td><td>{{ tx.sender }} <span class="muted-sm">({{ tx.sender_country }})</span></td></tr>
-                <tr><td>Beneficiary</td><td>{{ tx.receiver }} <span class="muted-sm">({{ tx.receiver_country }})</span></td></tr>
-                <tr><td>Purpose note</td><td>{{ tx.notes or '—' }}</td></tr>
-                <tr><td>Submitted</td><td class="font-mono">{{ tx.timestamp }}</td></tr>
-            </table>
-        </div>
-
-        <div class="card">
-            <div class="card-header"><h2 class="card-title">{{ tile('cpu', 'violet', 'sm') }}Model and policy</h2></div>
-            <table class="custom-table kv">
-                <tr><td>Scoring engine</td><td><strong>{{ 'Random Forest model' if tx.scoring_engine == 'model' else ('Fallback rules' if tx.scoring_engine == 'fallback' else 'Seed record') }}</strong></td></tr>
-                {% if tx.p_low is not none %}
-                <tr><td>Class probabilities</td><td>
-                    <div class="prob-bars">
-                        {% for name, p, col in [('LOW', tx.p_low, 'var(--low)'), ('MEDIUM', tx.p_med, 'var(--med)'), ('HIGH', tx.p_high, 'var(--high)')] %}
-                        <div class="prob-bar"><span>{{ name }}</span><div class="track"><div class="fill" style="width:{{ p * 100 }}%;background:{{ col }}"></div></div><span class="font-mono">{{ '%.3f'|format(p) }}</span></div>
-                        {% endfor %}
-                    </div></td></tr>
-                {% endif %}
-                {% if tx.top_factors_list %}
-                <tr><td>Top factors (score points)</td><td><ul class="factor-list">{% for f in tx.top_factors_list %}<li>{{ f.label or f.feature }}: <span class="font-mono">{{ f.value }}</span> ({{ '%+.1f'|format(f.contribution) }})</li>{% endfor %}</ul></td></tr>
-                {% endif %}
-                <tr><td>Behaviour features</td><td class="muted-sm">{{ tx.frequency }} payments / 30 days · {{ tx.previous_transactions }} previous · {{ tx.suspicious_transactions }} prior held/blocked · {{ tx.account_age }} months · corridor {{ tx.corridor_risk }}</td></tr>
-                {% if tx.policy_reasons_list %}
-                <tr><td>Policy reason codes</td><td><div class="reason-codes">{% for r in tx.policy_reasons_list %}<span class="badge badge-neutral font-mono">{{ r }}</span>{% endfor %}</div></td></tr>
-                {% endif %}
-                <tr><td>Contract address</td><td><span class="font-mono" style="font-size:0.76rem">{{ contract_address }}</span> <span class="badge badge-neutral">{{ contract_label }}</span></td></tr>
-                <tr><td>Contract state</td><td class="font-mono" style="font-size:0.8rem">{{ tx.smart_contract_status }}</td></tr>
-                <tr><td>Ledger hash</td><td><span class="hash-pill">{{ tx.blockchain_hash }}</span></td></tr>
-            </table>
-        </div>
-    </div>
-
-    {# P6.1 risk explainer: AI text is rendered with textContent / autoescape only, never |safe #}
-    <div class="grid-2">
-        <section class="ai-advisory {% if not (ai_on and ai_flags.get('AI_EXPLAIN', True)) %}is-unavailable{% else %}is-loading{% endif %}"
-                 {% if ai_on and ai_flags.get('AI_EXPLAIN', True) %}data-ai-poll="{{ url_for('api.ai_poll', task='explain', tx_id=tx.transaction_id) }}"{% endif %}
-                 aria-live="polite">
-            <div class="card-header" style="margin-bottom:6px">
-                <h2 class="card-title">{{ tile('sparkles', 'violet', 'sm') }}Why this decision</h2>
-                {{ ai_label() }}
-            </div>
-            <div data-ai-body>
-                <div class="ai-loading"><div class="skeleton" style="width:60%"></div>Writing a plain-language explanation…</div>
-            </div>
-            <div class="ai-fallback">
-                <p class="muted-sm" style="margin-bottom:8px">{% if ai_on %}The AI explanation is unavailable for this payment.{% else %}AI explanations are switched off.{% endif %}
-                    These are the model's own top factors:</p>
-                <ul class="factor-list">
-                {% for f in tx.top_factors_list %}<li>{{ f.label or f.feature }} = {{ f.value }} ({{ 'raised' if f.contribution > 0 else 'lowered' }} the score by {{ '%.1f'|format(f.contribution|abs) }} points)</li>
-                {% else %}<li>Seed record: no factor breakdown stored.</li>{% endfor %}
-                </ul>
-            </div>
-        </section>
-
-        {% if not is_admin %}
-        <section class="ai-advisory" aria-label="Payment assistant">
-            <div class="card-header" style="margin-bottom:6px">
-                <h2 class="card-title">{{ tile('bot', 'violet', 'sm') }}Ask about this payment</h2>
-                {{ ai_label() }}
-            </div>
-            {% if ai_on and ai_flags.get('AI_ASSIST', True) %}
-            <p class="muted-sm">Answers use only this receipt and a short FAQ. It cannot change the decision, see other customers, or explain how to avoid review. Up to 10 questions a day.</p>
-            <div class="chat-log" id="assistant-log"></div>
-            <form id="assistant-form" class="chat-form" data-endpoint="{{ url_for('ai_features.assistant', tx_id=tx.transaction_id) }}">
-                <input id="assistant-input" class="form-control" maxlength="1000" placeholder="e.g. Why is my payment on hold?" aria-label="Your question" required>
-                <button type="submit" class="btn btn-ai">{{ icon('send') }}<span class="sr-only">Ask</span></button>
-            </form>
-            {% else %}
-            <p class="muted-sm">The assistant is switched off. The receipt above lists every fact used in the decision.</p>
-            {% endif %}
-        </section>
-        {% else %}
-        <section class="card">
-            <div class="card-header"><h2 class="card-title">{{ tile('shield', 'teal', 'sm') }}Signals recorded with this payment</h2></div>
-            <dl class="kv-list">
-                <dt>Purpose (AI tagger)</dt><dd>{{ tx.purpose_category or '—' }}{% if tx.purpose_risk is not none %} · risk {{ tx.purpose_risk }}{% endif %}</dd>
-                <dt>AI escalations</dt><dd class="font-mono">{{ tx.ai_escalations or '[]' }}</dd>
-                <dt>Input guard</dt><dd class="font-mono">{{ tx.input_guard_flags or '[]' }}</dd>
-                <dt>Invoice check</dt><dd class="font-mono">{{ tx.invoice_flags or 'no invoice' }}</dd>
-            </dl>
-        </section>
-        {% endif %}
-    </div>
-
-    {% if reviews %}
-    <div class="card" style="margin-bottom:20px">
-        <div class="card-header"><h2 class="card-title">{{ tile('shield', 'teal', 'sm') }}Compliance review</h2></div>
-        {% for r in reviews %}
-        <p><strong>{{ r.admin_name }}</strong> · {{ r.action }} · <span class="font-mono muted-sm">{{ r.created_at }}</span><br>
-            <span class="muted">{{ r.reason }}</span></p>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if d == 'HOLD' and is_admin %}
-    <div class="card" style="margin-bottom:20px">
-        <div class="card-header">
-            <h2 class="card-title">{{ tile('scale', 'amber', 'sm') }}Officer decision</h2>
-            <a href="{{ url_for('admin.review', tx_id=tx.transaction_id) }}" class="btn btn-ai btn-sm">{{ icon('sparkles') }}Open review with AI copilot</a>
-        </div>
-        <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" class="review-form" data-once>
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label class="form-label" for="reason">Your reason, in your own words (at least 20 characters)</label>
-            <textarea id="reason" name="reason" class="form-control" minlength="20" required></textarea>
-            <div class="btn-row">
-                <button type="submit" name="action" value="reject" class="btn btn-danger">{{ icon('x') }}Reject</button>
-                <button type="submit" name="action" value="approve" class="btn btn-success">{{ icon('check') }}Release and settle</button>
-            </div>
+    {% if not is_admin %}
+    <section class="advisory" aria-labelledby="h-ask">
+        <div class="cluster between"><h2 class="section-title" id="h-ask">{{ tile('bot', 'ai', 'sm') }}Ask about this payment</h2>{{ ai_label() }}</div>
+        {% if ai_on and ai_flags.get('AI_ASSIST', True) %}
+        <p class="small text-2" style="margin-top:8px">Uses only this receipt and a short FAQ. It cannot change the decision, see other customers, or explain how to avoid review. Up to 10 questions a day.</p>
+        <div class="chat-log" id="assistant-log" aria-live="polite"></div>
+        <form id="assistant-form" class="chat-form" data-endpoint="{{ url_for('ai_features.assistant', tx_id=tx.transaction_id) }}">
+            <label class="sr-only" for="assistant-input">Your question</label>
+            <input id="assistant-input" class="input" maxlength="1000" placeholder="e.g. Why is my payment on hold?" required>
+            <button type="submit" class="btn btn-ai btn-icon" aria-label="Ask">{{ icon('send') }}</button>
         </form>
-    </div>
+        {% else %}
+        <p class="small text-2" style="margin-top:8px">The assistant is switched off. The receipt above lists every fact used in the decision.</p>
+        {% endif %}
+    </section>
+    {% else %}
+    <section class="card" aria-labelledby="h-signals">
+        <h2 class="section-title" id="h-signals" style="margin-bottom:12px">{{ tile('shield', 'brand', 'sm') }}Signals recorded with this payment</h2>
+        <dl class="kv-list">
+            <dt>Purpose (AI tagger)</dt><dd>{{ tx.purpose_category or '—' }}{% if tx.purpose_risk is not none %} · risk <span class="num">{{ tx.purpose_risk }}</span>{% endif %}</dd>
+            <dt>AI escalations</dt><dd class="num xsmall">{{ tx.ai_escalations or '[]' }}</dd>
+            <dt>Input guard</dt><dd class="num xsmall">{{ tx.input_guard_flags or '[]' }}</dd>
+            <dt>Invoice check</dt><dd class="num xsmall">{{ tx.invoice_flags or 'no invoice' }}</dd>
+        </dl>
+    </section>
     {% endif %}
+</div>
 
-    <div class="btn-row" style="justify-content:space-between">
-        {% if not is_admin %}<a href="{{ url_for('payments.payment') }}" class="btn btn-secondary">{{ icon('arrow-left') }}New payment</a>{% else %}<span></span>{% endif %}
-        <div class="btn-row">
-            <a href="{{ url_for('payments.transactions') }}" class="btn btn-outline">{{ icon('list') }}All transactions</a>
-            {% if d == 'APPROVED' %}<a href="{{ url_for('payments.blockchain_explorer') }}" class="btn btn-primary">{{ icon('link') }}View on ledger</a>{% endif %}
+{% if reviews %}
+<section class="card" style="margin-top:24px" aria-labelledby="h-reviews">
+    <h2 class="section-title" id="h-reviews" style="margin-bottom:12px">{{ tile('shield', 'brand', 'sm') }}Compliance review</h2>
+    {% for r in reviews %}<p><strong>{{ r.admin_name }}</strong> · {{ r.action }} · <span class="num xsmall muted">{{ r.created_at }}</span><br><span class="text-2">{{ r.reason }}</span></p>{% endfor %}
+</section>
+{% endif %}
+
+{% if d == 'HOLD' and is_admin %}
+<section class="card" style="margin-top:24px" aria-labelledby="h-decide">
+    <div class="card-header">
+        <h2 class="section-title" id="h-decide">{{ tile('scale', 'warning', 'sm') }}Officer decision</h2>
+        <a href="{{ url_for('admin.review', tx_id=tx.transaction_id) }}" class="btn btn-ai btn-sm">{{ icon('sparkles') }}Review with AI copilot</a>
+    </div>
+    <form method="POST" action="{{ url_for('admin.resolve_hold', tx_id=tx.transaction_id) }}" class="decision-form" data-once>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field" style="margin:0"><label class="field-label" for="reason">Your reason, in your own words</label>
+            <textarea id="reason" name="reason" class="textarea" minlength="20" required aria-describedby="reason-hint"></textarea>
+            <p class="field-hint" id="reason-hint">At least 20 characters. Stored with your name in the review history.</p></div>
+        <div class="btn-row cluster-end">
+            <button type="submit" name="action" value="reject" class="btn btn-destructive">{{ icon('x') }}Reject</button>
+            <button type="submit" name="action" value="approve" class="btn btn-success">{{ icon('check') }}Release and settle</button>
         </div>
+    </form>
+</section>
+{% endif %}
+
+<div class="result-actions">
+    {% if not is_admin %}<a href="{{ url_for('payments.payment') }}" class="btn btn-primary">{{ icon('send') }}New payment</a>{% else %}<span></span>{% endif %}
+    <div class="btn-row">
+        <a href="{{ url_for('payments.transactions') }}" class="btn btn-outline">{{ icon('list') }}All transactions</a>
+        {% if d == 'APPROVED' %}<a href="{{ url_for('payments.blockchain_explorer') }}" class="btn btn-secondary">{{ icon('link') }}View on ledger</a>{% endif %}
     </div>
 </div>
 {% endblock %}

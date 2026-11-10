@@ -102,3 +102,9 @@ def logout():
     session.clear()
     flash("You have been signed out safely.", "info")
     return redirect(url_for("auth.login"))
+
+
+@bp.route("/ui-kit")
+def ui_kit():
+    """Component gallery: every variant and state in light and dark (design-work/05-components.md)."""
+    return render_template("ui_kit.html")
