@@ -36,3 +36,29 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    # Builds the production image and checks that the container starts and answers its health check.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t crosspay:ci .
+      - name: Start container (throwaway CI-only secrets, AI off)
+        run: |
+          docker run -d --name crosspay -p 8000:8000 \
+            -e SECRET_KEY=ci-only-not-a-real-secret \
+            -e LEDGER_SIGNING_KEY=ci-only-not-a-real-key \
+            -e LLM_ENABLED=0 -e DEMO_MODE=0 \
+            crosspay:ci
+      - name: Health check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/healthz; then echo; echo "healthy after ${i} tries"; exit 0; fi
+            sleep 2
+          done
+          docker logs crosspay
+          exit 1
+      - name: Container runs as non-root
+        run: test "$(docker exec crosspay id -u)" != "0"

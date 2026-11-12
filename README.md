@@ -152,6 +152,30 @@ providers and is excluded by default; run it explicitly with `pytest -m live_red
 runs pytest, `ruff check crosspay tests model app.py --select E,F,W --ignore E501,E402` and CodeQL
 (`.github/workflows/`).
 
+## Run with Docker
+
+The `Dockerfile` builds the same runtime as Render: Python 3.12.10, the pinned requirements and gunicorn with one
+worker and 16 threads. It runs as an unprivileged user, keeps all state (SQLite database, audit chain, ledger view,
+uploads) on the `/data` volume and has a health check on `/healthz`. Secrets are never baked into the image.
+
+```bash
+copy .env.example .env
+docker compose up --build
+```
+
+Set `SECRET_KEY` and `LEDGER_SIGNING_KEY` in `.env` first (production mode refuses to start without them); the app
+then runs at <http://localhost:8000>. `docker-compose.yml` runs production mode like Render and overrides the storage
+paths so the data lives on the `crosspay-data` volume; `DEMO_MODE=1` in `.env` adds the one-click demo logins, as on
+the live demo. Without Compose:
+
+```bash
+docker build -t crosspay .
+docker run -p 8000:8000 -e SECRET_KEY=... -e LEDGER_SIGNING_KEY=... -v crosspay-data:/data crosspay
+```
+
+Production mode marks the session cookie `Secure`, which browsers accept on `http://localhost`; on any other host put
+the container behind HTTPS. CI builds the image on every push and pull request, starts it and checks `/healthz`.
+
 ## Deploy on Render
 
 `render.yaml` is a Render Blueprint: one web service running gunicorn with a single worker and 16 threads. The live

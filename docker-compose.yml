@@ -1,0 +1,24 @@
+# Local container run of CrossPay:  docker compose up --build   then open http://localhost:8000
+# Secrets come from .env (copy .env.example to .env and set SECRET_KEY and LEDGER_SIGNING_KEY).
+# The storage paths below override any DB_PATH / LEDGER_PATH / UPLOAD_DIR in .env, so all state lands on the volume.
+services:
+  web:
+    build: .
+    image: crosspay:local
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Fixed to prod like the Render deployment (CROSSPAY_ENV in .env is ignored here on purpose).
+      # DEMO_MODE=1 in .env still gives the one-click demo logins, exactly as on Render.
+      CROSSPAY_ENV: prod
+      DB_PATH: /data/crosspay.db
+      LEDGER_PATH: /data/blockchain_ledger.json
+      UPLOAD_DIR: /data/uploads
+    volumes:
+      - crosspay-data:/data
+    restart: unless-stopped
+
+volumes:
+  crosspay-data:
